@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLF Trading — Boss DSR Dashboard</title>
+<title>CLF Trading — DSR Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -393,13 +393,9 @@ body {
   <div class="header-left">
     <div class="logo">CLF<span>TRADING</span></div>
     <div class="title-block">
-      <div class="title">Boss DSR Dashboard</div>
+      <div class="title">DSR Dashboard</div>
       <div class="sub">Daily Sales Report — 4-Layer Trust + Verify</div>
     </div>
-  </div>
-  <div class="header-center">
-    <span class="branch-flag" id="branch-flag">MENTAKAB</span>
-    <span class="pilot-flag" id="pilot-flag">· Pilot: 5 Champions</span>
   </div>
   <div class="header-right">
     <div class="clock" id="clock">--:--:--</div>
@@ -647,7 +643,6 @@ async function loadStatic() {
     .order('full_name');
   if (e1) console.error('pilots', e1);
   pilots = ps || [];
-  $('pilot-flag').textContent = '· Pilot: ' + pilots.length + ' Champion' + (pilots.length === 1 ? '' : 's');
 
   const { data: pr, error: e2 } = await sb
     .from('monthly_priorities')
