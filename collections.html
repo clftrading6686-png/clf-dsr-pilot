@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collections — CLF Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --blue: #185FA5;
+  --blue-light: #E6F1FB;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-dark: #A88A33;
+  --green: #3B6D11;
+  --green-light: #EAF3DE;
+  --green-bright: #16A34A;
+  --amber: #854F0B;
+  --amber-light: #FAEEDA;
+  --red: #A32D2D;
+  --red-light: #FCEBEB;
+  --red-bright: #DC2626;
+  --gray: #6B7A8D;
+  --gray-light: #F4F6F9;
+  --border: #E2E8F0;
+  --text: #1A2A3A;
+  --text-2: #4A5568;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #F0F4F8;
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* HEADER */
+.header {
+  background: var(--navy); color: white;
+  padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-row {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-logo {
+  width: 36px; height: 36px; background: white; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--navy); line-height: 1;
+}
+.brand-logo span { font-size: 7px; color: var(--gold); margin-top: 2px; }
+.brand-title { font-size: 15px; font-weight: 600; }
+.brand-sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; }
+
+.who-block {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 8px;
+}
+.who-block label { font-size: 12px; color: #A8B4C5; white-space: nowrap; }
+.who-block select {
+  background: transparent; border: none; color: white;
+  font-size: 14px; font-weight: 500; outline: none;
+  font-family: inherit; padding: 2px 4px; min-width: 200px;
+}
+.who-block select option { color: var(--text); background: white; }
+
+/* CONTAINER */
+.container { max-width: 1280px; margin: 0 auto; padding: 20px 24px; }
+
+/* SUMMARY CARDS */
+.summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.summary-card {
+  background: white; border-radius: var(--radius); padding: 16px 18px;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.summary-card .label {
+  font-size: 11px; color: var(--gray); text-transform: uppercase;
+  letter-spacing: 1px; font-weight: 600;
+}
+.summary-card .value {
+  font-size: 26px; font-weight: 700; margin-top: 6px;
+  font-family: 'Geist Mono', monospace; color: var(--text);
+}
+.summary-card.alert .value { color: var(--red-bright); }
+.summary-card.success .value { color: var(--green-bright); }
+.summary-card.warn .value { color: var(--amber); }
+.summary-card .sub { font-size: 11px; color: var(--gray); margin-top: 4px; }
+
+/* FILTERS */
+.filters {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+  background: white; padding: 12px 16px; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  align-items: center;
+}
+.filters .label-text {
+  font-size: 12px; color: var(--gray); text-transform: uppercase;
+  letter-spacing: 1px; font-weight: 600; margin-right: 4px;
+}
+.chip {
+  padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500;
+  background: var(--gray-light); color: var(--text-2); cursor: pointer;
+  border: 1.5px solid transparent; transition: all 0.15s; user-select: none;
+}
+.chip:hover { background: #E8EDF3; }
+.chip.active {
+  background: var(--navy); color: white; border-color: var(--navy);
+}
+.chip .count {
+  font-family: 'Geist Mono', monospace; font-size: 11px; opacity: 0.7;
+  margin-left: 4px;
+}
+.chip.active .count { opacity: 0.9; }
+
+/* COLLECTION LIST */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.coll-card {
+  background: white; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 16px; align-items: center;
+}
+.coll-card.overdue { border-left: 4px solid var(--red-bright); }
+.coll-card.due-soon { border-left: 4px solid var(--amber); }
+.coll-card.banked { opacity: 0.65; }
+
+.coll-info .top {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.coll-info .cust {
+  font-size: 16px; font-weight: 600; color: var(--text);
+}
+.coll-info .meta {
+  font-size: 12px; color: var(--gray); margin-top: 4px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.coll-info .meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+.coll-amount {
+  text-align: right;
+}
+.coll-amount .amt {
+  font-size: 20px; font-weight: 700;
+  font-family: 'Geist Mono', monospace; color: var(--text);
+}
+.coll-amount .amt-label {
+  font-size: 11px; color: var(--gray); text-transform: uppercase;
+  letter-spacing: 1px; margin-top: 2px;
+}
+
+.coll-due {
+  text-align: right; min-width: 110px;
+}
+.coll-due .due-date {
+  font-size: 13px; color: var(--text-2); font-family: 'Geist Mono', monospace;
+}
+.coll-due .due-tag {
+  font-size: 11px; font-weight: 600; margin-top: 4px;
+  padding: 3px 8px; border-radius: 999px; display: inline-block;
+}
+.due-tag.normal { background: var(--gray-light); color: var(--gray); }
+.due-tag.warn { background: var(--amber-light); color: var(--amber); }
+.due-tag.bad { background: var(--red-light); color: var(--red-bright); font-weight: 700; }
+.due-tag.ok { background: var(--green-light); color: var(--green); }
+
+/* STATUS PIPELINE */
+.pipeline {
+  display: flex; gap: 4px; align-items: center;
+  min-width: 240px;
+}
+.pip-step {
+  flex: 1; padding: 6px 8px;
+  font-size: 11px; font-weight: 600; text-align: center;
+  background: var(--gray-light); color: var(--gray);
+  border-radius: var(--radius-sm); position: relative;
+  transition: all 0.15s;
+}
+.pip-step.done {
+  background: var(--green-light); color: var(--green);
+}
+.pip-step.current {
+  background: var(--navy); color: white;
+  box-shadow: 0 2px 6px rgba(11,31,58,0.25);
+}
+.pip-step.actionable {
+  background: var(--gold); color: var(--navy);
+  cursor: pointer; font-weight: 700;
+  animation: pulse-action 1.8s infinite;
+}
+.pip-step.actionable:hover { background: var(--gold-dark); color: white; }
+@keyframes pulse-action {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+}
+
+/* STATUS BADGE */
+.status-badge {
+  display: inline-block; padding: 3px 9px; font-size: 11px;
+  font-weight: 600; border-radius: 999px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.status-badge.pending { background: var(--gray-light); color: var(--gray); }
+.status-badge.collected { background: var(--blue-light); color: var(--blue); }
+.status-badge.submitted { background: var(--gold-light); color: var(--gold-dark); }
+.status-badge.banked { background: var(--green-light); color: var(--green); }
+.status-badge.overdue { background: var(--red-light); color: var(--red-bright); }
+
+/* EMPTY / LOADING */
+.empty {
+  background: white; padding: 48px 24px; text-align: center;
+  color: var(--gray); border-radius: var(--radius);
+  border: 1px dashed var(--border);
+}
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--green-bright); color: white;
+  padding: 12px 20px; border-radius: var(--radius);
+  font-weight: 500; font-size: 13px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  z-index: 200; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.toast.show { opacity: 1; }
+.toast.error { background: var(--red-bright); }
+
+/* CONNECTION DOT */
+.conn-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gray); margin-right: 6px;
+}
+.conn-dot.ok { background: #22C55E; }
+.conn-dot.err { background: var(--red); }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .coll-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .coll-amount, .coll-due { text-align: left; }
+  .coll-due { min-width: auto; }
+  .pipeline { min-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-row">
+    <div class="brand">
+      <div class="brand-logo">CLF<span>TRADING</span></div>
+      <div>
+        <div class="brand-title">Collections</div>
+        <div class="brand-sub">3-stage tracking</div>
+      </div>
+    </div>
+    <div class="who-block">
+      <label>View</label>
+      <select id="salesman-select">
+        <option value="">Loading...</option>
+      </select>
+      <span style="font-size:11px;color:#A8B4C5;margin-left:8px;"><span class="conn-dot" id="conn-dot"></span><span id="conn-text">Connecting</span></span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="summary">
+    <div class="summary-card alert">
+      <div class="label">Overdue</div>
+      <div class="value" id="sum-overdue-count">0</div>
+      <div class="sub" id="sum-overdue-amount">RM 0.00 outstanding</div>
+    </div>
+    <div class="summary-card warn">
+      <div class="label">Outstanding</div>
+      <div class="value" id="sum-outstanding">RM 0</div>
+      <div class="sub" id="sum-outstanding-count">0 collections</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">In Hand</div>
+      <div class="value" id="sum-in-hand">RM 0</div>
+      <div class="sub">Held by salesmen</div>
+    </div>
+    <div class="summary-card success">
+      <div class="label">Banked This Month</div>
+      <div class="value" id="sum-banked">RM 0</div>
+      <div class="sub" id="sum-banked-count">0 this month</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <span class="label-text">Status:</span>
+    <span class="chip active" data-filter="all">All <span class="count" id="cnt-all">0</span></span>
+    <span class="chip" data-filter="overdue">⚠ Overdue <span class="count" id="cnt-overdue">0</span></span>
+    <span class="chip" data-filter="pending">Pending <span class="count" id="cnt-pending">0</span></span>
+    <span class="chip" data-filter="collected">Collected <span class="count" id="cnt-collected">0</span></span>
+    <span class="chip" data-filter="submitted">Submitted <span class="count" id="cnt-submitted">0</span></span>
+    <span class="chip" data-filter="banked">Banked <span class="count" id="cnt-banked">0</span></span>
+  </div>
+
+  <div class="list" id="list">
+    <div class="empty">Loading...</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://wgwupdjiugmdgxprctse.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== STATE =====
+const state = {
+  salesmen: [],
+  collections: [],
+  selectedSalesmanId: 'ALL',
+  filter: 'all',
+};
+
+// ===== UTILS =====
+const $ = (id) => document.getElementById(id);
+const fmtRM = (n, decimals = 0) => 'RM ' + Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+const fmtRMfull = (n) => fmtRM(n, 2);
+
+function escapeHtml(s) {
+  if (!s && s !== 0) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function todayMY() {
+  // Malaysia is UTC+8 (no DST). Add 8h to UTC epoch then format as UTC ISO — works regardless of browser timezone.
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function daysDiff(dueDate) {
+  if (!dueDate) return 0;
+  const due = new Date(dueDate + 'T00:00:00');
+  const today = new Date(todayMY() + 'T00:00:00');
+  return Math.floor((due - today) / 86400000);
+}
+
+function dueLabel(dueDate, status) {
+  if (status === 'banked') return { text: 'Cleared', cls: 'ok' };
+  const d = daysDiff(dueDate);
+  if (d < 0) return { text: `${-d}d overdue`, cls: 'bad' };
+  if (d === 0) return { text: 'Due today', cls: 'warn' };
+  if (d <= 3) return { text: `${d}d left`, cls: 'warn' };
+  return { text: `${d}d left`, cls: 'normal' };
+}
+
+function isOverdue(c) {
+  return c.status !== 'banked' && daysDiff(c.due_date) < 0;
+}
+
+function showToast(msg, isError = false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setConnStatus(ok, text) {
+  const dot = $('conn-dot');
+  dot.classList.remove('ok', 'err');
+  dot.classList.add(ok ? 'ok' : 'err');
+  $('conn-text').textContent = text;
+}
+
+// ===== INITIAL LOAD =====
+async function init() {
+  try {
+    const { data, error } = await sb.from('salesmen').select('id, name, role, zone').order('name');
+    if (error) throw error;
+    state.salesmen = data || [];
+    populateSalesmenDropdown();
+    setConnStatus(true, 'Connected');
+    await loadCollections();
+  } catch (e) {
+    console.error(e);
+    setConnStatus(false, 'Connection failed');
+    showToast('Connection failed: ' + e.message, true);
+  }
+}
+
+function populateSalesmenDropdown() {
+  const sel = $('salesman-select');
+  sel.innerHTML = '<option value="ALL">📋 All Salesmen (Boss View)</option>';
+  state.salesmen.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.name}${s.zone ? ' · ' + s.zone : ''}${s.role !== 'salesman' ? ' (' + s.role + ')' : ''}`;
+    sel.appendChild(opt);
+  });
+  sel.value = 'ALL';
+  state.selectedSalesmanId = 'ALL';
+}
+
+async function loadCollections() {
+  const list = $('list');
+  list.innerHTML = '<div class="empty">Loading...</div>';
+
+  let query = sb.from('collections').select(`
+    id, order_id, salesman_id, customer_id,
+    amount_due, amount_collected, amount_submitted, amount_banked,
+    due_date, status, created_at,
+    salesmen (id, name, zone),
+    customers (id, name, area, credit_term_days),
+    orders (id, brand_id, order_date, brands(id, name))
+  `).order('due_date', { ascending: true });
+
+  if (state.selectedSalesmanId !== 'ALL') {
+    query = query.eq('salesman_id', state.selectedSalesmanId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    showToast('Failed to load: ' + error.message, true);
+    list.innerHTML = '<div class="empty">Failed to load</div>';
+    return;
+  }
+
+  state.collections = data || [];
+  render();
+}
+
+// ===== RENDERING =====
+function render() {
+  const all = state.collections;
+
+  // Compute counts
+  const counts = { all: all.length, overdue: 0, pending: 0, collected: 0, submitted: 0, banked: 0 };
+  all.forEach(c => {
+    if (counts[c.status] !== undefined) counts[c.status]++;
+    if (isOverdue(c)) counts.overdue++;
+  });
+
+  $('cnt-all').textContent = counts.all;
+  $('cnt-overdue').textContent = counts.overdue;
+  $('cnt-pending').textContent = counts.pending;
+  $('cnt-collected').textContent = counts.collected;
+  $('cnt-submitted').textContent = counts.submitted;
+  $('cnt-banked').textContent = counts.banked;
+
+  // Summary
+  const overdueAmt = all.filter(isOverdue).reduce((s, c) => s + Number(c.amount_due || 0), 0);
+  const outstanding = all.filter(c => c.status !== 'banked').reduce((s, c) => s + Number(c.amount_due || 0), 0);
+  const outstandingCount = all.filter(c => c.status !== 'banked').length;
+  const inHand = all.filter(c => c.status === 'collected').reduce((s, c) => s + Number(c.amount_collected || c.amount_due || 0), 0);
+
+  const thisMonthStart = todayMY().slice(0, 7) + '-01';
+  const bankedThisMonth = all.filter(c => c.status === 'banked' && c.due_date >= thisMonthStart);
+  const bankedAmt = bankedThisMonth.reduce((s, c) => s + Number(c.amount_banked || c.amount_due || 0), 0);
+
+  $('sum-overdue-count').textContent = counts.overdue;
+  $('sum-overdue-amount').textContent = fmtRMfull(overdueAmt) + ' outstanding';
+  $('sum-outstanding').textContent = fmtRM(outstanding);
+  $('sum-outstanding-count').textContent = outstandingCount + ' collections';
+  $('sum-in-hand').textContent = fmtRM(inHand);
+  $('sum-banked').textContent = fmtRM(bankedAmt);
+  $('sum-banked-count').textContent = bankedThisMonth.length + ' this month';
+
+  // Filter
+  let filtered = all;
+  if (state.filter === 'overdue') filtered = all.filter(isOverdue);
+  else if (state.filter !== 'all') filtered = all.filter(c => c.status === state.filter);
+
+  const list = $('list');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty">${state.filter === 'all' ? 'No collection records' : 'No matching records'}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => renderCard(c)).join('');
+
+  // Wire up action buttons
+  list.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', () => advanceStatus(el.dataset.id, el.dataset.action));
+  });
+}
+
+function renderCard(c) {
+  const overdue = isOverdue(c);
+  const due = dueLabel(c.due_date, c.status);
+  const cardCls = c.status === 'banked' ? 'banked' : (overdue ? 'overdue' : (due.cls === 'warn' ? 'due-soon' : ''));
+
+  const status = overdue ? 'overdue' : c.status;
+  const customerName = c.customers?.name || '(unknown)';
+  const customerArea = c.customers?.area || '';
+  const creditDays = c.customers?.credit_term_days || '';
+  const brandName = c.orders?.brands?.name || '?';
+  const salesmanName = c.salesmen?.name || '?';
+  const salesmanZone = c.salesmen?.zone || '';
+
+  const showSalesman = state.selectedSalesmanId === 'ALL';
+
+  return `
+    <div class="coll-card ${cardCls}" data-id="${c.id}">
+      <div class="coll-info">
+        <div class="top">
+          <div class="cust">${escapeHtml(customerName)}</div>
+          <span class="status-badge ${status}">${statusLabel(status)}</span>
+        </div>
+        <div class="meta">
+          ${showSalesman ? `<span>👤 ${escapeHtml(salesmanName)}${salesmanZone ? ' · ' + escapeHtml(salesmanZone) : ''}</span>` : ''}
+          <span>🏷️ ${escapeHtml(brandName)}</span>
+          ${customerArea ? `<span>📍 ${escapeHtml(customerArea)}</span>` : ''}
+          ${creditDays ? `<span>⏱ ${creditDays}-day terms</span>` : ''}
+        </div>
+      </div>
+      <div class="coll-amount">
+        <div class="amt">${fmtRMfull(c.amount_due)}</div>
+        <div class="amt-label">amount due</div>
+      </div>
+      <div class="coll-due">
+        <div class="due-date">${c.due_date || '—'}</div>
+        <div class="due-tag ${due.cls}">${due.text}</div>
+      </div>
+      ${renderPipeline(c)}
+    </div>
+  `;
+}
+
+function statusLabel(s) {
+  return ({
+    pending: 'Pending',
+    collected: 'Collected',
+    submitted: 'Submitted',
+    banked: 'Banked',
+    overdue: 'Overdue'
+  })[s] || s;
+}
+
+function renderPipeline(c) {
+  const status = c.status;
+  // Stages: pending -> collected -> submitted -> banked
+  const stages = [
+    { key: 'pending', label: 'Pending' },
+    { key: 'collected', label: 'Collected' },
+    { key: 'submitted', label: 'Submitted' },
+    { key: 'banked', label: 'Banked' },
+  ];
+  const idx = stages.findIndex(s => s.key === status);
+  const nextAction = ({
+    pending: 'mark_collected',
+    collected: 'mark_submitted',
+    submitted: 'mark_banked',
+    banked: null
+  })[status];
+
+  const html = stages.map((s, i) => {
+    let cls = '';
+    if (i < idx) cls = 'done';
+    else if (i === idx) cls = idx === stages.length - 1 ? 'done' : 'current';
+
+    const isNext = i === idx + 1 && nextAction;
+    if (isNext) cls = 'actionable';
+
+    const action = isNext ? `data-action="${nextAction}" data-id="${c.id}"` : '';
+    return `<div class="pip-step ${cls}" ${action} title="${isNext ? 'Click to mark as ' + s.label : s.label}">${s.label}</div>`;
+  }).join('');
+
+  return `<div class="pipeline">${html}</div>`;
+}
+
+// ===== STATUS ACTIONS =====
+async function advanceStatus(id, action) {
+  const coll = state.collections.find(c => c.id === id);
+  if (!coll) return;
+
+  const updates = {};
+  let newStatus, label;
+
+  if (action === 'mark_collected') {
+    newStatus = 'collected';
+    updates.amount_collected = Number(coll.amount_due || 0);
+    label = 'Marked as Collected';
+  } else if (action === 'mark_submitted') {
+    newStatus = 'submitted';
+    updates.amount_submitted = Number(coll.amount_due || 0);
+    label = 'Marked as Submitted';
+  } else if (action === 'mark_banked') {
+    newStatus = 'banked';
+    updates.amount_banked = Number(coll.amount_due || 0);
+    label = 'Marked as Banked ✅';
+  } else {
+    return;
+  }
+  updates.status = newStatus;
+
+  const { error } = await sb.from('collections').update(updates).eq('id', id);
+  if (error) {
+    showToast('Update failed: ' + error.message, true);
+    return;
+  }
+  showToast(label);
+  // Update local state + re-render
+  Object.assign(coll, updates);
+  render();
+}
+
+// ===== EVENT WIRING =====
+$('salesman-select').addEventListener('change', async (e) => {
+  state.selectedSalesmanId = e.target.value;
+  await loadCollections();
+});
+
+document.querySelectorAll('.chip[data-filter]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.filter = chip.dataset.filter;
+    render();
+  });
+});
+
+// Boot
+init();
+
+// Auto-refresh every 60s (catches new orders' auto-collections)
+setInterval(loadCollections, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>Daily Sales Report — CLF Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --navy-light: #2A4A6C;
+  --blue: #185FA5;
+  --blue-light: #E6F1FB;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-dark: #A88A33;
+  --gold-bright: #FFD66B;
+  --green: #3B6D11;
+  --green-light: #EAF3DE;
+  --green-bright: #16A34A;
+  --amber: #854F0B;
+  --amber-light: #FAEEDA;
+  --red: #A32D2D;
+  --red-light: #FCEBEB;
+  --red-bright: #DC2626;
+  --gray: #6B7A8D;
+  --gray-light: #F4F6F9;
+  --border: #E2E8F0;
+  --text: #1A2A3A;
+  --text-2: #4A5568;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { overscroll-behavior-y: contain; }
+body {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #F0F4F8;
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+  padding-bottom: 120px;
+}
+
+/* HEADER */
+.header { background: var(--navy); color: white; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header-main { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo { width: 34px; height: 34px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--navy); line-height: 1; }
+.brand-logo span { font-size: 7px; color: var(--gold); margin-top: 2px; }
+.brand-name { font-size: 14px; font-weight: 600; line-height: 1.2; }
+.brand-sub { font-size: 10px; color: var(--gold); margin-top: 1px; letter-spacing: 0.5px; }
+.deadline-badge { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: #A8B4C5; }
+.deadline-badge .time { font-size: 13px; font-weight: 600; font-family: 'Geist Mono', monospace; color: var(--gold-bright); }
+.deadline-badge.late .time { color: #FCA5A5; }
+
+.header-who { padding: 6px 16px 12px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.08); }
+.who-label { font-size: 11px; color: #A8B4C5; line-height: 1.1; }
+.who-label .ml { display: block; font-size: 9px; color: #7A8A9C; }
+.who-select { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; outline: none; }
+.who-select option { color: var(--text); background: white; }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(255,255,255,0.08); padding: 0; }
+.stat-cell { background: var(--navy); padding: 10px 8px; text-align: center; }
+.stat-cell .lbl { font-size: 9.5px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+.stat-cell .val { font-size: 17px; color: white; font-weight: 700; margin-top: 2px; font-family: 'Geist Mono', monospace; }
+.stat-cell .ml { font-size: 8.5px; color: #7A8A9C; margin-top: 1px; }
+
+.container { padding: 12px; max-width: 600px; margin: 0 auto; }
+
+.route-banner { background: linear-gradient(135deg, var(--gold-light) 0%, #FFF 100%); border: 1px solid var(--gold); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.route-icon { font-size: 22px; }
+.route-info { flex: 1; }
+.route-info .top { font-size: 13px; font-weight: 600; color: var(--gold-dark); }
+.route-info .top .ml { font-weight: 400; color: var(--gold-dark); opacity: 0.75; margin-left: 6px; font-size: 11px; }
+.route-info .meta { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+.route-info .meta .pill { display: inline-block; background: white; padding: 1px 8px; border-radius: 999px; font-weight: 600; color: var(--gold-dark); margin-right: 4px; font-size: 10.5px; }
+
+.priorities-card { background: white; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.priorities-card .title { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
+.priorities-card .title .ml { text-transform: none; letter-spacing: 0; opacity: 0.75; font-weight: 500; }
+.priorities-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.priority-chip { background: var(--blue-light); color: var(--blue); padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.priority-chip .num { background: var(--blue); color: white; width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+
+/* ACTION BAR — top of customer list */
+.action-bar {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 12px;
+}
+.action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 12px; border-radius: var(--radius);
+  font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  line-height: 1.3;
+  border: none;
+}
+.action-btn.search {
+  background: var(--gold); color: var(--navy);
+  box-shadow: 0 2px 6px rgba(201,168,76,0.3);
+}
+.action-btn.search:active { transform: scale(0.98); }
+.action-btn.new {
+  background: white; color: var(--text-2);
+  border: 1.5px dashed var(--gray);
+}
+.action-btn .icon { font-size: 18px; }
+.action-btn .ml { font-size: 10px; opacity: 0.75; font-weight: 500; display: block; }
+
+.section-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; padding: 0 4px; }
+.section-title .h { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; }
+.section-title .h .ml { font-weight: 400; opacity: 0.7; text-transform: none; letter-spacing: 0; margin-left: 6px; font-size: 11px; }
+.section-title .progress { font-size: 12px; color: var(--gray); font-family: 'Geist Mono', monospace; }
+
+.customer-list { display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+.empty-state {
+  background: white; border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 32px 20px; text-align: center;
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+.empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+.empty-state .desc { font-size: 12px; color: var(--gray); line-height: 1.5; }
+.empty-state .ml { display: block; opacity: 0.85; margin-top: 4px; font-size: 11px; }
+
+.customer-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; transition: all 0.2s; }
+.customer-card.has-sale { border-left: 3px solid var(--green-bright); }
+.customer-card.no-sale { border-left: 3px solid var(--gray); opacity: 0.85; }
+.customer-card.expanded { box-shadow: var(--shadow-md); border-color: var(--gold); }
+.customer-card.new-outlet { border-left: 3px solid var(--gold); }
+
+.customer-header { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.customer-num { width: 32px; height: 32px; background: var(--navy); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; font-family: 'Geist Mono', monospace; }
+.customer-card.has-sale .customer-num { background: var(--green-bright); }
+.customer-card.no-sale .customer-num { background: var(--gray); }
+.customer-card.new-outlet .customer-num { background: var(--gold); color: var(--navy); }
+.customer-name { font-size: 14.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.customer-code { font-size: 11px; color: var(--gray); font-family: 'Geist Mono', monospace; margin-top: 2px; }
+.customer-status-icon { font-size: 18px; }
+.customer-remove-btn {
+  font-size: 12px; color: var(--gray); cursor: pointer;
+  padding: 4px 8px; border-radius: 4px;
+}
+.customer-remove-btn:hover { background: var(--red-light); color: var(--red-bright); }
+
+.customer-body { display: none; padding: 12px 14px 14px; border-top: 1px solid var(--border); background: #FAFBFC; }
+.customer-card.expanded .customer-body { display: block; }
+
+.entry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.field { margin-bottom: 10px; }
+.field:last-child { margin-bottom: 0; }
+.field .lbl { font-size: 11px; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: baseline; gap: 6px; }
+.field .lbl .ml { font-weight: 400; opacity: 0.8; text-transform: none; letter-spacing: 0; font-size: 10.5px; }
+.field .lbl .objective { margin-left: auto; background: var(--gold-light); color: var(--gold-dark); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.input-prefix { position: relative; }
+.input-prefix .prefix-text { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: 13px; font-weight: 500; pointer-events: none; }
+.input-prefix input { padding-left: 32px !important; }
+.input, .select { width: 100%; padding: 10px 12px; font-size: 15px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: white; color: var(--text); font-family: inherit; outline: none; transition: border-color 0.15s; }
+.input[type="number"] { font-family: 'Geist Mono', monospace; font-weight: 500; }
+.input:focus, .select:focus { border-color: var(--blue); }
+
+.priority-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
+.priority-toggle { flex: 1; min-width: 56px; padding: 7px 4px; text-align: center; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: white; font-size: 11.5px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.15s; }
+.priority-toggle.active { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+.priority-toggle .n { font-size: 10px; opacity: 0.7; display: block; }
+
+.reason-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 4px; }
+.reason-btn { padding: 8px 4px; text-align: center; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: white; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.15s; }
+.reason-btn.active { border-color: var(--amber); background: var(--amber-light); color: var(--amber); }
+.reason-btn .letter { display: block; font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+.reason-btn .lbl-en { display: block; font-size: 9.5px; }
+.reason-btn .lbl-ml { display: block; font-size: 9px; opacity: 0.75; }
+
+.media-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.media-btn { padding: 10px; text-align: center; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); background: white; font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; user-select: none; transition: all 0.15s; }
+.media-btn:hover { border-color: var(--blue); color: var(--blue); }
+.media-btn.captured { border: 1.5px solid var(--green-bright); color: var(--green-bright); background: var(--green-light); }
+.media-btn .icon { font-size: 18px; display: block; margin-bottom: 2px; }
+.media-btn .ml { font-size: 9.5px; opacity: 0.75; display: block; }
+
+.entry-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.btn-secondary { padding: 12px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text-2); cursor: pointer; }
+.btn-secondary .ml { display: block; font-size: 10px; opacity: 0.75; font-weight: 400; }
+.btn-primary { padding: 12px; background: var(--gold); color: var(--navy); border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; box-shadow: 0 2px 6px rgba(201,168,76,0.3); }
+.btn-primary .ml { display: block; font-size: 10px; opacity: 0.75; font-weight: 500; }
+
+/* SUBMIT BAR */
+.submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); box-shadow: 0 -4px 12px rgba(0,0,0,0.06); z-index: 50; }
+.submit-bar-inner { max-width: 600px; margin: 0 auto; }
+.submit-summary { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11.5px; color: var(--gray); }
+.submit-summary span { display: inline-flex; align-items: baseline; gap: 4px; }
+.submit-summary .v { color: var(--text); font-weight: 700; font-family: 'Geist Mono', monospace; font-size: 13px; }
+.btn-submit { width: 100%; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; line-height: 1.2; }
+.btn-submit .ml { display: block; font-size: 11px; opacity: 0.75; font-weight: 500; margin-top: 2px; }
+.btn-submit:disabled { background: var(--gray); color: white; opacity: 0.6; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(11,31,58,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 200; padding: 0; }
+.modal-overlay.show { display: flex; }
+.modal { background: white; border-radius: var(--radius) var(--radius) 0 0; max-width: 600px; width: 100%; padding: 20px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 -8px 32px rgba(0,0,0,0.2); }
+@media (min-width: 600px) {
+  .modal-overlay { align-items: center; padding: 16px; }
+  .modal { border-radius: var(--radius); }
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.modal-title .ml { font-size: 12px; font-weight: 400; color: var(--gray); display: block; margin-top: 2px; }
+.modal-close { font-size: 24px; color: var(--gray); cursor: pointer; padding: 4px 8px; line-height: 1; }
+.modal-body { overflow-y: auto; flex: 1; min-height: 0; }
+
+/* SEARCH MODAL */
+.search-input-wrap { position: relative; margin-bottom: 12px; }
+.search-input-wrap .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.search-input { width: 100%; padding: 14px 14px 14px 40px; font-size: 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none; font-family: inherit; }
+.search-input:focus { border-color: var(--blue); }
+
+.privacy-notice {
+  background: var(--blue-light); color: var(--blue);
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size: 11.5px; line-height: 1.5;
+  margin-bottom: 12px;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.privacy-notice .icon { font-size: 14px; flex-shrink: 0; }
+.privacy-notice .ml { display: block; opacity: 0.85; margin-top: 2px; }
+
+.search-results { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.search-result {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; cursor: pointer; transition: all 0.15s;
+}
+.search-result:hover, .search-result:active { border-color: var(--gold); background: var(--gold-light); }
+.search-result .name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.search-result .meta { font-size: 11px; color: var(--gray); margin-top: 3px; font-family: 'Geist Mono', monospace; }
+.search-result .badge { display: inline-block; background: var(--gray-light); color: var(--text-2); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+.search-result.already-added { opacity: 0.5; cursor: not-allowed; }
+.search-result.already-added .badge { background: var(--green-light); color: var(--green); }
+
+.search-empty {
+  text-align: center; padding: 32px 16px; color: var(--gray); font-size: 13px;
+}
+.search-empty .icon { font-size: 36px; margin-bottom: 6px; opacity: 0.6; }
+.search-empty .ml { display: block; opacity: 0.85; font-size: 11.5px; margin-top: 2px; }
+
+.results-count { font-size: 11px; color: var(--gray); margin-bottom: 6px; padding: 0 2px; }
+
+/* CONFIRM / SUCCESS MODAL */
+.confirm-modal { padding: 24px; text-align: center; align-items: center !important; }
+.confirm-modal .modal { border-radius: var(--radius); max-width: 420px; }
+.confirm-icon { font-size: 56px; margin-bottom: 8px; }
+.confirm-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.confirm-sub { font-size: 13px; color: var(--gray); margin-bottom: 16px; }
+.confirm-stats { background: var(--gray-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; font-family: 'Geist Mono', monospace; font-size: 13px; text-align: left; }
+.confirm-stats div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.confirm-stats div:last-child { margin-bottom: 0; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; font-weight: 700; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: var(--green-bright); color: white; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 300; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.2s; max-width: 90vw; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.error { background: var(--red-bright); }
+
+/* UTILITY */
+.hidden { display: none !important; }
+.muted { color: var(--gray); font-size: 11.5px; line-height: 1.4; margin-top: 4px; }
+.muted .ml { display: block; opacity: 0.85; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-main">
+    <div class="brand">
+      <div class="brand-logo">CLF<span>TRADING</span></div>
+      <div>
+        <div class="brand-name">Daily Sales Report</div>
+        <div class="brand-sub">Laporan Jualan Harian</div>
+      </div>
+    </div>
+    <div class="deadline-badge" id="deadline">
+      <span class="ml">Submit by</span>
+      <span class="time" id="deadline-time">23:59</span>
+    </div>
+  </div>
+
+  <div class="header-who">
+    <div class="who-label">I am<span class="ml">Saya</span></div>
+    <select class="who-select" id="salesman-pick"></select>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="lbl">Visits</div>
+      <div class="val" id="stat-visits">0</div>
+      <div class="ml">Lawatan</div>
+    </div>
+    <div class="stat-cell">
+      <div class="lbl">Sales</div>
+      <div class="val" id="stat-sales">0</div>
+      <div class="ml">RM</div>
+    </div>
+    <div class="stat-cell">
+      <div class="lbl">Strike</div>
+      <div class="val" id="stat-strike">0%</div>
+      <div class="ml">Effective</div>
+    </div>
+    <div class="stat-cell">
+      <div class="lbl">Target</div>
+      <div class="val" id="stat-target">0%</div>
+      <div class="ml">MTD</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="route-banner">
+    <div class="route-icon">🗺️</div>
+    <div class="route-info">
+      <div class="top">Today's Visits<span class="ml">Lawatan Hari Ini</span></div>
+      <div class="meta">
+        <span class="pill" id="route-pill">W3D2</span>
+        <span id="route-area">TRIANG</span> ·
+        <span id="route-date">14/05/2026</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="priorities-card">
+    <div class="title">⭐ Monthly Priorities <span class="ml">· Keutamaan Bulanan</span></div>
+    <div class="priorities-list" id="priorities-list"></div>
+  </div>
+
+  <!-- ACTION BUTTONS — Privacy-first: search to add customer -->
+  <div class="action-bar">
+    <button class="action-btn search" id="open-search-btn">
+      <span class="icon">🔍</span>
+      <span>
+        Search & Add Customer
+        <span class="ml">Cari & Tambah Pelanggan</span>
+      </span>
+    </button>
+    <button class="action-btn new" id="open-newop-btn">
+      <span class="icon">➕</span>
+      <span>
+        New Outlet
+        <span class="ml">Baru</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="section-title">
+    <div class="h">📋 Today's Visits <span class="ml">· Hari Ini</span></div>
+    <div class="progress" id="route-progress">0 visited</div>
+  </div>
+
+  <div class="customer-list" id="customer-list"></div>
+
+</div>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+  <div class="submit-bar-inner">
+    <div class="submit-summary">
+      <span>Today Sales: <span class="v" id="bar-sales">RM 0.00</span></span>
+      <span>Collection: <span class="v" id="bar-coll">RM 0.00</span></span>
+    </div>
+    <button class="btn-submit" id="submit-btn" disabled>
+      Submit Daily Report
+      <span class="ml">Hantar Laporan Harian</span>
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: SEARCH CUSTOMER -->
+<div class="modal-overlay" id="search-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        🔍 Search Customer
+        <span class="ml">Cari Pelanggan</span>
+      </div>
+      <div class="modal-close" onclick="closeSearchModal()">✕</div>
+    </div>
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="search-input" placeholder="Type name or code..." autocomplete="off">
+    </div>
+    <div class="privacy-notice">
+      <span class="icon">🔒</span>
+      <div>
+        Customer list is private. Type at least 2 characters to search.
+        <span class="ml">Senarai pelanggan adalah sulit. Taip sekurang-kurangnya 2 aksara.</span>
+      </div>
+    </div>
+    <div class="results-count" id="results-count"></div>
+    <div class="modal-body">
+      <div class="search-results" id="search-results">
+        <div class="search-empty">
+          <div class="icon">🔎</div>
+          Start typing to search
+          <span class="ml">Mula taip untuk mencari</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NEW OUTLET (not in customer master) -->
+<div class="modal-overlay" id="newop-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        ➕ New Outlet
+        <span class="ml">Pelanggan Baru (tiada dalam sistem)</span>
+      </div>
+      <div class="modal-close" onclick="closeNewOpModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <div class="lbl">Outlet Name <span class="ml">Nama Kedai</span></div>
+        <input type="text" class="input" id="newop-name" placeholder="e.g. Kedai Runcit ABC">
+      </div>
+      <div class="entry-row">
+        <div class="field">
+          <div class="lbl">Sales <span class="ml">Jualan</span> (RM)</div>
+          <div class="input-prefix">
+            <span class="prefix-text">RM</span>
+            <input type="number" class="input" id="newop-sales" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+        <div class="field">
+          <div class="lbl">Collection <span class="ml">Kutipan</span> (RM)</div>
+          <div class="input-prefix">
+            <span class="prefix-text">RM</span>
+            <input type="number" class="input" id="newop-coll" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+      <div class="entry-actions">
+        <button class="btn-secondary" onclick="closeNewOpModal()">Cancel<span class="ml">Batal</span></button>
+        <button class="btn-primary" onclick="addNewOp()">Add<span class="ml">Tambah</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SUBMIT CONFIRM -->
+<div class="modal-overlay confirm-modal" id="submit-modal">
+  <div class="modal">
+    <div class="confirm-icon">📤</div>
+    <div class="confirm-title">Submit Today's Report?</div>
+    <div class="confirm-sub">Hantar laporan hari ini?</div>
+    <div class="confirm-stats" id="submit-stats"></div>
+    <div class="muted" style="margin-bottom:12px;">
+      Once submitted, you cannot modify today's entries.
+      <span class="ml">Selepas dihantar, tidak boleh diubah.</span>
+    </div>
+    <div class="entry-actions">
+      <button class="btn-secondary" onclick="closeSubmitModal()">Review<span class="ml">Semak Semula</span></button>
+      <button class="btn-primary" onclick="doSubmit()">Submit ✓<span class="ml">Hantar ✓</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SUCCESS -->
+<div class="modal-overlay confirm-modal" id="success-modal">
+  <div class="modal">
+    <div class="confirm-icon">🎉</div>
+    <div class="confirm-title">Submitted!</div>
+    <div class="confirm-sub">Laporan dihantar pada masa</div>
+    <div class="confirm-stats" id="success-stats"></div>
+    <button class="btn-primary" style="width:100%" onclick="closeSuccessModal()">
+      OK <span class="ml">OK</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+// SUPABASE CLIENT
+// ============================================================
+const SUPABASE_URL = 'https://wgwupdjiugmdgxprctse.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// DATA (populated from Supabase on init)
+// ============================================================
+let SALESMEN = [];          // pilot champions from Supabase
+let MONTHLY_PRIORITIES = []; // current month from Supabase
+// Customer search is server-side via Supabase ILIKE — never load full list
+
+// Kept here for backward-compat with search function (now unused)
+const CUSTOMER_MASTER = [
+  // From paper form (W3D2 Triang)
+  { code: '30M-02617', name: 'ONE BOWL PAN MEE RESTAURANT', area: 'TRIANG', category: 'COFFEESHOP' },
+  { code: '30M-02666', name: '1968 HAINAN KOPITIAM', area: 'TRIANG', category: 'COFFEESHOP' },
+  { code: '30M-01410', name: 'TEKAD PRIMA SDN.BHD. PETRON PEKAN TRIANG', area: 'TRIANG', category: 'PETROLMART' },
+  { code: '30M-02436', name: 'RESTORAN HONG YUN', area: 'TRIANG', category: 'RES' },
+  { code: '30M-01253', name: 'RESTORAN HUP SENG TRIANG 31R1/246', area: 'TRIANG', category: 'RES' },
+  { code: '30M-01737', name: 'TAN CHOOI JUAN (RESTORAN SEKELUARGA)', area: 'TRIANG', category: 'RES' },
+  { code: '30M-01043', name: 'PASAR MINI PRABA 31P1/012', area: 'TRIANG', category: 'MINIMARKET' },
+  { code: '30M-01738', name: 'K K MAJU TRADING', area: 'TRIANG', category: 'SUN' },
+  { code: '30M-01796', name: 'PASARAYA BS TRIANG SDN BHD', area: 'TRIANG', category: 'MINIMARKET' },
+  { code: '30M-01367', name: 'SELVER RIVER RESTORAN 31S1/121', area: 'TRIANG', category: 'RES' },
+  { code: '30M-00803', name: 'LONG XIANG RESTAURANT 31L1/014', area: 'TRIANG', category: 'RES' },
+  { code: '30M-01282', name: 'RESTORAN SIN HONG YUN 31R1/274', area: 'TRIANG', category: 'RES' },
+  { code: '30M-00526', name: 'KAWAN BAIK KOPITIAM 31K1/483', area: 'TRIANG', category: 'COFFEESHOP' },
+  { code: '30M-01296', name: 'RESTORAN XI LAI LER 31R1/035', area: 'TRIANG', category: 'RES' },
+  { code: '30M-01837', name: 'FU XING KOPITIAM', area: 'TRIANG', category: 'COFFEESHOP' },
+  { code: '30M-02291', name: 'CENDOL TRIANG', area: 'TRIANG', category: 'CVS' },
+  { code: '30M-01772', name: 'KEDAI KOPI TRIANG', area: 'TRIANG', category: 'COFFEESHOP' },
+  { code: '30M-00777', name: 'LAO DE FANG RESTAURANT', area: 'TRIANG', category: 'RES' },
+  // From customer master analysis (sample beyond Triang)
+  { code: '30M-00001', name: 'ONE ZERO ONE CASH & CARRY', area: 'TRIANG', category: 'MINIMARKET' },
+  { code: '30M-00007', name: 'A&R FRESHMART', area: 'KG.AWAH', category: 'MINIMARKET' },
+  { code: '30M-00008', name: 'A.SANDRAN ENTERPRISE', area: 'TEMERLOH', category: 'MINIMARKET' },
+  { code: '30M-00027', name: 'AFFANDI ISHAK PETROLEUM', area: 'BENTONG', category: 'PETROLMART' },
+  { code: '30M-00034', name: 'AH TAN TRADING 31A1/138', area: 'TEMERLOH', category: 'MINIMARKET' },
+  { code: '30M-00044', name: 'AIK HENG', area: 'MENTAKAB', category: 'WHOLESALER' },
+  { code: '30M-00059', name: 'ALSYIFAA FARMASI JERANTUT SDN BHD', area: 'JERANTUT', category: 'PHARMACY' },
+  { code: '30M-00074', name: 'ANGEL OF LOVE SDN BHD', area: 'JERANTUT', category: 'GOOD' },
+  { code: '30M-00105', name: 'BAHAU PHARMACY SDN BHD', area: 'TRIANG', category: 'PHARMACY' },
+  { code: '30M-00107', name: 'BAN CHOON HING TRADING', area: 'BENTONG', category: 'WHOLESALER' },
+  { code: '30M-00108', name: 'BAN HING LEE', area: 'RAUB', category: 'WHOLESALER' },
+  { code: '30M-00119', name: 'BERJAYA STORE', area: 'TEMERLOH', category: 'MINIMARKET' },
+  { code: '30M-00122', name: 'BERSERI STORE', area: 'TEMERLOH', category: 'MINIMARKET' },
+  { code: '30M-00150', name: 'KEDAI BORONG ABC', area: 'MENTAKAB', category: 'WHOLESALER' },
+  { code: '30M-00220', name: '99 SPEEDMART MENTAKAB CAW 1', area: 'MENTAKAB', category: 'MINIMARKET' },
+  { code: '30M-00345', name: 'PASARAYA BORONG SDN BHD', area: 'MENTAKAB', category: 'MINIMARKET' },
+  { code: '30M-03104', name: 'AH SIEW KOPITIAM', area: 'MENTAKAB', category: 'COFFEESHOP' },
+  { code: '30M-03105', name: 'ABC MENTAKAB FOOD COURT', area: 'MENTAKAB', category: 'COFFEESHOP' },
+  { code: '30M-03234', name: 'RESTORAN WENG LOOK', area: 'MENTAKAB', category: 'COFFEESHOP' },
+  { code: '30M-03241', name: 'CAHAYA GEMILANG 86 ENTERPRISE', area: 'TEMERLOH', category: 'SUN' },
+];
+
+// State
+const state = {
+  currentSalesmanId: 'LOKE-CP',
+  todayCustomers: [],   // { code, name, area, category, isNewOp?, entry }
+  expandedCode: null,
+  submitted: false,
+  monthTarget: 299439,
+  mtdBeforeToday: 66113.53,
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+const fmtRM = (n) => Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtRMshort = (n) => {
+  const v = Number(n || 0);
+  if (v >= 1000) return (v / 1000).toFixed(1) + 'K';
+  return v.toFixed(0);
+};
+function escapeHtml(s) {
+  if (!s && s !== 0) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function todayDisplay() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
+}
+function showToast(msg, isError = false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// GPS — real browser Geolocation API
+// ============================================================
+async function captureGPS(customer, code) {
+  if (!navigator.geolocation) {
+    showToast('GPS not available on this device', true);
+    return;
+  }
+  showToast('📍 Getting GPS...');
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        customer.entry.gps = `${lat},${lng}`;
+        customer.entry.gps_accuracy_m = Math.round(pos.coords.accuracy);
+        showToast(`📍 GPS captured (±${Math.round(pos.coords.accuracy)}m)`);
+        resolve();
+      },
+      (err) => {
+        console.error('GPS error:', err);
+        showToast('GPS failed: ' + err.message + ' — check phone permissions', true);
+        resolve();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  });
+}
+
+// ============================================================
+// PHOTO — capture + compress + upload to Supabase Storage
+// ============================================================
+async function capturePhoto(customer, code) {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';   // prefer rear camera on mobile
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      document.body.removeChild(input);
+      if (!file) { resolve(); return; }
+
+      try {
+        showToast('📸 Uploading photo...');
+        const compressed = await compressImage(file, 1280, 0.85);
+        const filename = `${state.currentSalesmanId}/${todayDateMY()}/${code}_${Date.now()}.jpg`;
+
+        const { data: uploadData, error: uploadErr } = await sb.storage
+          .from('dsr-photos')
+          .upload(filename, compressed, { contentType: 'image/jpeg', upsert: false });
+
+        if (uploadErr) throw uploadErr;
+
+        // Get public URL
+        const { data: { publicUrl } } = sb.storage.from('dsr-photos').getPublicUrl(filename);
+        customer.entry.photo = publicUrl;
+        customer.entry.photo_path = filename;
+        showToast(`✅ Photo uploaded (${Math.round(compressed.size / 1024)}KB)`);
+      } catch (err) {
+        console.error('Photo upload error:', err);
+        showToast('Photo upload failed: ' + (err.message || 'check connection'), true);
+      }
+      resolve();
+    };
+    input.click();
+  });
+}
+
+// Compress image using canvas — max width X px, JPEG quality Q
+function compressImage(file, maxWidth = 1280, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('compress failed')), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('image load failed'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function todayDateMY() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// ============================================================
+// SEARCH — server-side via Supabase ILIKE (privacy-first)
+// Only top 10 results, never loads full customer list.
+// ============================================================
+async function searchCustomers(query) {
+  const q = (query || '').trim();
+  if (q.length < 2) return [];
+  // Sanitize for ILIKE (escape % and _ to prevent wildcard injection)
+  const safe = q.replace(/[%_]/g, ch => '\\' + ch);
+  const { data, error } = await sb
+    .from('customers')
+    .select('legacy_code, name, area, category')
+    .eq('branch_code', 'M')
+    .or(`name.ilike.%${safe}%,legacy_code.ilike.%${safe}%`)
+    .order('name')
+    .limit(10);
+  if (error) {
+    console.error('search error:', error);
+    return [];
+  }
+  // Map to legacy shape used by renderer
+  return (data || []).map(c => ({
+    code: c.legacy_code,
+    name: c.name,
+    area: c.area,
+    category: c.category,
+  }));
+}
+
+function openSearchModal() {
+  $('search-input').value = '';
+  renderSearchResults('');
+  $('search-modal').classList.add('show');
+  setTimeout(() => $('search-input').focus(), 100);
+}
+function closeSearchModal() {
+  $('search-modal').classList.remove('show');
+}
+
+let searchTimer;
+let searchSeq = 0;  // race-condition guard
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  const q = $('search-input').value;
+  searchTimer = setTimeout(() => renderSearchResults(q), 250);
+}
+
+async function renderSearchResults(query) {
+  const countEl = $('results-count');
+  const listEl = $('search-results');
+  const mySeq = ++searchSeq;
+
+  if (!query || query.trim().length < 2) {
+    countEl.textContent = '';
+    listEl.innerHTML = `
+      <div class="search-empty">
+        <div class="icon">🔎</div>
+        Type at least 2 characters
+        <span class="ml">Taip sekurang-kurangnya 2 aksara</span>
+      </div>
+    `;
+    return;
+  }
+
+  // Show loading state during async search
+  listEl.innerHTML = `<div class="search-empty"><div class="icon">⏳</div>Searching...</div>`;
+  countEl.textContent = '';
+
+  const results = await searchCustomers(query);
+
+  // Race-condition guard: drop result if newer search has started
+  if (mySeq !== searchSeq) return;
+
+  if (results.length === 0) {
+    countEl.textContent = '0 results';
+    listEl.innerHTML = `
+      <div class="search-empty">
+        <div class="icon">🤔</div>
+        No match found
+        <span class="ml">Tiada hasil</span>
+      </div>
+    `;
+    return;
+  }
+
+  // Cache the results so addFromSearch can find them
+  window._lastSearchResults = results;
+
+  countEl.textContent = `${results.length} match${results.length > 1 ? 'es' : ''}`;
+  listEl.innerHTML = results.map(c => {
+    const alreadyAdded = state.todayCustomers.some(x => x.code === c.code);
+    return `
+      <div class="search-result ${alreadyAdded ? 'already-added' : ''}" ${alreadyAdded ? '' : `onclick="addFromSearch('${c.code}')"`}>
+        <div class="name">${escapeHtml(c.name)}${alreadyAdded ? '<span class="badge">✓ Added</span>' : ''}</div>
+        <div class="meta">${c.code} · ${escapeHtml(c.area || '')} · ${escapeHtml(c.category || '')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addFromSearch(code) {
+  const c = (window._lastSearchResults || []).find(x => x.code === code);
+  if (!c) return;
+  if (state.todayCustomers.some(x => x.code === code)) return;
+  state.todayCustomers.push({
+    code: c.code, name: c.name, area: c.area, category: c.category,
+    isNewOp: false, entry: {}
+  });
+  closeSearchModal();
+  state.expandedCode = code;
+  renderCustomers();
+  renderStats();
+  setTimeout(() => {
+    const el = $(`card-${code}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+  showToast(`✓ ${c.name.slice(0, 30)} added`);
+}
+
+function removeCustomer(code) {
+  state.todayCustomers = state.todayCustomers.filter(c => c.code !== code);
+  if (state.expandedCode === code) state.expandedCode = null;
+  renderCustomers();
+  renderStats();
+  showToast('Removed');
+}
+
+// ============================================================
+// NEW OUTLET (not in customer master)
+// ============================================================
+function openNewOpModal() {
+  $('newop-name').value = '';
+  $('newop-sales').value = '';
+  $('newop-coll').value = '';
+  $('newop-modal').classList.add('show');
+  setTimeout(() => $('newop-name').focus(), 100);
+}
+function closeNewOpModal() {
+  $('newop-modal').classList.remove('show');
+}
+function addNewOp() {
+  const name = $('newop-name').value.trim();
+  if (!name) {
+    showToast('Outlet name required · Nama wajib', true);
+    return;
+  }
+  const code = 'NEW-' + Date.now();
+  state.todayCustomers.push({
+    code, name, area: '(new outlet)', category: 'NEW',
+    isNewOp: true,
+    entry: {
+      total_sales: Number($('newop-sales').value) || 0,
+      total_collection: Number($('newop-coll').value) || 0,
+      visited: true,
+    }
+  });
+  closeNewOpModal();
+  renderCustomers();
+  renderStats();
+  showToast(`✓ ${name} added`);
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderSalesmanDropdown() {
+  $('salesman-pick').innerHTML = SALESMEN.map(s =>
+    `<option value="${s.sr_code}"${s.sr_code === state.currentSalesmanId ? ' selected' : ''}>${s.name} · ${s.area}</option>`
+  ).join('');
+}
+
+function renderPriorities() {
+  $('priorities-list').innerHTML = MONTHLY_PRIORITIES.map(p =>
+    `<span class="priority-chip"><span class="num">${p.id}</span>${escapeHtml(p.name)}</span>`
+  ).join('');
+}
+
+function renderRouteHeader() {
+  const s = SALESMEN.find(x => x.sr_code === state.currentSalesmanId) || {};
+  const d = new Date();
+  const dayOfMonth = d.getDate();
+  const week = Math.ceil(dayOfMonth / 7);
+  const dow = ((d.getDay() + 6) % 7) + 1; // Mon=1 ... Sun=7
+  $('route-pill').textContent = `W${week}D${dow}`;
+  $('route-area').textContent = s.area || '-';
+  $('route-date').textContent = todayDisplay();
+}
+
+function renderCustomers() {
+  const list = $('customer-list');
+  if (state.todayCustomers.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <div class="title">No customers added yet<br><span style="font-weight:400;font-size:11.5px;color:var(--gray);">Belum ada pelanggan</span></div>
+        <div class="desc">
+          Tap "Search & Add Customer" above to start your daily visits.
+          <span class="ml">Klik "Cari & Tambah Pelanggan" untuk mula.</span>
+        </div>
+      </div>
+    `;
+    $('route-progress').textContent = '0 visited';
+    return;
+  }
+  list.innerHTML = state.todayCustomers.map((c, i) => renderCard(c, i + 1)).join('');
+  $$('.customer-header').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('customer-remove-btn')) return;
+      toggleExpand(el.dataset.code);
+    });
+  });
+  $$('.customer-remove-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Remove this customer? · Buang pelanggan ini?')) removeCustomer(el.dataset.code);
+    });
+  });
+  if (state.expandedCode) wireExpandedEvents();
+  const visited = state.todayCustomers.filter(c => c.entry.visited).length;
+  $('route-progress').textContent = `${visited} / ${state.todayCustomers.length} visited`;
+}
+
+function renderCard(c, num) {
+  const e = c.entry || {};
+  const hasSale = (e.total_sales || 0) > 0;
+  const visited = e.visited;
+  const expanded = state.expandedCode === c.code;
+  let cls = '';
+  if (expanded) cls = 'expanded';
+  else if (hasSale) cls = 'has-sale';
+  else if (visited) cls = 'no-sale';
+  if (c.isNewOp) cls += ' new-outlet';
+  const icon = expanded ? '🔽' : (hasSale ? '✅' : (visited ? '⚪' : '⏳'));
+
+  return `
+    <div class="customer-card ${cls}" id="card-${c.code}">
+      <div class="customer-header" data-code="${c.code}">
+        <div class="customer-num">${num}</div>
+        <div>
+          <div class="customer-name">${escapeHtml(c.name)}${c.isNewOp ? ' <span style="font-size:10px;color:var(--gold-dark);font-weight:600;">[NEW]</span>' : ''}</div>
+          <div class="customer-code">${escapeHtml(c.code)} · ${escapeHtml(c.area || '')}${hasSale ? ` · sold RM ${fmtRM(e.total_sales)}` : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="customer-status-icon">${icon}</span>
+          <span class="customer-remove-btn" data-code="${c.code}" title="Remove">✕</span>
+        </div>
+      </div>
+      ${expanded ? renderEntryForm(c) : ''}
+    </div>
+  `;
+}
+
+function renderEntryForm(c) {
+  const e = c.entry || {};
+  const priorities = e.priorities || [];
+  const reason = e.reason || null;
+  return `
+    <div class="customer-body">
+      <div class="entry-row">
+        <div class="field">
+          <div class="lbl">Sales <span class="ml">Jualan</span></div>
+          <div class="input-prefix">
+            <span class="prefix-text">RM</span>
+            <input type="number" class="input" id="sales-${c.code}" value="${e.total_sales || ''}" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+        <div class="field">
+          <div class="lbl">Collection <span class="ml">Kutipan</span></div>
+          <div class="input-prefix">
+            <span class="prefix-text">RM</span>
+            <input type="number" class="input" id="coll-${c.code}" value="${e.total_collection || ''}" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Pushed Monthly Priorities <span class="ml">Promosi yang dijual</span></div>
+        <div class="priority-toggles">
+          ${MONTHLY_PRIORITIES.map(p => `
+            <div class="priority-toggle ${priorities.includes(p.id) ? 'active' : ''}" data-code="${c.code}" data-pid="${p.id}">
+              <span class="n">P${p.id}</span>${escapeHtml(p.code)}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Reason (if no sale) <span class="ml">Sebab tiada jualan</span></div>
+        <div class="reason-row">
+          ${['A','B','C','D','E'].map((code, i) => {
+            const labels = [
+              {en:'Stock OK', ml:'Stok cukup'},
+              {en:'Boss out', ml:'Bos tiada'},
+              {en:'Closed',   ml:'Tutup'},
+              {en:'Payment',  ml:'Masalah bayar'},
+              {en:'Other',    ml:'Lain-lain'},
+            ];
+            return `
+              <div class="reason-btn ${reason === code ? 'active' : ''}" data-code="${c.code}" data-reason="${code}">
+                <span class="letter">${code}</span>
+                <span class="lbl-en">${labels[i].en}</span>
+                <span class="lbl-ml">${labels[i].ml}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Remarks <span class="ml">Catatan</span> <span style="margin-left:auto;font-weight:400;color:var(--gray);">optional</span></div>
+        <input type="text" class="input" id="remark-${c.code}" value="${escapeHtml(e.remark || '')}" placeholder="Notes...">
+      </div>
+
+      <div class="media-row">
+        <div class="media-btn ${e.photo ? 'captured' : ''}" data-code="${c.code}" data-action="photo">
+          <span class="icon">${e.photo ? '✅' : '📸'}</span>
+          ${e.photo ? 'Photo captured' : 'Take Photo'}
+          <span class="ml">${e.photo ? 'Foto disimpan' : 'Ambil Foto'}</span>
+        </div>
+        <div class="media-btn ${e.gps ? 'captured' : ''}" data-code="${c.code}" data-action="gps">
+          <span class="icon">${e.gps ? '✅' : '📍'}</span>
+          ${e.gps ? 'GPS captured' : 'Capture GPS'}
+          <span class="ml">${e.gps ? 'GPS disimpan' : 'Tangkap GPS'}</span>
+        </div>
+      </div>
+
+      <div class="entry-actions">
+        <button class="btn-secondary" data-code="${c.code}" data-action="skip">
+          Skip / No Visit
+          <span class="ml">Langkau</span>
+        </button>
+        <button class="btn-primary" data-code="${c.code}" data-action="save">
+          Save Entry ✓
+          <span class="ml">Simpan ✓</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleExpand(code) {
+  saveCurrentInputs();
+  state.expandedCode = state.expandedCode === code ? null : code;
+  renderCustomers();
+  if (state.expandedCode) {
+    setTimeout(() => {
+      const el = $(`card-${state.expandedCode}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  }
+}
+
+function saveCurrentInputs() {
+  const code = state.expandedCode;
+  if (!code) return;
+  const c = state.todayCustomers.find(x => x.code === code);
+  if (!c) return;
+  c.entry = c.entry || {};
+  const sales = $(`sales-${code}`);
+  const coll = $(`coll-${code}`);
+  const remark = $(`remark-${code}`);
+  if (sales) c.entry.total_sales = Number(sales.value) || 0;
+  if (coll) c.entry.total_collection = Number(coll.value) || 0;
+  if (remark) c.entry.remark = remark.value;
+}
+
+function wireExpandedEvents() {
+  $$('.priority-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      const pid = Number(el.dataset.pid);
+      const c = state.todayCustomers.find(x => x.code === code);
+      if (!c) return;
+      c.entry = c.entry || {};
+      c.entry.priorities = c.entry.priorities || [];
+      const idx = c.entry.priorities.indexOf(pid);
+      if (idx >= 0) c.entry.priorities.splice(idx, 1);
+      else c.entry.priorities.push(pid);
+      el.classList.toggle('active');
+    });
+  });
+
+  $$('.reason-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      const reason = el.dataset.reason;
+      const c = state.todayCustomers.find(x => x.code === code);
+      if (!c) return;
+      c.entry = c.entry || {};
+      c.entry.reason = c.entry.reason === reason ? null : reason;
+      el.parentNode.querySelectorAll('.reason-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.reason === c.entry.reason);
+      });
+    });
+  });
+
+  $$('.media-btn').forEach(el => {
+    el.addEventListener('click', async () => {
+      const code = el.dataset.code;
+      const action = el.dataset.action;
+      const c = state.todayCustomers.find(x => x.code === code);
+      if (!c) return;
+      c.entry = c.entry || {};
+      if (action === 'photo') {
+        await capturePhoto(c, code);
+      } else if (action === 'gps') {
+        await captureGPS(c, code);
+      }
+      renderCustomers();
+    });
+  });
+
+  $$('.entry-actions button').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      const action = el.dataset.action;
+      saveCurrentInputs();
+      const c = state.todayCustomers.find(x => x.code === code);
+      if (!c) return;
+      c.entry = c.entry || {};
+      if (action === 'save') {
+        if ((c.entry.total_sales || 0) === 0 && !c.entry.reason) {
+          showToast('Pls select a reason if no sale · Pilih sebab', true);
+          return;
+        }
+        c.entry.visited = true;
+        state.expandedCode = null;
+        showToast('✅ Entry saved');
+      } else if (action === 'skip') {
+        c.entry.visited = false;
+        c.entry.total_sales = 0;
+        c.entry.total_collection = 0;
+        state.expandedCode = null;
+        showToast('Skipped');
+      }
+      renderCustomers();
+      renderStats();
+    });
+  });
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function visitedCount() {
+  return state.todayCustomers.filter(c => c.entry.visited).length;
+}
+function totalSales() {
+  return state.todayCustomers.reduce((s, c) => s + Number(c.entry.total_sales || 0), 0);
+}
+function totalCollection() {
+  return state.todayCustomers.reduce((s, c) => s + Number(c.entry.total_collection || 0), 0);
+}
+function effectiveCalls() {
+  return state.todayCustomers.filter(c => (c.entry.total_sales || 0) > 0).length;
+}
+
+function renderStats() {
+  const visits = visitedCount();
+  const total = state.todayCustomers.length;
+  const sales = totalSales();
+  const coll = totalCollection();
+  const eff = effectiveCalls();
+  const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
+  const mtdSales = state.mtdBeforeToday + sales;
+  const targetPct = state.monthTarget > 0 ? Math.round((mtdSales / state.monthTarget) * 100) : 0;
+
+  $('stat-visits').textContent = total > 0 ? `${visits}/${total}` : '0';
+  $('stat-sales').textContent = fmtRMshort(sales);
+  $('stat-strike').textContent = strike + '%';
+  $('stat-target').textContent = targetPct + '%';
+  $('bar-sales').textContent = `RM ${fmtRM(sales)}`;
+  $('bar-coll').textContent = `RM ${fmtRM(coll)}`;
+  $('submit-btn').disabled = visits === 0 && state.todayCustomers.length === 0;
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+function openSubmitModal() {
+  saveCurrentInputs();
+  const visits = visitedCount();
+  const eff = effectiveCalls();
+  const sales = totalSales();
+  const coll = totalCollection();
+  const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
+  const mtdSales = state.mtdBeforeToday + sales;
+  const targetPct = state.monthTarget > 0 ? ((mtdSales / state.monthTarget) * 100).toFixed(2) : 0;
+  const newOps = state.todayCustomers.filter(c => c.isNewOp).length;
+
+  $('submit-stats').innerHTML = `
+    <div><span>Total Visits</span><span>${visits}</span></div>
+    <div><span>Effective Calls</span><span>${eff}</span></div>
+    <div><span>Strike Rate</span><span>${strike}%</span></div>
+    <div><span>New Outlets Added</span><span>${newOps}</span></div>
+    <div><span>Today Collection</span><span>RM ${fmtRM(coll)}</span></div>
+    <div><span>Today Sales</span><span>RM ${fmtRM(sales)}</span></div>
+    <div><span>MTD vs Target</span><span>RM ${fmtRM(mtdSales)} / ${targetPct}%</span></div>
+  `;
+  $('submit-modal').classList.add('show');
+}
+function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
+
+async function doSubmit() {
+  // Disable the modal Submit button to prevent double-tap
+  const btn = $('submit-modal').querySelector('.btn-primary');
+  if (btn) btn.disabled = true;
+
+  try {
+    const visits = visitedCount();
+    const eff = effectiveCalls();
+    const sales = totalSales();
+    const coll = totalCollection();
+    const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
+    const now = new Date();
+    const dl = new Date(now); dl.setHours(23, 59, 0, 0);
+    const isLate = now > dl;
+    const todayMY = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+    const branchCode = 'M';
+    const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+    if (!salesman) throw new Error('Salesman not found in loaded list');
+
+    // 1. Insert daily_reports row (upsert on (salesman_id, report_date) to allow re-submit)
+    const reportPayload = {
+      salesman_id: salesman.id,
+      report_date: todayMY,
+      branch_code: branchCode,
+      week_day_code: $('route-pill').textContent.trim(),
+      total_visits: visits,
+      total_sales: sales,
+      total_collection: coll,
+      effective_calls: eff,
+      strike_rate_pct: strike,
+      status: 'submitted',
+      submitted_at: now.toISOString(),
+      deadline_at: dl.toISOString(),
+      is_late: isLate,
+      monthly_priorities_snapshot: MONTHLY_PRIORITIES,
+    };
+    const { data: report, error: reportErr } = await sb
+      .from('daily_reports')
+      .upsert(reportPayload, { onConflict: 'salesman_id,report_date' })
+      .select()
+      .single();
+    if (reportErr) throw reportErr;
+
+    // 2. Delete existing entries (if re-submit) then insert all current
+    await sb.from('dsr_entries').delete().eq('report_id', report.id);
+
+    const entries = state.todayCustomers.map((c, idx) => ({
+      report_id: report.id,
+      customer_id: c.isNewOp ? null : (c.customer_db_id || null),
+      customer_code: c.code,
+      customer_name: c.name,
+      is_new_outlet: !!c.isNewOp,
+      sales_objective: c.entry?.sales_objective || 0,
+      total_sales: Number(c.entry?.total_sales || 0),
+      total_collection: Number(c.entry?.total_collection || 0),
+      visited: !!c.entry?.visited,
+      visit_at: c.entry?.visited ? now.toISOString() : null,
+      reason_code: c.entry?.reason || null,
+      remark: c.entry?.remark || null,
+      priorities_pushed: c.entry?.priorities || [],
+      gps_checkin: c.entry?.gps || null,
+      sequence_no: idx + 1,
+    }));
+
+    if (entries.length > 0) {
+      const { data: insertedEntries, error: entriesErr } = await sb
+        .from('dsr_entries').insert(entries).select('id, customer_code');
+      if (entriesErr) throw entriesErr;
+
+      // Build dsr_photos for any entries with photos
+      const photoRows = [];
+      insertedEntries.forEach(ie => {
+        const c = state.todayCustomers.find(x => x.code === ie.customer_code);
+        if (c?.entry?.photo) {
+          photoRows.push({
+            entry_id: ie.id,
+            storage_path: c.entry.photo_path || '',
+            public_url: c.entry.photo,
+            photo_type: 'storefront',
+            taken_at: now.toISOString(),
+            gps_at_capture: c.entry.gps || null,
+          });
+        }
+      });
+      if (photoRows.length > 0) {
+        const { error: photoErr } = await sb.from('dsr_photos').insert(photoRows);
+        if (photoErr) console.warn('photo metadata insert failed:', photoErr);
+      }
+    }
+
+    closeSubmitModal();
+    state.submitted = true;
+
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    $('success-stats').innerHTML = `
+      <div><span>Submitted at</span><span>${time}</span></div>
+      <div><span>Status</span><span>${isLate ? '⚠️ LATE' : '✅ On Time'}</span></div>
+      <div><span>Visits</span><span>${visits}</span></div>
+      <div><span>Effective</span><span>${eff}</span></div>
+      <div><span>Today Sales</span><span>RM ${fmtRM(sales)}</span></div>
+      <div><span>Report ID</span><span style="font-size:10px;">${report.id.slice(0, 8)}...</span></div>
+    `;
+    $('success-modal').classList.add('show');
+  } catch (e) {
+    console.error('Submit failed:', e);
+    showToast('❌ Submit failed: ' + (e.message || 'unknown error') + ' — try again or contact admin', true);
+    closeSubmitModal();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+function closeSuccessModal() { $('success-modal').classList.remove('show'); }
+
+// ============================================================
+// DEADLINE
+// ============================================================
+function updateDeadline() {
+  const now = new Date();
+  const dl = new Date(now);
+  dl.setHours(23, 59, 0, 0);
+  const diff = dl - now;
+  const el = $('deadline-time');
+  const wrap = $('deadline');
+  if (diff < 0) {
+    wrap.classList.add('late');
+    el.textContent = 'LATE';
+    return;
+  }
+  const hh = Math.floor(diff / 3600000);
+  const mm = Math.floor((diff % 3600000) / 60000);
+  if (hh > 4) { el.textContent = `${hh}h left`; wrap.classList.remove('late'); }
+  else if (hh > 0) { el.textContent = `${hh}h ${mm}m`; wrap.classList.remove('late'); }
+  else { el.textContent = `${mm}m`; wrap.classList.add('late'); }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function onSalesmanChange() {
+  state.currentSalesmanId = $('salesman-pick').value;
+  state.todayCustomers = [];
+  state.expandedCode = null;
+  state.submitted = false;
+  renderRouteHeader();
+  renderCustomers();
+  renderStats();
+}
+
+async function loadInitialData() {
+  // Fetch pilot champions (only is_pilot=true salesmen visible)
+  const { data: salesmen, error: smErr } = await sb
+    .from('salesmen')
+    .select('id, sr_code, name, full_name, phone, zone')
+    .eq('is_pilot', true)
+    .eq('status', 'Active')
+    .order('full_name');
+  if (smErr) throw new Error('Failed to load salesmen: ' + smErr.message);
+  SALESMEN = (salesmen || []).map(s => ({
+    id: s.id,
+    sr_code: s.sr_code,
+    name: s.full_name || s.name,
+    phone: s.phone,
+    area: s.zone || 'MENTAKAB',
+  }));
+
+  if (SALESMEN.length === 0) {
+    throw new Error('No pilot salesmen found. Contact admin.');
+  }
+
+  // Pick first salesman as default
+  state.currentSalesmanId = SALESMEN[0].sr_code;
+
+  // Fetch monthly priorities for current month + Mentakab (or null for all branches)
+  const monthYear = new Date().toISOString().slice(0, 7);
+  const { data: priorities } = await sb
+    .from('monthly_priorities')
+    .select('priority_order, product_name, brand_short_code')
+    .eq('month_year', monthYear)
+    .or('branch_code.eq.M,branch_code.is.null')
+    .order('priority_order');
+
+  MONTHLY_PRIORITIES = (priorities || []).map(p => ({
+    id: p.priority_order,
+    code: 'P' + p.priority_order,
+    name: p.product_name,
+  }));
+  // Fallback to demo priorities if none configured
+  if (MONTHLY_PRIORITIES.length === 0) {
+    MONTHLY_PRIORITIES = [
+      { id: 1, code: 'P1', name: 'MARIGOLD Yogurt 1L' },
+      { id: 2, code: 'P2', name: 'MONDELEZ Oreo Family Pack' },
+      { id: 3, code: 'P3', name: 'A.CLOUET Sardines 425g' },
+      { id: 4, code: 'P4', name: 'UNILEVER Knorr Cube' },
+      { id: 5, code: 'P5', name: 'POWER ROOT Alicafe 3-in-1' },
+    ];
+  }
+}
+
+async function init() {
+  // Show loading state
+  $('salesman-pick').innerHTML = '<option>⏳ Loading...</option>';
+
+  try {
+    await loadInitialData();
+  } catch (e) {
+    showToast('❌ Load failed: ' + e.message, true);
+    $('salesman-pick').innerHTML = '<option>⚠ Connection failed</option>';
+    return;
+  }
+
+  renderSalesmanDropdown();
+  renderPriorities();
+  renderRouteHeader();
+  renderCustomers();
+  renderStats();
+  updateDeadline();
+  setInterval(updateDeadline, 60000);
+
+  $('salesman-pick').addEventListener('change', onSalesmanChange);
+  $('open-search-btn').addEventListener('click', openSearchModal);
+  $('open-newop-btn').addEventListener('click', openNewOpModal);
+  $('search-input').addEventListener('input', onSearchInput);
+  $('submit-btn').addEventListener('click', openSubmitModal);
+
+  $$('.modal-overlay').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target === el) el.classList.remove('show');
+    });
+  });
+
+  showToast(`✓ Welcome ${SALESMEN[0].name.split(' ')[0]}!`);
+}
+
+init();
+</script>
+</body>
+</html>

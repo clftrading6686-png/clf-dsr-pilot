@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>Route Plan Builder — CLF Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --blue: #185FA5;
+  --blue-light: #E6F1FB;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-dark: #A88A33;
+  --green: #3B6D11;
+  --green-light: #EAF3DE;
+  --green-bright: #16A34A;
+  --amber: #854F0B;
+  --amber-light: #FAEEDA;
+  --red: #A32D2D;
+  --red-light: #FCEBEB;
+  --red-bright: #DC2626;
+  --purple: #7C3AED;
+  --purple-light: #EDE9FE;
+  --gray: #6B7A8D;
+  --gray-light: #F4F6F9;
+  --border: #E2E8F0;
+  --text: #1A2A3A;
+  --text-2: #4A5568;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #F0F4F8;
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+  padding-bottom: 120px;
+}
+
+/* HEADER */
+.header { background: var(--navy); color: white; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header-main { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo { width: 34px; height: 34px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--navy); }
+.brand-logo span { font-size: 7px; color: var(--gold); margin-top: 2px; }
+.brand-name { font-size: 14px; font-weight: 600; }
+.brand-sub { font-size: 10px; color: var(--gold); letter-spacing: 0.5px; }
+.status-badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.8px; }
+.status-badge.draft { background: var(--amber-light); color: var(--amber); }
+.status-badge.submitted { background: var(--blue-light); color: var(--blue); }
+.status-badge.approved { background: var(--green-light); color: var(--green); }
+
+.header-controls { padding: 8px 16px 12px; display: flex; gap: 8px; background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.08); }
+.control-block { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.control-block label { font-size: 10px; color: #A8B4C5; text-transform: uppercase; letter-spacing: 1px; }
+.control-block select {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white;
+  padding: 7px 10px; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none;
+}
+.control-block select option { color: var(--text); background: white; }
+
+/* AI PANEL */
+.ai-panel {
+  margin: 12px;
+  background: linear-gradient(135deg, var(--purple-light), white);
+  border: 1px solid var(--purple);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.ai-header {
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.ai-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--purple); font-size: 14px; }
+.ai-title .icon { font-size: 18px; }
+.ai-title .badge {
+  background: var(--purple); color: white; padding: 2px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+}
+.ai-toggle { color: var(--purple); font-size: 16px; }
+.ai-body { padding: 0 14px 14px; display: none; }
+.ai-panel.open .ai-body { display: block; }
+.ai-panel.open .ai-toggle { transform: rotate(180deg); }
+
+.suggestion {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.suggestion:last-child { margin-bottom: 0; }
+.suggestion .icon-type { font-size: 18px; flex-shrink: 0; }
+.suggestion .body { flex: 1; }
+.suggestion .title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.suggestion .title .ml { font-size: 11px; font-weight: 400; color: var(--gray); margin-left: 6px; }
+.suggestion .desc { font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+.suggestion .desc .pill {
+  display: inline-block; background: var(--gray-light); padding: 1px 6px; border-radius: 4px;
+  font-size: 10.5px; font-weight: 600; color: var(--text-2); margin-right: 4px;
+}
+.suggestion .actions { display: flex; gap: 4px; margin-top: 6px; }
+.suggestion .actions button {
+  font-size: 11px; padding: 4px 10px; border-radius: 4px;
+  border: 1px solid var(--border); background: white; font-family: inherit; cursor: pointer; font-weight: 600;
+}
+.suggestion .actions .apply { background: var(--purple); color: white; border-color: var(--purple); }
+.suggestion .actions .dismiss { color: var(--gray); }
+
+/* WEEK SELECTOR */
+.week-selector {
+  margin: 0 12px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  background: white; padding: 4px; border-radius: var(--radius); box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.week-btn {
+  padding: 8px 4px; text-align: center;
+  background: white; border: none; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  cursor: pointer; user-select: none; transition: all 0.15s;
+  font-family: inherit;
+}
+.week-btn.active { background: var(--navy); color: white; }
+.week-btn .ml { display: block; font-size: 10px; font-weight: 500; opacity: 0.7; margin-top: 2px; font-family: 'Geist Mono', monospace; }
+
+/* DAY TABS */
+.day-tabs {
+  margin: 0 12px 8px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
+  overflow-x: auto;
+}
+.day-tab {
+  padding: 8px 4px; text-align: center;
+  background: white; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  cursor: pointer; user-select: none; transition: all 0.15s;
+}
+.day-tab.active { border-color: var(--gold); background: var(--gold-light); color: var(--gold-dark); }
+.day-tab .count { display: block; font-size: 10px; opacity: 0.7; margin-top: 2px; font-family: 'Geist Mono', monospace; }
+.day-tab .count.over { color: var(--red-bright); opacity: 1; font-weight: 700; }
+
+/* DAY CONTENT */
+.day-content { margin: 0 12px; }
+.day-header {
+  background: white; padding: 12px 14px; border-radius: var(--radius) var(--radius) 0 0;
+  border: 1px solid var(--border); border-bottom: none;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.day-header .h { font-size: 14px; font-weight: 700; }
+.day-header .h .ml { font-size: 11px; font-weight: 400; color: var(--gray); margin-left: 6px; }
+.day-header .summary { font-size: 11px; color: var(--gray); font-family: 'Geist Mono', monospace; }
+.day-list {
+  background: white; border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  min-height: 200px;
+}
+.customer-row {
+  padding: 10px 14px; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+.customer-row:first-child { border-top: none; }
+.customer-num {
+  width: 28px; height: 28px; background: var(--gray-light); color: var(--text-2);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; font-family: 'Geist Mono', monospace;
+}
+.customer-info { min-width: 0; }
+.customer-info .name { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.customer-info .meta { font-size: 11px; color: var(--gray); margin-top: 2px; font-family: 'Geist Mono', monospace; }
+.customer-info .meta .freq {
+  background: var(--blue-light); color: var(--blue);
+  padding: 1px 5px; border-radius: 3px; font-size: 9.5px; font-weight: 700;
+  margin-left: 4px;
+}
+.customer-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 28px; height: 28px; border-radius: 6px; background: transparent;
+  border: none; cursor: pointer; font-size: 14px;
+}
+.icon-btn:hover { background: var(--gray-light); }
+.icon-btn.remove { color: var(--red-bright); }
+
+.empty-day {
+  padding: 40px 20px; text-align: center; color: var(--gray); font-size: 13px;
+}
+.empty-day .icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+
+.add-btn {
+  margin: 12px;
+  width: calc(100% - 24px);
+  padding: 14px;
+  background: var(--gold); color: var(--navy);
+  border: none; border-radius: var(--radius);
+  font-size: 14px; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 2px 6px rgba(201,168,76,0.3);
+}
+.add-btn .ml { font-size: 10px; font-weight: 500; opacity: 0.8; display: block; }
+
+/* SUBMIT BAR */
+.submit-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); box-shadow: 0 -4px 12px rgba(0,0,0,0.06); z-index: 50; }
+.submit-bar-inner { max-width: 600px; margin: 0 auto; }
+.submit-summary { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11.5px; color: var(--gray); }
+.submit-summary .v { color: var(--text); font-weight: 700; font-family: 'Geist Mono', monospace; font-size: 13px; }
+.btn-submit { width: 100%; padding: 14px; background: var(--navy); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; line-height: 1.2; }
+.btn-submit:hover { background: var(--navy-mid); }
+.btn-submit .ml { display: block; font-size: 11px; opacity: 0.75; font-weight: 500; margin-top: 2px; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(11,31,58,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 200; }
+.modal-overlay.show { display: flex; }
+.modal { background: white; border-radius: var(--radius) var(--radius) 0 0; max-width: 600px; width: 100%; padding: 20px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 -8px 32px rgba(0,0,0,0.2); }
+@media (min-width: 600px) {
+  .modal-overlay { align-items: center; padding: 16px; }
+  .modal { border-radius: var(--radius); }
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.modal-title .ml { font-size: 12px; font-weight: 400; color: var(--gray); display: block; margin-top: 2px; }
+.modal-close { font-size: 24px; color: var(--gray); cursor: pointer; padding: 4px 8px; line-height: 1; }
+.modal-body { overflow-y: auto; flex: 1; min-height: 0; }
+
+.search-input-wrap { position: relative; margin-bottom: 12px; }
+.search-input-wrap .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.search-input { width: 100%; padding: 14px 14px 14px 40px; font-size: 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none; font-family: inherit; }
+.search-input:focus { border-color: var(--blue); }
+
+.privacy-notice { background: var(--blue-light); color: var(--blue); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 11.5px; line-height: 1.5; margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; }
+.privacy-notice .icon { font-size: 14px; flex-shrink: 0; }
+
+.search-results { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.search-result { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer; transition: all 0.15s; }
+.search-result:hover { border-color: var(--gold); background: var(--gold-light); }
+.search-result .name { font-size: 14px; font-weight: 600; color: var(--text); }
+.search-result .meta { font-size: 11px; color: var(--gray); margin-top: 3px; font-family: 'Geist Mono', monospace; }
+.search-result.already-in { opacity: 0.5; cursor: not-allowed; }
+.search-result.already-in .badge { background: var(--green-light); color: var(--green); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-left: 6px; }
+.search-empty { text-align: center; padding: 32px 16px; color: var(--gray); font-size: 13px; }
+.search-empty .icon { font-size: 36px; margin-bottom: 6px; opacity: 0.6; }
+
+/* CONFIRM */
+.confirm-modal { padding: 24px; text-align: center; align-items: center !important; }
+.confirm-modal .modal { border-radius: var(--radius); max-width: 440px; }
+.confirm-icon { font-size: 56px; margin-bottom: 8px; }
+.confirm-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.confirm-sub { font-size: 13px; color: var(--gray); margin-bottom: 16px; }
+.confirm-stats { background: var(--gray-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; font-family: 'Geist Mono', monospace; font-size: 13px; text-align: left; }
+.confirm-stats div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+
+.field { text-align: left; margin-bottom: 12px; }
+.field .lbl { font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.field .input { width: 100%; padding: 10px 12px; font-size: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none; font-family: inherit; }
+.field .select { width: 100%; padding: 10px 12px; font-size: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); outline: none; font-family: inherit; background: white; }
+
+.actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-secondary { padding: 12px; border: 1.5px solid var(--border); background: white; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; font-family: inherit; color: var(--text-2); cursor: pointer; }
+.btn-primary { padding: 12px; background: var(--gold); color: var(--navy); border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; }
+
+.toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: var(--green-bright); color: white; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 300; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.2s; max-width: 90vw; text-align: center; }
+.toast.show { opacity: 1; }
+.toast.error { background: var(--red-bright); }
+
+.muted { color: var(--gray); font-size: 11.5px; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-main">
+    <div class="brand">
+      <div class="brand-logo">CLF<span>TRADING</span></div>
+      <div>
+        <div class="brand-name">Route Plan Builder</div>
+        <div class="brand-sub">Pelan Laluan Bulanan</div>
+      </div>
+    </div>
+    <span class="status-badge draft" id="status-badge">DRAFT</span>
+  </div>
+  <div class="header-controls">
+    <div class="control-block">
+      <label>Salesman</label>
+      <select id="salesman-pick">
+        <option value="LOKE-CP">LOKE CHEE PING</option>
+        <option value="ALEX-TH">ALEX THAM YONG JING</option>
+        <option value="ANN-CX">ANN CHYI XIAN</option>
+        <option value="NIK-MS">NIK MASRI SHAH</option>
+      </select>
+    </div>
+    <div class="control-block">
+      <label>Plan For</label>
+      <select id="month-pick">
+        <option value="2026-06">June 2026</option>
+        <option value="2026-07">July 2026</option>
+        <option value="2026-08">August 2026</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- AI PANEL -->
+<div class="ai-panel open" id="ai-panel">
+  <div class="ai-header" onclick="toggleAi()">
+    <div class="ai-title">
+      <span class="icon">🤖</span>
+      Hermes Analysis <span class="badge" id="ai-count">5</span>
+    </div>
+    <div class="ai-toggle">▼</div>
+  </div>
+  <div class="ai-body" id="ai-suggestions">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- WEEK SELECTOR -->
+<div class="week-selector">
+  <button class="week-btn active" data-week="1">W1<span class="ml" id="w1-count">0</span></button>
+  <button class="week-btn" data-week="2">W2<span class="ml" id="w2-count">0</span></button>
+  <button class="week-btn" data-week="3">W3<span class="ml" id="w3-count">0</span></button>
+  <button class="week-btn" data-week="4">W4<span class="ml" id="w4-count">0</span></button>
+</div>
+
+<!-- DAY TABS -->
+<div class="day-tabs">
+  <div class="day-tab active" data-day="1">Mon<span class="count">0</span></div>
+  <div class="day-tab" data-day="2">Tue<span class="count">0</span></div>
+  <div class="day-tab" data-day="3">Wed<span class="count">0</span></div>
+  <div class="day-tab" data-day="4">Thu<span class="count">0</span></div>
+  <div class="day-tab" data-day="5">Fri<span class="count">0</span></div>
+  <div class="day-tab" data-day="6">Sat<span class="count">0</span></div>
+</div>
+
+<!-- DAY CONTENT -->
+<div class="day-content">
+  <div class="day-header">
+    <div class="h" id="day-title">Week 1 · Monday <span class="ml">W1D1</span></div>
+    <div class="summary" id="day-summary">0 customers</div>
+  </div>
+  <div class="day-list" id="day-list"></div>
+</div>
+
+<!-- ADD BUTTON -->
+<button class="add-btn" id="add-btn">
+  <span style="font-size:18px;">🔍</span>
+  <span>
+    Add Customer to W1D1
+    <span class="ml">Tambah Pelanggan</span>
+  </span>
+</button>
+
+<!-- SUBMIT BAR -->
+<div class="submit-bar">
+  <div class="submit-bar-inner">
+    <div class="submit-summary">
+      <span>Total visits planned: <span class="v" id="total-visits">0</span></span>
+      <span>Unique customers: <span class="v" id="unique-customers">0</span></span>
+    </div>
+    <button class="btn-submit" id="submit-btn">
+      Submit for Approval
+      <span class="ml">Hantar untuk Kelulusan</span>
+    </button>
+  </div>
+</div>
+
+<!-- SEARCH MODAL -->
+<div class="modal-overlay" id="search-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔍 Add Customer<span class="ml">Tambah Pelanggan</span></div>
+      <div class="modal-close" onclick="closeSearchModal()">✕</div>
+    </div>
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="search-input" placeholder="Type name or code..." autocomplete="off">
+    </div>
+    <div class="privacy-notice">
+      <span class="icon">🔒</span>
+      <div>Customer list is private — type 2+ characters to search.</div>
+    </div>
+    <div class="modal-body">
+      <div class="search-results" id="search-results">
+        <div class="search-empty"><div class="icon">🔎</div>Start typing to search</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT MODAL -->
+<div class="modal-overlay confirm-modal" id="submit-modal">
+  <div class="modal">
+    <div class="confirm-icon">📤</div>
+    <div class="confirm-title">Submit Route Plan?</div>
+    <div class="confirm-sub">For approval · Untuk kelulusan</div>
+    <div class="confirm-stats" id="submit-stats"></div>
+    <div class="field">
+      <div class="lbl">Submit to <span style="font-weight:400;">(supervisor or boss)</span></div>
+      <select class="select" id="submit-to">
+        <option value="boss">Boss (direct)</option>
+        <option value="supervisor">Supervisor: Raj Kumar</option>
+      </select>
+    </div>
+    <div class="field">
+      <div class="lbl">Note (optional)</div>
+      <input type="text" class="input" id="submit-note" placeholder="Why this plan...">
+    </div>
+    <div class="actions-row">
+      <button class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+      <button class="btn-primary" onclick="doSubmit()">Submit ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay confirm-modal" id="success-modal">
+  <div class="modal">
+    <div class="confirm-icon">🎉</div>
+    <div class="confirm-title">Submitted!</div>
+    <div class="confirm-sub" id="success-sub">Waiting for approval</div>
+    <div class="confirm-stats" id="success-stats"></div>
+    <div class="muted" style="margin-bottom:16px;">
+      You'll get a notification when approved.<br>
+      Anda akan mendapat pemberitahuan apabila diluluskan.
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="closeSuccessModal()">OK</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// SAMPLE DATA
+const CUSTOMER_MASTER = [
+  { code: '30M-02617', name: 'ONE BOWL PAN MEE RESTAURANT', area: 'TRIANG', sales_3m: 5400, freq: 4 },
+  { code: '30M-02666', name: '1968 HAINAN KOPITIAM', area: 'TRIANG', sales_3m: 12300, freq: 4 },
+  { code: '30M-01410', name: 'TEKAD PRIMA SDN.BHD.', area: 'TRIANG', sales_3m: 2100, freq: 2 },
+  { code: '30M-02436', name: 'RESTORAN HONG YUN', area: 'TRIANG', sales_3m: 800, freq: 1 },
+  { code: '30M-01253', name: 'RESTORAN HUP SENG TRIANG', area: 'TRIANG', sales_3m: 1500, freq: 2 },
+  { code: '30M-01737', name: 'TAN CHOOI JUAN (SEKELUARGA)', area: 'TRIANG', sales_3m: 2900, freq: 2 },
+  { code: '30M-01043', name: 'PASAR MINI PRABA', area: 'TRIANG', sales_3m: 3400, freq: 2 },
+  { code: '30M-01738', name: 'K K MAJU TRADING', area: 'TRIANG', sales_3m: 4200, freq: 2 },
+  { code: '30M-01796', name: 'PASARAYA BS TRIANG SDN BHD', area: 'TRIANG', sales_3m: 18900, freq: 4 },
+  { code: '30M-01367', name: 'SELVER RIVER RESTORAN', area: 'TRIANG', sales_3m: 1200, freq: 1 },
+  { code: '30M-00803', name: 'LONG XIANG RESTAURANT', area: 'TRIANG', sales_3m: 1800, freq: 2 },
+  { code: '30M-01282', name: 'RESTORAN SIN HONG YUN', area: 'TRIANG', sales_3m: 2400, freq: 2 },
+  { code: '30M-00526', name: 'KAWAN BAIK KOPITIAM', area: 'TRIANG', sales_3m: 3100, freq: 2 },
+  { code: '30M-01296', name: 'RESTORAN XI LAI LER', area: 'TRIANG', sales_3m: 900, freq: 1 },
+  { code: '30M-01837', name: 'FU XING KOPITIAM', area: 'TRIANG', sales_3m: 1700, freq: 2 },
+  { code: '30M-02291', name: 'CENDOL TRIANG', area: 'TRIANG', sales_3m: 4100, freq: 2 },
+  { code: '30M-01772', name: 'KEDAI KOPI TRIANG', area: 'TRIANG', sales_3m: 600, freq: 1 },
+  { code: '30M-00777', name: 'LAO DE FANG RESTAURANT', area: 'TRIANG', sales_3m: 2200, freq: 2 },
+  { code: '30M-00120', name: 'BAN HING LEE', area: 'RAUB', sales_3m: 18000, freq: 4 },
+  { code: '30M-00345', name: 'PASARAYA BORONG SDN BHD', area: 'MENTAKAB', sales_3m: 32000, freq: 4 },
+  { code: '30M-00220', name: '99 SPEEDMART CAW 1', area: 'MENTAKAB', sales_3m: 12000, freq: 4 },
+  { code: '30M-03240', name: 'NUSANTARA FRESHMART', area: 'JENGKA', sales_3m: 4500, freq: 0 },
+  { code: '30M-00074', name: 'ANGEL OF LOVE SDN BHD', area: 'JERANTUT', sales_3m: 0, freq: 0 },
+  { code: '30M-00059', name: 'ALSYIFAA FARMASI', area: 'JERANTUT', sales_3m: 6300, freq: 1 },
+];
+
+// AI Suggestions (mock - in production from Hermes)
+const AI_SUGGESTIONS = [
+  {
+    type: 'add', icon: '🟢',
+    title: 'Add high-value missed customer',
+    title_ml: 'Tambah pelanggan terlepas',
+    desc: '<span class="pill">3 customers</span> haven\'t been visited in 60+ days but had RM 24K total sales last quarter.',
+    customers: ['30M-00120', '30M-00345', '30M-03240'],
+  },
+  {
+    type: 'frequency', icon: '⬆️',
+    title: 'Increase frequency for top customer',
+    desc: 'PASARAYA BS TRIANG (RM 18.9K / 3 months) — currently 2x/month, suggest 4x/month.',
+    customers: ['30M-01796'],
+  },
+  {
+    type: 'remove', icon: '⬇️',
+    title: 'Reduce visits for dead routes',
+    desc: '<span class="pill">2 customers</span> visited 4x last month with 0 sales. Suggest drop to 1x.',
+    customers: ['30M-01772', '30M-01296'],
+  },
+  {
+    type: 'balance', icon: '⚖️',
+    title: 'Balance week load',
+    desc: 'Monday has 21 visits planned, Wednesday only 8. Suggest moving 5 to Wed.',
+  },
+  {
+    type: 'new', icon: '✨',
+    title: 'New customer needs first visit',
+    desc: 'NUSANTARA FRESHMART (JENGKA) added 2 months ago, never visited. Add to plan?',
+    customers: ['30M-03240'],
+  },
+];
+
+// STATE
+const state = {
+  salesmanId: 'LOKE-CP',
+  monthKey: '2026-06',
+  selectedWeek: 1,
+  selectedDay: 1,
+  plan: {},  // 'W1D1' → array of customer_codes
+};
+
+// Pre-fill with LOKE-CP's actual W3D2 paper-form route as example
+function initSamplePlan() {
+  state.plan['W3D2'] = [
+    '30M-02617','30M-02666','30M-01410','30M-02436','30M-01253','30M-01737',
+    '30M-01043','30M-01738','30M-01796','30M-01367','30M-00803','30M-01282',
+    '30M-00526','30M-01296','30M-01837','30M-02291','30M-01772','30M-00777',
+  ];
+  state.plan['W1D1'] = ['30M-01796','30M-02666','30M-00526','30M-01043'];
+  state.plan['W1D2'] = ['30M-01410','30M-02436','30M-00803'];
+  state.plan['W2D1'] = ['30M-01796','30M-02666','30M-01738','30M-02291','30M-00526'];
+  state.plan['W2D3'] = ['30M-01253','30M-01737','30M-01282','30M-01837'];
+  state.plan['W4D1'] = ['30M-01796','30M-02666','30M-01043','30M-01738'];
+}
+
+// UTILS
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+function escapeHtml(s) {
+  if (!s && s !== 0) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function showToast(msg, isError = false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const DAY_NAMES = ['','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_NAMES_FULL = ['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function currentKey() { return `W${state.selectedWeek}D${state.selectedDay}`; }
+
+function getCustomer(code) {
+  return CUSTOMER_MASTER.find(c => c.code === code);
+}
+
+// RENDERING
+function renderAi() {
+  $('ai-count').textContent = AI_SUGGESTIONS.length;
+  $('ai-suggestions').innerHTML = AI_SUGGESTIONS.map((s, i) => `
+    <div class="suggestion" data-idx="${i}">
+      <div class="icon-type">${s.icon}</div>
+      <div class="body">
+        <div class="title">${escapeHtml(s.title)}${s.title_ml ? `<span class="ml">${escapeHtml(s.title_ml)}</span>` : ''}</div>
+        <div class="desc">${s.desc}</div>
+        <div class="actions">
+          <button class="apply" onclick="applySuggestion(${i})">Apply</button>
+          <button class="dismiss" onclick="dismissSuggestion(${i})">Dismiss</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDayCounts() {
+  // For currently selected week, update day tabs
+  $$('.day-tab').forEach(t => {
+    const d = parseInt(t.dataset.day);
+    const key = `W${state.selectedWeek}D${d}`;
+    const count = (state.plan[key] || []).length;
+    const counter = t.querySelector('.count');
+    counter.textContent = count;
+    counter.classList.toggle('over', count > 22);
+  });
+  // Week totals
+  for (let w = 1; w <= 4; w++) {
+    let sum = 0;
+    for (let d = 1; d <= 6; d++) sum += (state.plan[`W${w}D${d}`] || []).length;
+    $(`w${w}-count`).textContent = sum + ' visits';
+  }
+}
+
+function renderDayContent() {
+  const key = currentKey();
+  const customers = state.plan[key] || [];
+
+  $('day-title').innerHTML = `Week ${state.selectedWeek} · ${DAY_NAMES_FULL[state.selectedDay]} <span class="ml">${key}</span>`;
+  $('day-summary').textContent = `${customers.length} customers`;
+
+  const list = $('day-list');
+  if (customers.length === 0) {
+    list.innerHTML = `
+      <div class="empty-day">
+        <div class="icon">📋</div>
+        No customers planned for ${DAY_NAMES_FULL[state.selectedDay]}
+      </div>
+    `;
+  } else {
+    list.innerHTML = customers.map((code, i) => {
+      const c = getCustomer(code);
+      if (!c) return '';
+      return `
+        <div class="customer-row" data-code="${code}">
+          <div class="customer-num">${i + 1}</div>
+          <div class="customer-info">
+            <div class="name">${escapeHtml(c.name)}</div>
+            <div class="meta">${c.code} · ${escapeHtml(c.area)}<span class="freq">${c.freq}x/mo</span></div>
+          </div>
+          <div class="customer-actions">
+            <button class="icon-btn remove" onclick="removeCustomer('${code}')" title="Remove">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  $('add-btn').querySelector('span:nth-child(2)').innerHTML = `Add Customer to ${key}<span class="ml">Tambah Pelanggan</span>`;
+}
+
+function renderStats() {
+  let total = 0;
+  const unique = new Set();
+  Object.values(state.plan).forEach(list => {
+    total += list.length;
+    list.forEach(c => unique.add(c));
+  });
+  $('total-visits').textContent = total;
+  $('unique-customers').textContent = unique.size;
+}
+
+function renderAll() {
+  renderAi();
+  renderDayCounts();
+  renderDayContent();
+  renderStats();
+}
+
+// ACTIONS
+function selectWeek(w) {
+  state.selectedWeek = w;
+  $$('.week-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.week) === w));
+  renderDayCounts();
+  renderDayContent();
+}
+function selectDay(d) {
+  state.selectedDay = d;
+  $$('.day-tab').forEach(b => b.classList.toggle('active', parseInt(b.dataset.day) === d));
+  renderDayContent();
+}
+
+function removeCustomer(code) {
+  const key = currentKey();
+  state.plan[key] = (state.plan[key] || []).filter(c => c !== code);
+  renderAll();
+  showToast('Removed');
+}
+
+function addCustomer(code) {
+  const key = currentKey();
+  if (!state.plan[key]) state.plan[key] = [];
+  if (state.plan[key].includes(code)) {
+    showToast('Already in this slot', true);
+    return;
+  }
+  state.plan[key].push(code);
+  renderAll();
+  const c = getCustomer(code);
+  showToast(`✓ Added ${c.name.slice(0, 30)} to ${key}`);
+}
+
+// SEARCH
+function openSearchModal() {
+  $('search-input').value = '';
+  renderSearchResults('');
+  $('search-modal').classList.add('show');
+  setTimeout(() => $('search-input').focus(), 100);
+}
+function closeSearchModal() { $('search-modal').classList.remove('show'); }
+
+let searchTimer;
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  const q = $('search-input').value;
+  searchTimer = setTimeout(() => renderSearchResults(q), 200);
+}
+
+function renderSearchResults(query) {
+  const q = query.trim().toLowerCase();
+  const list = $('search-results');
+  if (q.length < 2) {
+    list.innerHTML = '<div class="search-empty"><div class="icon">🔎</div>Type at least 2 characters</div>';
+    return;
+  }
+  const matches = CUSTOMER_MASTER.filter(c =>
+    c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.area.toLowerCase().includes(q)
+  ).slice(0, 10);
+
+  if (matches.length === 0) {
+    list.innerHTML = '<div class="search-empty"><div class="icon">🤔</div>No match</div>';
+    return;
+  }
+
+  const currentSlot = state.plan[currentKey()] || [];
+  list.innerHTML = matches.map(c => {
+    const inSlot = currentSlot.includes(c.code);
+    return `
+      <div class="search-result ${inSlot ? 'already-in' : ''}" ${inSlot ? '' : `onclick="addFromSearch('${c.code}')"`}>
+        <div class="name">${escapeHtml(c.name)}${inSlot ? '<span class="badge">✓ In slot</span>' : ''}</div>
+        <div class="meta">${c.code} · ${escapeHtml(c.area)} · 3M sales: RM ${c.sales_3m.toLocaleString()} · freq ${c.freq}x</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addFromSearch(code) {
+  addCustomer(code);
+  closeSearchModal();
+}
+
+// AI SUGGESTIONS
+function applySuggestion(idx) {
+  const s = AI_SUGGESTIONS[idx];
+  if (s.type === 'add' && s.customers) {
+    // Add to W2D2 as a default
+    if (!state.plan['W2D2']) state.plan['W2D2'] = [];
+    s.customers.forEach(code => {
+      if (!state.plan['W2D2'].includes(code)) state.plan['W2D2'].push(code);
+    });
+    showToast(`✓ Added ${s.customers.length} customers to W2D2`);
+  } else if (s.type === 'new' && s.customers) {
+    if (!state.plan['W2D5']) state.plan['W2D5'] = [];
+    s.customers.forEach(code => {
+      if (!state.plan['W2D5'].includes(code)) state.plan['W2D5'].push(code);
+    });
+    showToast(`✓ Added new customer to W2D5`);
+  } else if (s.type === 'frequency' && s.customers) {
+    const code = s.customers[0];
+    ['W1D1','W2D1','W3D1','W4D1'].forEach(k => {
+      if (!state.plan[k]) state.plan[k] = [];
+      if (!state.plan[k].includes(code)) state.plan[k].push(code);
+    });
+    showToast(`✓ Increased frequency to 4x/month`);
+  } else if (s.type === 'remove' && s.customers) {
+    s.customers.forEach(code => {
+      Object.keys(state.plan).forEach(k => {
+        state.plan[k] = state.plan[k].filter(c => c !== code);
+      });
+      // Add back at 1x
+      if (!state.plan['W1D5']) state.plan['W1D5'] = [];
+      state.plan['W1D5'].push(s.customers[0]);
+    });
+    showToast(`✓ Reduced to 1x/month`);
+  } else {
+    showToast(`✓ Applied: ${s.title}`);
+  }
+  // Remove this suggestion from list
+  AI_SUGGESTIONS.splice(idx, 1);
+  renderAll();
+}
+
+function dismissSuggestion(idx) {
+  AI_SUGGESTIONS.splice(idx, 1);
+  renderAi();
+  showToast('Dismissed');
+}
+
+function toggleAi() { $('ai-panel').classList.toggle('open'); }
+
+// SUBMIT
+function openSubmitModal() {
+  let total = 0;
+  const unique = new Set();
+  Object.values(state.plan).forEach(list => {
+    total += list.length;
+    list.forEach(c => unique.add(c));
+  });
+  const filledDays = Object.values(state.plan).filter(list => list.length > 0).length;
+
+  $('submit-stats').innerHTML = `
+    <div><span>Salesman</span><span>${state.salesmanId}</span></div>
+    <div><span>Plan for</span><span>${state.monthKey}</span></div>
+    <div><span>Total visits</span><span>${total}</span></div>
+    <div><span>Unique customers</span><span>${unique.size}</span></div>
+    <div><span>Days planned</span><span>${filledDays} / 24</span></div>
+  `;
+  $('submit-modal').classList.add('show');
+}
+function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
+
+function doSubmit() {
+  const submitTo = $('submit-to').value;
+  closeSubmitModal();
+  $('status-badge').className = 'status-badge submitted';
+  $('status-badge').textContent = 'SUBMITTED';
+
+  let total = 0;
+  const unique = new Set();
+  Object.values(state.plan).forEach(list => {
+    total += list.length;
+    list.forEach(c => unique.add(c));
+  });
+
+  const target = submitTo === 'boss' ? 'Boss (M Boss)' : 'Raj Kumar (Supervisor)';
+  $('success-sub').textContent = `Sent to ${target}`;
+  $('success-stats').innerHTML = `
+    <div><span>Total visits</span><span>${total}</span></div>
+    <div><span>Unique customers</span><span>${unique.size}</span></div>
+    <div><span>Sent at</span><span>${new Date().toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}</span></div>
+  `;
+  $('success-modal').classList.add('show');
+}
+function closeSuccessModal() { $('success-modal').classList.remove('show'); }
+
+// INIT
+function init() {
+  initSamplePlan();
+  renderAll();
+  $$('.week-btn').forEach(b => b.addEventListener('click', () => selectWeek(parseInt(b.dataset.week))));
+  $$('.day-tab').forEach(b => b.addEventListener('click', () => selectDay(parseInt(b.dataset.day))));
+  $('add-btn').addEventListener('click', openSearchModal);
+  $('submit-btn').addEventListener('click', openSubmitModal);
+  $('search-input').addEventListener('input', onSearchInput);
+
+  $$('.modal-overlay').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target === el) el.classList.remove('show');
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>

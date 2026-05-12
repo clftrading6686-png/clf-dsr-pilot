@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLF Trading — Live Sales Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --navy-light: #2A4A6C;
+  --blue: #185FA5;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-bright: #FFD66B;
+  --green: #3B6D11;
+  --green-bright: #4ADE80;
+  --red: #A32D2D;
+  --red-bright: #EF4444;
+  --gray: #6B7A8D;
+  --border: rgba(255,255,255,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: 'Geist', -apple-system, sans-serif;
+  background: var(--navy);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(ellipse at top right, rgba(201,168,76,0.08), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(24,95,165,0.12), transparent 50%),
+    var(--navy);
+  display: flex; flex-direction: column;
+}
+
+/* HEADER BAR */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  width: 48px; height: 48px; background: white; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: var(--navy); line-height: 1;
+}
+.logo span { font-size: 8px; color: var(--gold); margin-top: 2px; }
+.title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+.title-block .sub { font-size: 12px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+.header-right { text-align: right; }
+.clock { font-size: 28px; font-weight: 600; font-family: 'Geist Mono', monospace; }
+.date { font-size: 13px; color: var(--gold); margin-top: 2px; }
+.live-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+  padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  color: #4ADE80; margin-left: 12px;
+}
+.live-pill.dim { color: var(--gray); background: rgba(107,122,141,0.15); border-color: rgba(107,122,141,0.3); }
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* TOTALS STRIP */
+.totals {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 0; padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.total-cell { padding: 0 24px; border-right: 1px solid var(--border); }
+.total-cell:last-child { border-right: none; }
+.total-cell .label {
+  font-size: 12px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 2px; font-weight: 600;
+}
+.total-cell .value {
+  font-size: 56px; font-weight: 700; line-height: 1.1; margin-top: 8px;
+  font-family: 'Geist Mono', monospace; color: white;
+}
+.total-cell .value-sub {
+  font-size: 13px; color: var(--gray); margin-top: 6px;
+}
+.total-cell.profit .value { color: var(--gold-bright); }
+
+/* MAIN GRID */
+.main {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 1.4fr 1fr;
+  gap: 1px; background: var(--border);
+}
+.panel {
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.panel-header {
+  padding: 18px 28px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-header .h {
+  font-size: 18px; font-weight: 600; letter-spacing: 0.5px;
+}
+.panel-header .h-sub {
+  font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px;
+}
+.panel-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+.panel-body::-webkit-scrollbar { width: 6px; }
+.panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* LEADERBOARD */
+.lb-row {
+  display: grid; grid-template-columns: 56px 1fr auto;
+  align-items: center; gap: 16px;
+  padding: 14px 28px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.3s, transform 0.4s;
+}
+.lb-row.flash { background: rgba(201,168,76,0.12); }
+.lb-rank {
+  font-size: 24px; font-weight: 700; font-family: 'Geist Mono', monospace;
+  color: var(--gray); text-align: center;
+}
+.lb-row[data-rank="1"] .lb-rank { color: var(--gold-bright); font-size: 28px; }
+.lb-row[data-rank="2"] .lb-rank { color: #C0C0C0; }
+.lb-row[data-rank="3"] .lb-rank { color: #CD7F32; }
+.lb-name {
+  font-size: 18px; font-weight: 600;
+}
+.lb-meta {
+  font-size: 12px; color: var(--gray); margin-top: 4px;
+  display: flex; gap: 12px;
+}
+.lb-bar {
+  height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px;
+  margin-top: 8px; overflow: hidden;
+}
+.lb-bar-fill {
+  height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold));
+  border-radius: 2px; transition: width 0.6s ease;
+}
+.lb-profit {
+  text-align: right;
+  font-size: 22px; font-weight: 700; font-family: 'Geist Mono', monospace;
+  color: var(--gold-bright);
+}
+.lb-row[data-rank="1"] .lb-profit { font-size: 26px; }
+.lb-orders {
+  font-size: 11px; color: var(--gray); margin-top: 2px;
+  font-family: 'Geist Mono', monospace;
+}
+
+/* RECENT ORDERS */
+.feed-item {
+  padding: 12px 28px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  animation: slideIn 0.5s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.feed-row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.feed-name { font-size: 15px; font-weight: 600; }
+.feed-time { font-size: 11px; color: var(--gray); font-family: 'Geist Mono', monospace; }
+.feed-row2 {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-top: 4px; font-size: 12px; color: var(--gray);
+}
+.feed-detail { color: var(--gray); }
+.feed-profit {
+  font-family: 'Geist Mono', monospace; font-weight: 600; color: var(--gold-bright);
+  font-size: 14px;
+}
+.feed-profit.big { color: var(--green-bright); }
+
+/* EMPTY STATE */
+.empty {
+  text-align: center; padding: 40px 24px; color: var(--gray); font-size: 13px;
+}
+
+/* BIG ORDER OVERLAY */
+.big-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(ellipse at center, rgba(11,31,58,0.95), rgba(11,31,58,1));
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column;
+  animation: bigFadeIn 0.4s ease;
+}
+.big-overlay.show { display: flex; }
+@keyframes bigFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.big-emoji {
+  font-size: 100px; animation: bigBounce 0.8s ease infinite alternate;
+}
+@keyframes bigBounce {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-20px) scale(1.05); }
+}
+.big-text-1 {
+  font-size: 36px; color: var(--gold); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 4px; margin-top: 16px;
+}
+.big-text-2 {
+  font-size: 80px; font-weight: 800; color: white;
+  margin: 16px 0; font-family: 'Geist', sans-serif;
+}
+.big-text-3 {
+  font-size: 64px; font-weight: 700; color: var(--gold-bright);
+  font-family: 'Geist Mono', monospace;
+}
+.confetti {
+  position: absolute; top: -20px;
+  width: 10px; height: 16px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0.5; }
+}
+
+/* RESPONSIVE — for smaller screens, still works */
+@media (max-width: 1100px) {
+  .totals { grid-template-columns: 1fr 1fr 1fr; }
+  .total-cell .value { font-size: 36px; }
+  .main { grid-template-columns: 1fr; }
+  .clock { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">CLF<span>TRADING</span></div>
+    <div class="title-block">
+      <div class="title">Live Sales Board</div>
+      <div class="sub">Real-time leaderboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="date" id="date">
+      <span id="date-text">Loading...</span>
+      <span class="live-pill dim" id="live-pill"><span class="live-dot"></span><span id="live-pill-text">CONNECTING</span></span>
+    </div>
+  </div>
+</header>
+
+<section class="totals">
+  <div class="total-cell">
+    <div class="label">Today's Sales</div>
+    <div class="value" id="total-sales">RM 0</div>
+    <div class="value-sub" id="total-orders">0 orders</div>
+  </div>
+  <div class="total-cell profit">
+    <div class="label">Today's Profit</div>
+    <div class="value" id="total-profit">RM 0</div>
+    <div class="value-sub" id="total-margin">--</div>
+  </div>
+  <div class="total-cell">
+    <div class="label">Active Salesmen</div>
+    <div class="value" id="total-active">0</div>
+    <div class="value-sub" id="total-active-sub">made an order today</div>
+  </div>
+</section>
+
+<main class="main">
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">🏆 Top 10 Leaderboard</div>
+        <div class="h-sub">By today's profit</div>
+      </div>
+    </div>
+    <div class="panel-body" id="leaderboard">
+      <div class="empty">No orders yet today</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">⚡ Recent Orders</div>
+        <div class="h-sub">Live feed · last 10</div>
+      </div>
+    </div>
+    <div class="panel-body" id="feed">
+      <div class="empty">Waiting for orders...</div>
+    </div>
+  </div>
+</main>
+
+<div class="big-overlay" id="big-overlay">
+  <div class="big-emoji">🎉</div>
+  <div class="big-text-1">BIG ORDER!</div>
+  <div class="big-text-2" id="big-name">—</div>
+  <div class="big-text-3" id="big-profit">RM 0</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://wgwupdjiugmdgxprctse.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
+const BIG_ORDER_THRESHOLD = 500;
+const REFRESH_INTERVAL_MS = 30000;
+const CELEBRATION_DURATION_MS = 8000;
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== UTILS =====
+const $ = (id) => document.getElementById(id);
+const fmtRM = (n, decimals = 0) => 'RM ' + Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+const fmtRMfull = (n) => fmtRM(n, 2);
+
+function todayMY() {
+  // Malaysia is UTC+8 (no DST). Add 8h to UTC epoch then format as UTC ISO — works regardless of browser timezone.
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function timeAgo(timestamp) {
+  const diff = (Date.now() - new Date(timestamp).getTime()) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+// ===== CLOCK =====
+function tickClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  $('clock').textContent = `${hh}:${mm}:${ss}`;
+  $('date-text').textContent = now.toLocaleDateString('en-MY', {
+    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+  });
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+function setLive(state) {
+  const pill = $('live-pill');
+  const text = $('live-pill-text');
+  if (state === 'live') {
+    pill.classList.remove('dim');
+    text.textContent = 'LIVE';
+  } else if (state === 'connecting') {
+    pill.classList.add('dim');
+    text.textContent = 'CONNECTING';
+  } else {
+    pill.classList.add('dim');
+    text.textContent = 'OFFLINE';
+  }
+}
+
+// ===== DATA FETCHING =====
+async function fetchToday() {
+  const today = todayMY();
+  // Pull all today's orders with joins
+  const { data, error } = await sb
+    .from('orders')
+    .select(`
+      id, order_date, list_price_total, selling_price_total, profit, created_at,
+      salesman_id, customer_id, brand_id,
+      salesmen (id, name, zone),
+      customers (id, name),
+      brands (id, name)
+    `)
+    .eq('order_date', today)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('fetchToday error:', error);
+    setLive('offline');
+    return;
+  }
+
+  setLive('live');
+  render(data || []);
+}
+
+function render(orders) {
+  // Aggregate totals
+  const totalSales = orders.reduce((s, o) => s + Number(o.selling_price_total || 0), 0);
+  const totalProfit = orders.reduce((s, o) => s + Number(o.profit || 0), 0);
+  const totalCount = orders.length;
+  const activeSet = new Set(orders.map(o => o.salesman_id));
+
+  $('total-sales').textContent = fmtRM(totalSales);
+  $('total-profit').textContent = fmtRM(totalProfit);
+  $('total-orders').textContent = totalCount + ' orders';
+  $('total-active').textContent = activeSet.size;
+
+  const avgMargin = totalSales > 0 ? (totalProfit / totalSales * 100).toFixed(1) : '0.0';
+  $('total-margin').textContent = `Avg margin ${avgMargin}%`;
+
+  // Leaderboard: group by salesman
+  const bySalesman = {};
+  orders.forEach(o => {
+    const sid = o.salesman_id;
+    if (!bySalesman[sid]) {
+      bySalesman[sid] = {
+        id: sid,
+        name: o.salesmen?.name || '(unknown)',
+        zone: o.salesmen?.zone || '',
+        profit: 0, orders: 0, sales: 0
+      };
+    }
+    bySalesman[sid].profit += Number(o.profit || 0);
+    bySalesman[sid].sales += Number(o.selling_price_total || 0);
+    bySalesman[sid].orders += 1;
+  });
+
+  const ranked = Object.values(bySalesman).sort((a, b) => b.profit - a.profit).slice(0, 10);
+  const maxProfit = ranked[0]?.profit || 1;
+
+  const lb = $('leaderboard');
+  if (ranked.length === 0) {
+    lb.innerHTML = '<div class="empty">No orders yet today</div>';
+  } else {
+    lb.innerHTML = ranked.map((r, i) => `
+      <div class="lb-row" data-rank="${i + 1}" data-sid="${r.id}">
+        <div class="lb-rank">${i + 1}</div>
+        <div>
+          <div class="lb-name">${escapeHtml(r.name)}</div>
+          <div class="lb-meta">
+            ${r.zone ? `<span>${escapeHtml(r.zone)}</span>` : ''}
+            <span>${r.orders} orders</span>
+            <span>${fmtRMfull(r.sales)} sales</span>
+          </div>
+          <div class="lb-bar"><div class="lb-bar-fill" style="width:${(r.profit / maxProfit * 100).toFixed(1)}%"></div></div>
+        </div>
+        <div>
+          <div class="lb-profit">${fmtRM(r.profit)}</div>
+          <div class="lb-orders">profit</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Feed: most recent 10
+  const feed = $('feed');
+  const recent = orders.slice(0, 10);
+  if (recent.length === 0) {
+    feed.innerHTML = '<div class="empty">Waiting for orders...</div>';
+  } else {
+    feed.innerHTML = recent.map(o => `
+      <div class="feed-item">
+        <div class="feed-row1">
+          <div class="feed-name">${escapeHtml(o.salesmen?.name || '?')}</div>
+          <div class="feed-time">${timeAgo(o.created_at)}</div>
+        </div>
+        <div class="feed-row2">
+          <div class="feed-detail">${escapeHtml(o.customers?.name || '?')} · ${escapeHtml(o.brands?.name || '?')}</div>
+          <div class="feed-profit ${Number(o.profit) >= BIG_ORDER_THRESHOLD ? 'big' : ''}">+${fmtRMfull(o.profit)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ===== BIG ORDER CELEBRATION =====
+function celebrate(salesmanName, profit) {
+  $('big-name').textContent = salesmanName || 'Someone';
+  $('big-profit').textContent = fmtRMfull(profit);
+  const overlay = $('big-overlay');
+  overlay.classList.add('show');
+
+  // Confetti
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = ['#C9A84C', '#FFD66B', '#185FA5', '#4ADE80', '#EF4444'][Math.floor(Math.random() * 5)];
+    c.style.animationDuration = (3 + Math.random() * 2) + 's';
+    c.style.animationDelay = Math.random() * 0.8 + 's';
+    overlay.appendChild(c);
+  }
+
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    overlay.querySelectorAll('.confetti').forEach(c => c.remove());
+  }, CELEBRATION_DURATION_MS);
+}
+
+// ===== REALTIME =====
+function setupRealtime() {
+  // New orders
+  sb.channel('orders-realtime')
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'orders' },
+      async (payload) => {
+        console.log('[realtime] new order:', payload.new);
+        // Flash row + refetch
+        await fetchToday();
+        // Highlight the new salesman's row briefly
+        const sid = payload.new.salesman_id;
+        const row = document.querySelector(`.lb-row[data-sid="${sid}"]`);
+        if (row) {
+          row.classList.add('flash');
+          setTimeout(() => row.classList.remove('flash'), 2000);
+        }
+      })
+    .subscribe();
+
+  // Big order notifications
+  sb.channel('notif-realtime')
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications_log' },
+      async (payload) => {
+        if (payload.new?.type !== 'big_order') return;
+        // Look up salesman name + profit
+        const sid = payload.new.salesman_id;
+        let name = 'Someone';
+        let profit = 0;
+        if (sid) {
+          const { data: s } = await sb.from('salesmen').select('name').eq('id', sid).maybeSingle();
+          name = s?.name || name;
+          // Get latest big order for this salesman today
+          const { data: o } = await sb.from('orders')
+            .select('profit')
+            .eq('salesman_id', sid)
+            .eq('order_date', todayMY())
+            .gte('profit', BIG_ORDER_THRESHOLD)
+            .order('created_at', { ascending: false })
+            .limit(1).maybeSingle();
+          profit = o?.profit || 0;
+        }
+        celebrate(name, profit);
+      })
+    .subscribe();
+}
+
+// ===== BOOT =====
+async function boot() {
+  await fetchToday();
+  setupRealtime();
+  setInterval(fetchToday, REFRESH_INTERVAL_MS);
+}
+boot();
+
+// Click anywhere to dismiss big overlay (manual override)
+$('big-overlay').addEventListener('click', () => {
+  $('big-overlay').classList.remove('show');
+  $('big-overlay').querySelectorAll('.confetti').forEach(c => c.remove());
+});
+</script>
+</body>
+</html>

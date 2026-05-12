@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLF Trading — Pilot Apps</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Geist', sans-serif;
+  background: linear-gradient(135deg, #0B1F3A 0%, #1A3A5C 100%);
+  color: white;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.container { max-width: 600px; width: 100%; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.sub { color: #C9A84C; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 32px; }
+.app-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: white;
+  display: block;
+  transition: all 0.2s;
+}
+.app-card:hover { background: rgba(201,168,76,0.15); border-color: #C9A84C; }
+.app-card .name { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.app-card .desc { font-size: 13px; color: #A8B4C5; }
+.app-card .pill {
+  display: inline-block; background: #C9A84C; color: #0B1F3A;
+  padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
+  margin-left: 6px;
+}
+.footer { color: #6B7A8D; font-size: 11px; text-align: center; margin-top: 32px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CLF Trading</h1>
+  <div class="sub">Mentakab Pilot Apps</div>
+
+  <a class="app-card" href="dsr_mobile.html">
+    <div class="name">📱 Daily Sales Report <span class="pill">LIVE</span></div>
+    <div class="desc">业务员手机日报 · For salesmen — replace paper DSR</div>
+  </a>
+
+  <a class="app-card" href="route_plan_builder.html">
+    <div class="name">🗺️ Route Plan Builder</div>
+    <div class="desc">业务员月度路线 · For salesmen — plan monthly route</div>
+  </a>
+
+  <a class="app-card" href="boss_leaderboard.html">
+    <div class="name">📺 TV Leaderboard</div>
+    <div class="desc">大屏排行榜 · For office TV — live sales (demo)</div>
+  </a>
+
+  <a class="app-card" href="collections.html">
+    <div class="name">💰 Collections Tracking</div>
+    <div class="desc">收款追踪 · For boss/manager — pending/collected/banked</div>
+  </a>
+
+  <div class="footer">© CLF Trading Sdn Bhd · Pilot system · Internal use only</div>
+</div>
+</body>
+</html>
