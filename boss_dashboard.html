@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLF Trading — Boss DSR Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --navy-light: #2A4A6C;
+  --blue: #185FA5;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-bright: #FFD66B;
+  --green: #3B6D11;
+  --green-bright: #4ADE80;
+  --amber: #F59E0B;
+  --amber-bright: #FBBF24;
+  --red: #A32D2D;
+  --red-bright: #EF4444;
+  --gray: #6B7A8D;
+  --gray-light: #A8B4C5;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100vh;
+  font-family: 'Geist', -apple-system, sans-serif;
+  background: var(--navy);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(ellipse at top right, rgba(201,168,76,0.08), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(24,95,165,0.12), transparent 50%),
+    var(--navy);
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- HEADER ---------- */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  width: 48px; height: 48px; background: white; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: var(--navy); line-height: 1;
+}
+.logo span { font-size: 8px; color: var(--gold); margin-top: 2px; }
+.title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+.title-block .sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+.header-center {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 13px;
+}
+.header-center .branch-flag { color: var(--gold-bright); font-weight: 600; }
+.header-center .pilot-flag { color: var(--gray-light); font-size: 11px; }
+.header-right { text-align: right; }
+.clock { font-size: 26px; font-weight: 600; font-family: 'Geist Mono', monospace; }
+.date { font-size: 12px; color: var(--gold); margin-top: 2px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.live-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+  padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  color: var(--green-bright);
+}
+.live-pill.dim { color: var(--gray); background: rgba(107,122,141,0.15); border-color: rgba(107,122,141,0.3); }
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ---------- KPI STRIP ---------- */
+.kpis {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 0; padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.kpi { padding: 0 18px; border-right: 1px solid var(--border); }
+.kpi:last-child { border-right: none; }
+.kpi .label {
+  font-size: 10px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 1.4px; font-weight: 600;
+}
+.kpi .value {
+  font-size: 32px; font-weight: 700; line-height: 1.1; margin-top: 5px;
+  font-family: 'Geist Mono', monospace; color: white;
+}
+.kpi .value-sub { font-size: 11px; color: var(--gray-light); margin-top: 3px; }
+.kpi.warn .value { color: var(--amber-bright); }
+.kpi.bad .value  { color: var(--red-bright); }
+.kpi.good .value { color: var(--green-bright); }
+.kpi.gold .value { color: var(--gold-bright); }
+
+/* ---------- TRUST + VERIFY LAYERS (4 cards) ---------- */
+.trust-section {
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.trust-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.trust-title {
+  font-size: 13px; font-weight: 600; color: white;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.trust-title .shield { color: var(--gold-bright); margin-right: 8px; }
+.trust-sub { font-size: 11px; color: var(--gray-light); }
+
+.trust-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.trust-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  position: relative; overflow: hidden;
+  transition: background 0.3s, border-color 0.3s;
+}
+.trust-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--gray);
+}
+.trust-card.green::before  { background: var(--green-bright); }
+.trust-card.amber::before  { background: var(--amber-bright); }
+.trust-card.red::before    { background: var(--red-bright); }
+.trust-card.gray::before   { background: var(--gray); }
+.trust-card.green { background: rgba(74,222,128,0.05); border-color: rgba(74,222,128,0.25); }
+.trust-card.amber { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.3); }
+.trust-card.red   { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.35); }
+
+.trust-top { display: flex; align-items: center; justify-content: space-between; }
+.trust-layer-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--gold); font-family: 'Geist Mono', monospace;
+}
+.trust-status-pill {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px;
+  padding: 3px 8px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); color: var(--gray-light);
+}
+.trust-card.green .trust-status-pill { background: rgba(74,222,128,0.15); color: var(--green-bright); }
+.trust-card.amber .trust-status-pill { background: rgba(251,191,36,0.18); color: var(--amber-bright); }
+.trust-card.red   .trust-status-pill { background: rgba(239,68,68,0.18);  color: var(--red-bright); }
+
+.trust-name {
+  font-size: 15px; font-weight: 600; color: white;
+  display: flex; align-items: center; gap: 8px;
+}
+.trust-name .icon { font-size: 18px; }
+.trust-metric {
+  font-size: 28px; font-weight: 700; line-height: 1.1;
+  font-family: 'Geist Mono', monospace; color: white;
+}
+.trust-card.green .trust-metric { color: var(--green-bright); }
+.trust-card.amber .trust-metric { color: var(--amber-bright); }
+.trust-card.red   .trust-metric { color: var(--red-bright); }
+.trust-card.gray  .trust-metric { color: var(--gray-light); }
+.trust-detail {
+  font-size: 11.5px; color: var(--gray-light); line-height: 1.5;
+  min-height: 32px;
+}
+.trust-card.red .trust-detail   { color: #FCA5A5; }
+.trust-card.amber .trust-detail { color: #FCD34D; }
+
+/* ---------- MAIN 2x2 GRID ---------- */
+.main {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(260px, auto) minmax(260px, auto);
+  gap: 1px; background: var(--border);
+}
+.panel {
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.panel-header {
+  padding: 14px 22px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-header .h { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
+.panel-header .h-sub { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.6px; margin-top: 2px; }
+.panel-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+.panel-body::-webkit-scrollbar { width: 6px; }
+.panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* SUBMISSION LIST */
+.sub-row {
+  display: grid; grid-template-columns: 32px 1fr auto;
+  align-items: center; gap: 12px;
+  padding: 11px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.sub-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+}
+.sub-icon.ok    { background: rgba(74,222,128,0.15); color: var(--green-bright); }
+.sub-icon.draft { background: rgba(251,191,36,0.15); color: var(--amber-bright); }
+.sub-icon.wait  { background: rgba(168,180,197,0.12); color: var(--gray-light); }
+.sub-icon.late  { background: rgba(239,68,68,0.15); color: var(--red-bright); }
+.sub-name { font-size: 14px; font-weight: 600; }
+.sub-meta { font-size: 10.5px; color: var(--gray-light); margin-top: 2px; display: flex; gap: 9px; flex-wrap: wrap; }
+.sub-right { text-align: right; }
+.sub-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.sub-status.ok    { color: var(--green-bright); }
+.sub-status.draft { color: var(--amber-bright); }
+.sub-status.wait  { color: var(--gray-light); }
+.sub-status.late  { color: var(--red-bright); }
+.sub-sales { font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 600; color: white; margin-top: 2px; }
+.sub-time { font-size: 10px; color: var(--gray); font-family: 'Geist Mono', monospace; margin-top: 1px; }
+
+/* ALERTS LIST */
+.alert-row {
+  padding: 11px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: grid; grid-template-columns: 22px 1fr auto;
+  gap: 11px; align-items: start;
+}
+.alert-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
+.alert-row[data-sev="critical"] .alert-dot,
+.alert-row[data-sev="high"] .alert-dot   { background: var(--red-bright); box-shadow: 0 0 8px var(--red-bright); }
+.alert-row[data-sev="medium"] .alert-dot { background: var(--amber-bright); }
+.alert-row[data-sev="low"] .alert-dot    { background: var(--gray-light); }
+.alert-title { font-size: 13px; font-weight: 600; }
+.alert-desc  { font-size: 11px; color: var(--gray-light); margin-top: 2px; line-height: 1.45; }
+.alert-meta  { font-size: 9.5px; color: var(--gray); margin-top: 3px; text-transform: uppercase; letter-spacing: 1px; }
+.alert-row .layer-tag {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.8px;
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(201,168,76,0.15); color: var(--gold-bright);
+  margin-right: 6px; font-family: 'Geist Mono', monospace;
+}
+.alert-resolve {
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border-strong);
+  color: white; padding: 4px 9px; border-radius: 6px;
+  font-family: inherit; font-size: 10.5px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.alert-resolve:hover { background: rgba(74,222,128,0.15); border-color: var(--green-bright); color: var(--green-bright); }
+.alert-resolve:disabled { opacity: 0.5; cursor: wait; }
+
+/* PRIORITIES */
+.prio-row { padding: 11px 22px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.prio-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.prio-rank {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  color: var(--gold); background: rgba(201,168,76,0.12);
+  padding: 2px 7px; border-radius: 4px; margin-right: 7px;
+  font-family: 'Geist Mono', monospace;
+}
+.prio-name { font-size: 13px; font-weight: 600; }
+.prio-counts { text-align: right; font-family: 'Geist Mono', monospace; }
+.prio-month { font-size: 17px; font-weight: 700; color: var(--gold-bright); }
+.prio-month-lbl { font-size: 9px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
+.prio-today { font-size: 10.5px; color: var(--green-bright); margin-top: 2px; }
+.prio-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 7px; overflow: hidden; }
+.prio-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold)); border-radius: 2px; transition: width 0.6s ease; }
+
+/* LIVE FEED */
+.feed-section {
+  border-top: 1px solid var(--border);
+  background: var(--navy);
+  flex-shrink: 0;
+}
+.feed-header {
+  padding: 12px 32px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.feed-header .h { font-size: 14px; font-weight: 600; }
+.feed-header .h-sub { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.6px; }
+.feed-list {
+  display: flex; gap: 1px; background: var(--border);
+  overflow-x: auto;
+}
+.feed-list::-webkit-scrollbar { height: 6px; }
+.feed-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.feed-item {
+  background: var(--navy); flex: 0 0 260px; padding: 12px 16px;
+  animation: slideIn 0.5s ease;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+.feed-row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.feed-name { font-size: 13px; font-weight: 600; }
+.feed-time { font-size: 10px; color: var(--gray); font-family: 'Geist Mono', monospace; }
+.feed-row2 { font-size: 11px; color: var(--gray-light); margin-top: 3px; line-height: 1.4; }
+.feed-row3 { display: flex; align-items: baseline; justify-content: space-between; margin-top: 5px; }
+.feed-sales { font-family: 'Geist Mono', monospace; font-weight: 700; color: var(--gold-bright); font-size: 13px; }
+.feed-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+.feed-tag {
+  font-size: 9px; padding: 2px 5px; border-radius: 4px;
+  background: rgba(255,255,255,0.06); color: var(--gray-light);
+  text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+}
+.feed-tag.gps    { background: rgba(24,95,165,0.18); color: #93C5FD; }
+.feed-tag.new    { background: rgba(255,214,107,0.15); color: var(--gold-bright); }
+.feed-tag.miss   { background: rgba(239,68,68,0.15); color: var(--red-bright); }
+
+/* EMPTY STATES */
+.empty { text-align: center; padding: 26px 22px; color: var(--gray); font-size: 12px; }
+
+/* RESPONSIVE */
+@media (max-width: 1280px) {
+  .trust-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(3, 1fr); }
+  .kpi { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .kpi:nth-child(3), .kpi:nth-child(6) { border-right: none; }
+  .kpi .value { font-size: 24px; }
+  .main { grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); }
+  .clock { font-size: 20px; }
+  .header { padding: 12px 16px; }
+  .kpis, .trust-section { padding: 12px 16px; }
+  .trust-grid { gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">CLF<span>TRADING</span></div>
+    <div class="title-block">
+      <div class="title">Boss DSR Dashboard</div>
+      <div class="sub">Daily Sales Report — 4-Layer Trust + Verify</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <span class="branch-flag" id="branch-flag">MENTAKAB</span>
+    <span class="pilot-flag" id="pilot-flag">· Pilot: 5 Champions</span>
+  </div>
+  <div class="header-right">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="date">
+      <span id="date-text">Loading...</span>
+      <span class="live-pill dim" id="live-pill"><span class="live-dot"></span><span id="live-pill-text">CONNECTING</span></span>
+    </div>
+  </div>
+</header>
+
+<section class="kpis">
+  <div class="kpi" id="kpi-submitted">
+    <div class="label">Submitted</div>
+    <div class="value" id="k-submitted">0/0</div>
+    <div class="value-sub" id="k-submitted-sub">— pending</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Total Visits</div>
+    <div class="value" id="k-visits">0</div>
+    <div class="value-sub" id="k-visits-sub">across reports</div>
+  </div>
+  <div class="kpi gold">
+    <div class="label">Sales Reported</div>
+    <div class="value" id="k-sales">RM 0</div>
+    <div class="value-sub" id="k-sales-sub">— margin</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Collections</div>
+    <div class="value" id="k-collect">RM 0</div>
+    <div class="value-sub">reported today</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Strike Rate</div>
+    <div class="value" id="k-strike">0%</div>
+    <div class="value-sub">effective / visits</div>
+  </div>
+  <div class="kpi" id="kpi-alerts">
+    <div class="label">Open Alerts</div>
+    <div class="value" id="k-alerts">0</div>
+    <div class="value-sub" id="k-alerts-sub">unresolved</div>
+  </div>
+</section>
+
+<section class="trust-section">
+  <div class="trust-header">
+    <div class="trust-title"><span class="shield">🛡️</span>Trust + Verify · 4 Layers</div>
+    <div class="trust-sub" id="trust-sub">Anti-cheat framework — each layer covers one fraud vector</div>
+  </div>
+  <div class="trust-grid">
+
+    <div class="trust-card gray" id="layer-1">
+      <div class="trust-top">
+        <div class="trust-layer-num">LAYER 01</div>
+        <div class="trust-status-pill" id="l1-pill">—</div>
+      </div>
+      <div class="trust-name"><span class="icon">📋</span>Submission Trust</div>
+      <div class="trust-metric" id="l1-metric">0/0</div>
+      <div class="trust-detail" id="l1-detail">Loading...</div>
+    </div>
+
+    <div class="trust-card gray" id="layer-2">
+      <div class="trust-top">
+        <div class="trust-layer-num">LAYER 02</div>
+        <div class="trust-status-pill" id="l2-pill">—</div>
+      </div>
+      <div class="trust-name"><span class="icon">📍</span>Location Trust</div>
+      <div class="trust-metric" id="l2-metric">—</div>
+      <div class="trust-detail" id="l2-detail">Loading...</div>
+    </div>
+
+    <div class="trust-card gray" id="layer-3">
+      <div class="trust-top">
+        <div class="trust-layer-num">LAYER 03</div>
+        <div class="trust-status-pill" id="l3-pill">PENDING</div>
+      </div>
+      <div class="trust-name"><span class="icon">⚖️</span>Sales Trust</div>
+      <div class="trust-metric" id="l3-metric">—</div>
+      <div class="trust-detail" id="l3-detail">Waiting for Eficore feed — Reported vs Actual variance check will activate once read-only credentials are connected.</div>
+    </div>
+
+    <div class="trust-card gray" id="layer-4">
+      <div class="trust-top">
+        <div class="trust-layer-num">LAYER 04</div>
+        <div class="trust-status-pill" id="l4-pill">—</div>
+      </div>
+      <div class="trust-name"><span class="icon">📈</span>Pattern Trust</div>
+      <div class="trust-metric" id="l4-metric">0</div>
+      <div class="trust-detail" id="l4-detail">Loading...</div>
+    </div>
+
+  </div>
+</section>
+
+<main class="main">
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">📋 Today's Submission Status</div>
+        <div class="h-sub">5 pilot champions · deadline 23:59</div>
+      </div>
+    </div>
+    <div class="panel-body" id="submission-list">
+      <div class="empty">Loading champions...</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">🤖 Open AI Alerts</div>
+        <div class="h-sub">All 4 layers · unresolved</div>
+      </div>
+    </div>
+    <div class="panel-body" id="alerts-list">
+      <div class="empty">No open alerts</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">🎯 Monthly Priorities Push</div>
+        <div class="h-sub" id="prio-month-lbl">This Month</div>
+      </div>
+    </div>
+    <div class="panel-body" id="priorities-list">
+      <div class="empty">Loading priorities...</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="h">📍 Recent Visits Detail</div>
+        <div class="h-sub">Today · sorted newest</div>
+      </div>
+    </div>
+    <div class="panel-body" id="visits-list">
+      <div class="empty">No entries yet today</div>
+    </div>
+  </div>
+</main>
+
+<section class="feed-section">
+  <div class="feed-header">
+    <div>
+      <div class="h">⚡ Live DSR Activity Feed</div>
+      <div class="h-sub">Last 10 customer entries · today</div>
+    </div>
+  </div>
+  <div class="feed-list" id="feed-list">
+    <div class="empty" style="flex: 1;">No entries yet today</div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL      = 'https://wgwupdjiugmdgxprctse.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
+const BRANCH_CODE       = 'M';      // Mentakab pilot
+const REFRESH_MS        = 30000;
+const GPS_VARIANCE_THRESHOLD_KM = 5;  // entries above this count as Layer 2 anomaly
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== UTILS =====
+const $ = (id) => document.getElementById(id);
+const fmtRM = (n, d = 0) =>
+  'RM ' + Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: d, maximumFractionDigits: d });
+const escHtml = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function todayMY() { return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10); }
+function monthMY() { return todayMY().slice(0, 7); }
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (diff < 60)    return Math.floor(diff) + 's ago';
+  if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+function fmtHM(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+// ===== CLOCK =====
+function tickClock() {
+  const now = new Date();
+  $('clock').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+  $('date-text').textContent = now.toLocaleDateString('en-MY', {
+    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+  });
+}
+setInterval(tickClock, 1000); tickClock();
+
+function setLive(state) {
+  const pill = $('live-pill'), text = $('live-pill-text');
+  if (state === 'live')            { pill.classList.remove('dim'); text.textContent = 'LIVE'; }
+  else if (state === 'connecting') { pill.classList.add('dim');    text.textContent = 'CONNECTING'; }
+  else                             { pill.classList.add('dim');    text.textContent = 'OFFLINE'; }
+}
+
+// ===== STATE =====
+let pilots = [];
+let priorities = [];
+
+// ===== STATIC LOAD =====
+async function loadStatic() {
+  const month = monthMY();
+  const { data: ps, error: e1 } = await sb
+    .from('salesmen')
+    .select('id, sr_code, full_name, name, phone, branch_code')
+    .eq('is_pilot', true).eq('status', 'Active')
+    .order('full_name');
+  if (e1) console.error('pilots', e1);
+  pilots = ps || [];
+  $('pilot-flag').textContent = '· Pilot: ' + pilots.length + ' Champion' + (pilots.length === 1 ? '' : 's');
+
+  const { data: pr, error: e2 } = await sb
+    .from('monthly_priorities')
+    .select('priority_order, product_name, brand_short_code')
+    .eq('month_year', month).eq('branch_code', BRANCH_CODE)
+    .order('priority_order');
+  if (e2) console.error('priorities', e2);
+  priorities = pr || [];
+  $('prio-month-lbl').textContent = 'This Month · ' + month;
+}
+
+// ===== FETCH =====
+async function fetchAll() {
+  const today = todayMY(), month = monthMY();
+  const pilotIds = pilots.map(p => p.id);
+  if (!pilotIds.length) { setLive('live'); return; }
+
+  const [reportsRes, entriesRes, alertsRes, monthEntriesRes] = await Promise.all([
+    sb.from('daily_reports')
+      .select('id, salesman_id, status, total_visits, total_sales, total_collection, effective_calls, strike_rate_pct, submitted_at, is_late, created_at')
+      .eq('report_date', today).in('salesman_id', pilotIds),
+
+    sb.from('dsr_entries')
+      .select('id, report_id, customer_code, customer_name, is_new_outlet, total_sales, total_collection, visited, visit_at, reason_code, remark, priorities_pushed, gps_checkin, gps_variance_km, created_at, daily_reports!inner(salesman_id, report_date)')
+      .eq('daily_reports.report_date', today).in('daily_reports.salesman_id', pilotIds)
+      .order('created_at', { ascending: false }).limit(60),
+
+    sb.from('ai_alerts')
+      .select('id, alert_type, severity, salesman_id, title, description, data_snapshot, created_at')
+      .eq('resolved', false)
+      .order('created_at', { ascending: false }).limit(30),
+
+    sb.from('dsr_entries')
+      .select('priorities_pushed, created_at, daily_reports!inner(salesman_id, report_date)')
+      .gte('daily_reports.report_date', month + '-01').in('daily_reports.salesman_id', pilotIds)
+  ]);
+
+  if (reportsRes.error || entriesRes.error || alertsRes.error || monthEntriesRes.error) {
+    console.error(reportsRes.error, entriesRes.error, alertsRes.error, monthEntriesRes.error);
+    setLive('offline'); return;
+  }
+  setLive('live');
+
+  render({
+    reports:      reportsRes.data || [],
+    entries:      entriesRes.data || [],
+    alerts:       alertsRes.data || [],
+    monthEntries: monthEntriesRes.data || []
+  });
+}
+
+// ===== RENDER =====
+function render({ reports, entries, alerts, monthEntries }) {
+  renderKPIs(reports, alerts);
+  renderTrustLayers(reports, entries, alerts);
+  renderSubmissionStatus(reports);
+  renderAlerts(alerts);
+  renderPriorities(entries, monthEntries);
+  renderVisitsDetail(entries);
+  renderFeed(entries);
+}
+
+function renderKPIs(reports, alerts) {
+  const submitted  = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
+  const draft      = reports.filter(r => r.status === 'draft').length;
+  const total      = pilots.length;
+  const pending    = total - submitted;
+
+  $('k-submitted').textContent = submitted + '/' + total;
+  $('k-submitted-sub').textContent =
+    (pending > 0 ? pending + ' pending' : 'all done ✓') +
+    (draft > 0 ? ' · ' + draft + ' draft' : '');
+  $('kpi-submitted').className = 'kpi ' + (submitted === total ? 'good' : (submitted === 0 ? 'bad' : 'warn'));
+
+  const totalVisits  = reports.reduce((s, r) => s + Number(r.total_visits || 0), 0);
+  const totalSales   = reports.reduce((s, r) => s + Number(r.total_sales || 0), 0);
+  const totalCollect = reports.reduce((s, r) => s + Number(r.total_collection || 0), 0);
+  const effective    = reports.reduce((s, r) => s + Number(r.effective_calls || 0), 0);
+  const strikeRate   = totalVisits > 0 ? (effective / totalVisits * 100) : 0;
+
+  $('k-visits').textContent     = totalVisits;
+  $('k-visits-sub').textContent = effective + ' effective';
+  $('k-sales').textContent      = fmtRM(totalSales);
+  $('k-sales-sub').textContent  = totalSales > 0 ? 'across ' + reports.filter(r => r.total_sales > 0).length + ' reports' : '—';
+  $('k-collect').textContent    = fmtRM(totalCollect);
+  $('k-strike').textContent     = strikeRate.toFixed(0) + '%';
+
+  const high = alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length;
+  $('k-alerts').textContent = alerts.length;
+  $('k-alerts-sub').textContent = high > 0 ? high + ' high/critical' : (alerts.length > 0 ? 'all medium/low' : 'all clear');
+  $('kpi-alerts').className = 'kpi ' + (high > 0 ? 'bad' : (alerts.length > 0 ? 'warn' : 'good'));
+}
+
+// ----- Trust + Verify (4 layers) -----
+function setLayer(idPrefix, status, metric, detail, statusLabel) {
+  const card = $('layer-' + idPrefix);
+  card.className = 'trust-card ' + status;
+  $('l' + idPrefix + '-pill').textContent = statusLabel;
+  $('l' + idPrefix + '-metric').textContent = metric;
+  $('l' + idPrefix + '-detail').textContent = detail;
+}
+
+function renderTrustLayers(reports, entries, alerts) {
+  const total = pilots.length;
+  const submitted = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
+  const pending = total - submitted;
+  const lateAlerts = alerts.filter(a => a.alert_type === 'late_submission');
+
+  // ---------- LAYER 1: Submission Trust ----------
+  // Map salesman -> report status
+  const reportById = {};
+  reports.forEach(r => { reportById[r.salesman_id] = r; });
+  const pendingNames = pilots
+    .filter(p => {
+      const r = reportById[p.id];
+      return !r || (r.status !== 'submitted' && r.status !== 'approved');
+    })
+    .map(p => p.sr_code || p.full_name || p.name)
+    .filter(Boolean);
+
+  let l1Status, l1Label, l1Detail;
+  if (lateAlerts.length > 0) {
+    l1Status = 'red'; l1Label = 'LATE';
+    l1Detail = lateAlerts.length + ' late-submission alert' + (lateAlerts.length === 1 ? '' : 's') +
+      ' · ' + pendingNames.slice(0, 3).join(', ') + (pendingNames.length > 3 ? '...' : '');
+  } else if (submitted === total) {
+    l1Status = 'green'; l1Label = 'CLEAR';
+    l1Detail = 'All ' + total + ' champions submitted on time. No late alerts.';
+  } else if (submitted === 0) {
+    l1Status = 'amber'; l1Label = 'WAITING';
+    l1Detail = 'No submissions yet today. Deadline 23:59. ' + total + ' champions outstanding.';
+  } else {
+    l1Status = 'amber'; l1Label = 'PARTIAL';
+    l1Detail = pending + ' pending: ' + pendingNames.slice(0, 3).join(', ') + (pendingNames.length > 3 ? '...' : '');
+  }
+  setLayer('1', l1Status, submitted + '/' + total, l1Detail, l1Label);
+
+  // ---------- LAYER 2: Location Trust ----------
+  const gpsEntries = entries.filter(e => e.gps_variance_km != null);
+  const gpsAnomalies = entries.filter(e => Number(e.gps_variance_km || 0) > GPS_VARIANCE_THRESHOLD_KM);
+  const gpsAlerts = alerts.filter(a => a.alert_type === 'gps_anomaly');
+  const gpsEntriesWithCheckin = entries.filter(e => e.gps_checkin).length;
+
+  let l2Status, l2Label, l2Detail, l2Metric;
+  if (gpsAlerts.length > 0 || gpsAnomalies.length > 0) {
+    l2Status = 'red'; l2Label = 'ANOMALY';
+    l2Metric = (gpsAnomalies.length || gpsAlerts.length) + '';
+    l2Detail = gpsAnomalies.length > 0
+      ? gpsAnomalies.length + ' entr' + (gpsAnomalies.length === 1 ? 'y' : 'ies') + ' > ' + GPS_VARIANCE_THRESHOLD_KM + 'km off customer location.'
+      : gpsAlerts.length + ' GPS anomaly alert' + (gpsAlerts.length === 1 ? '' : 's') + ' open.';
+  } else if (gpsEntries.length === 0 && gpsEntriesWithCheckin === 0) {
+    l2Status = 'gray'; l2Label = 'NO DATA';
+    l2Metric = '—';
+    l2Detail = 'No GPS check-ins captured today. (Pilot phase: customer GPS coords not in master yet — variance check inactive.)';
+  } else {
+    l2Status = 'green'; l2Label = 'CLEAR';
+    l2Metric = '0';
+    l2Detail = gpsEntriesWithCheckin + ' visit' + (gpsEntriesWithCheckin === 1 ? '' : 's') + ' with GPS check-in · no anomalies above ' + GPS_VARIANCE_THRESHOLD_KM + 'km.';
+  }
+  setLayer('2', l2Status, l2Metric, l2Detail, l2Label);
+
+  // ---------- LAYER 3: Sales Trust (Reported vs Actual / Eficore) ----------
+  // Eficore feed not connected yet — always PENDING
+  setLayer('3', 'gray', '—',
+    'Waiting for Eficore feed — Reported vs Actual variance check activates once read-only credentials are connected. Then: ±15% variance triggers alert.',
+    'PENDING');
+
+  // ---------- LAYER 4: Pattern Trust ----------
+  const patternAlerts = alerts.filter(a => a.alert_type === 'pattern_anomaly');
+  let l4Status, l4Label, l4Detail, l4Metric;
+  if (patternAlerts.length > 0) {
+    l4Status = 'red'; l4Label = 'ANOMALY';
+    l4Metric = patternAlerts.length + '';
+    const first = patternAlerts[0];
+    l4Detail = (first.title || 'Pattern anomaly detected') +
+      (patternAlerts.length > 1 ? ' · +' + (patternAlerts.length - 1) + ' more' : '');
+  } else {
+    l4Status = 'green'; l4Label = 'CLEAR';
+    l4Metric = '0';
+    l4Detail = 'No pattern anomalies detected. Hermes monitors strike-rate drops, sudden volume changes, repeated low-effort visits.';
+  }
+  setLayer('4', l4Status, l4Metric, l4Detail, l4Label);
+
+  // Trust subtitle: rollup status
+  const layers = [l1Status, l2Status, 'gray', l4Status];
+  const reds = layers.filter(s => s === 'red').length;
+  const ambers = layers.filter(s => s === 'amber').length;
+  const greens = layers.filter(s => s === 'green').length;
+  $('trust-sub').textContent =
+    reds > 0   ? reds + ' layer' + (reds === 1 ? '' : 's') + ' flagged — action needed' :
+    ambers > 0 ? ambers + ' layer' + (ambers === 1 ? '' : 's') + ' partial · waiting' :
+                 greens + ' of 4 layers clear · Layer 3 awaits Eficore';
+}
+
+// ----- Submission Status (5 Champions) -----
+function renderSubmissionStatus(reports) {
+  const list = $('submission-list');
+  if (!pilots.length) { list.innerHTML = '<div class="empty">No pilot salesmen configured</div>'; return; }
+
+  const byId = {};
+  reports.forEach(r => { byId[r.salesman_id] = r; });
+
+  const ranked = pilots.map(p => {
+    const r = byId[p.id];
+    let state, weight;
+    if (!r)                                                       { state = 'wait';  weight = 3; }
+    else if (r.status === 'submitted' || r.status === 'approved') { state = 'ok';    weight = 1; }
+    else if (r.status === 'draft')                                { state = 'draft'; weight = 2; }
+    else                                                          { state = 'wait';  weight = 3; }
+    return { p, r, state, weight };
+  }).sort((a, b) => a.weight - b.weight || (a.p.full_name || '').localeCompare(b.p.full_name || ''));
+
+  list.innerHTML = ranked.map(({ p, r, state }) => {
+    const name = p.full_name || p.name || p.sr_code;
+    const stat = state === 'ok'    ? { icon: '✓', label: 'Submitted' }
+              : state === 'draft' ? { icon: '✎', label: 'Draft' }
+              :                      { icon: '◐', label: 'Pending' };
+    const visits = r?.total_visits ?? 0;
+    const sales  = r?.total_sales  ?? 0;
+    const sr     = r?.strike_rate_pct;
+    const subAt  = r?.submitted_at;
+    return `
+      <div class="sub-row">
+        <div class="sub-icon ${state}">${stat.icon}</div>
+        <div>
+          <div class="sub-name">${escHtml(name)}</div>
+          <div class="sub-meta">
+            <span>${escHtml(p.sr_code || '')}</span>
+            ${r ? `<span>${visits} visits</span>` : ''}
+            ${r && sr != null ? `<span>SR ${Number(sr).toFixed(0)}%</span>` : ''}
+            ${p.phone ? `<span>${escHtml(p.phone)}</span>` : ''}
+          </div>
+        </div>
+        <div class="sub-right">
+          <div class="sub-status ${state}">${stat.label}</div>
+          ${sales > 0 ? `<div class="sub-sales">${fmtRM(sales)}</div>` : ''}
+          ${subAt ? `<div class="sub-time">${fmtHM(subAt)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ----- AI Alerts -----
+const LAYER_BY_TYPE = {
+  late_submission:    'L1',
+  gps_anomaly:        'L2',
+  reported_vs_actual: 'L3',
+  pattern_anomaly:    'L4'
+};
+
+function renderAlerts(alerts) {
+  const list = $('alerts-list');
+  if (!alerts.length) { list.innerHTML = '<div class="empty">No open alerts — all 4 layers clear ✓</div>'; return; }
+
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  const sorted = [...alerts].sort((a, b) =>
+    (sevOrder[a.severity] ?? 9) - (sevOrder[b.severity] ?? 9) ||
+    new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  list.innerHTML = sorted.map(a => {
+    const layer = LAYER_BY_TYPE[a.alert_type] || '—';
+    return `
+      <div class="alert-row" data-sev="${a.severity || 'low'}" data-id="${a.id}">
+        <div class="alert-dot"></div>
+        <div>
+          <div class="alert-title"><span class="layer-tag">${layer}</span>${escHtml(a.title || 'Alert')}</div>
+          <div class="alert-desc">${escHtml(a.description || '')}</div>
+          <div class="alert-meta">
+            ${escHtml((a.alert_type || '').replace(/_/g, ' '))} ·
+            ${escHtml(a.severity || '')} ·
+            ${timeAgo(a.created_at)}
+          </div>
+        </div>
+        <button class="alert-resolve" data-id="${a.id}">Resolve</button>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.alert-resolve').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = '…';
+      const id = btn.getAttribute('data-id');
+      const { error } = await sb.from('ai_alerts')
+        .update({ resolved: true, resolved_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) { console.error('resolve', error); btn.disabled = false; btn.textContent = 'Retry'; }
+      else {
+        btn.closest('.alert-row')?.remove();
+        if (!$('alerts-list').querySelector('.alert-row')) {
+          $('alerts-list').innerHTML = '<div class="empty">No open alerts — all 4 layers clear ✓</div>';
+        }
+        fetchAll();
+      }
+    });
+  });
+}
+
+// ----- Priorities -----
+function renderPriorities(todayEntries, monthEntries) {
+  const list = $('priorities-list');
+  if (!priorities.length) {
+    list.innerHTML = '<div class="empty">No monthly priorities set for ' + monthMY() + ' / ' + BRANCH_CODE + '</div>';
+    return;
+  }
+  const countPushed = (rows, ord) =>
+    rows.filter(e => Array.isArray(e.priorities_pushed) && e.priorities_pushed.includes(ord)).length;
+
+  const counts = priorities.map(p => ({
+    p,
+    monthCount: countPushed(monthEntries, p.priority_order),
+    todayCount: countPushed(todayEntries, p.priority_order)
+  }));
+  const maxMonth = Math.max(1, ...counts.map(c => c.monthCount));
+
+  list.innerHTML = counts.map(({ p, monthCount, todayCount }) => `
+    <div class="prio-row">
+      <div class="prio-row-top">
+        <div>
+          <span class="prio-rank">#${p.priority_order}</span>
+          <span class="prio-name">${escHtml(p.product_name)}</span>
+        </div>
+        <div class="prio-counts">
+          <div class="prio-month">${monthCount}</div>
+          <div class="prio-month-lbl">this month</div>
+          ${todayCount > 0 ? `<div class="prio-today">+${todayCount} today</div>` : ''}
+        </div>
+      </div>
+      <div class="prio-bar"><div class="prio-bar-fill" style="width:${(monthCount / maxMonth * 100).toFixed(1)}%"></div></div>
+    </div>
+  `).join('');
+}
+
+// ----- Recent Visits Detail -----
+function renderVisitsDetail(entries) {
+  const list = $('visits-list');
+  const visited = entries.filter(e => e.visited).slice(0, 12);
+  if (!visited.length) { list.innerHTML = '<div class="empty">No visits recorded yet today</div>'; return; }
+
+  const nameById = {};
+  pilots.forEach(p => { nameById[p.id] = p.sr_code || p.full_name || p.name; });
+
+  list.innerHTML = visited.map(e => {
+    const sid = e.daily_reports?.salesman_id;
+    const sName = nameById[sid] || '?';
+    const gpsBad = Number(e.gps_variance_km || 0) > GPS_VARIANCE_THRESHOLD_KM;
+    return `
+      <div class="sub-row">
+        <div class="sub-icon ${gpsBad ? 'late' : 'ok'}">${gpsBad ? '!' : '✓'}</div>
+        <div>
+          <div class="sub-name">${escHtml(e.customer_name || e.customer_code || 'Customer')}</div>
+          <div class="sub-meta">
+            <span>${escHtml(sName)}</span>
+            ${e.gps_checkin ? '<span>GPS ✓</span>' : '<span style="color:var(--gray);">no GPS</span>'}
+            ${gpsBad ? `<span style="color:var(--red-bright);">var ${Number(e.gps_variance_km).toFixed(1)}km</span>` : ''}
+            ${e.is_new_outlet ? '<span style="color:var(--gold-bright);">NEW</span>' : ''}
+          </div>
+        </div>
+        <div class="sub-right">
+          ${Number(e.total_sales) > 0 ? `<div class="sub-sales">${fmtRM(e.total_sales)}</div>` : '<div class="sub-status wait">No sale</div>'}
+          <div class="sub-time">${timeAgo(e.created_at)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ----- Live Feed -----
+function renderFeed(entries) {
+  const feed = $('feed-list');
+  const recent = entries.slice(0, 10);
+  if (!recent.length) { feed.innerHTML = '<div class="empty" style="flex:1; padding:22px;">No entries yet today</div>'; return; }
+
+  const nameById = {};
+  pilots.forEach(p => { nameById[p.id] = p.full_name || p.name || p.sr_code; });
+
+  feed.innerHTML = recent.map(e => {
+    const sid = e.daily_reports?.salesman_id;
+    const sName = nameById[sid] || '?';
+    const tags = [];
+    if (e.is_new_outlet) tags.push('<span class="feed-tag new">NEW</span>');
+    if (e.gps_checkin)   tags.push('<span class="feed-tag gps">GPS</span>');
+    if (!e.visited && e.reason_code) tags.push(`<span class="feed-tag miss">MISS · ${escHtml(e.reason_code)}</span>`);
+    return `
+      <div class="feed-item">
+        <div class="feed-row1">
+          <div class="feed-name">${escHtml(sName)}</div>
+          <div class="feed-time">${timeAgo(e.created_at)}</div>
+        </div>
+        <div class="feed-row2">${escHtml(e.customer_name || e.customer_code || 'Customer')}</div>
+        <div class="feed-row3">
+          ${Number(e.total_sales) > 0 ? `<div class="feed-sales">${fmtRM(e.total_sales)}</div>` : '<div style="color:var(--gray); font-size:11px;">no sale</div>'}
+          ${Number(e.total_collection) > 0 ? `<div style="font-size:11px; color:var(--gray-light);">+${fmtRM(e.total_collection)} coll.</div>` : ''}
+        </div>
+        ${tags.length ? `<div class="feed-tags">${tags.join('')}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== REALTIME =====
+function setupRealtime() {
+  sb.channel('dsr-reports')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_reports' }, () => fetchAll())
+    .subscribe();
+  sb.channel('dsr-entries')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'dsr_entries' }, () => fetchAll())
+    .subscribe();
+  sb.channel('dsr-alerts')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_alerts' }, () => fetchAll())
+    .subscribe();
+}
+
+// ===== BOOT =====
+async function boot() {
+  await loadStatic();
+  await fetchAll();
+  setupRealtime();
+  setInterval(fetchAll, REFRESH_MS);
+}
+boot();
+</script>
+</body>
+</html>

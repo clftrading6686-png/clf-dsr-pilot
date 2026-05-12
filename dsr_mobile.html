@@ -854,6 +854,13 @@ function renderSalesmanDropdown() {
 }
 
 function renderPriorities() {
+  const card = document.querySelector('.priorities-card');
+  if (MONTHLY_PRIORITIES.length === 0) {
+    if (card) card.style.display = 'none';
+    $('priorities-list').innerHTML = '';
+    return;
+  }
+  if (card) card.style.display = '';
   $('priorities-list').innerHTML = MONTHLY_PRIORITIES.map(p =>
     `<span class="priority-chip"><span class="num">${p.id}</span>${escapeHtml(p.name)}</span>`
   ).join('');
@@ -956,6 +963,7 @@ function renderEntryForm(c) {
         </div>
       </div>
 
+      ${MONTHLY_PRIORITIES.length > 0 ? `
       <div class="field">
         <div class="lbl">Pushed Monthly Priorities <span class="ml">Promosi yang dijual</span></div>
         <div class="priority-toggles">
@@ -966,6 +974,7 @@ function renderEntryForm(c) {
           `).join('')}
         </div>
       </div>
+      ` : ''}
 
       <div class="field">
         <div class="lbl">Reason (if no sale) <span class="ml">Sebab tiada jualan</span></div>
@@ -1370,16 +1379,8 @@ async function loadInitialData() {
     code: 'P' + p.priority_order,
     name: p.product_name,
   }));
-  // Fallback to demo priorities if none configured
-  if (MONTHLY_PRIORITIES.length === 0) {
-    MONTHLY_PRIORITIES = [
-      { id: 1, code: 'P1', name: 'MARIGOLD Yogurt 1L' },
-      { id: 2, code: 'P2', name: 'MONDELEZ Oreo Family Pack' },
-      { id: 3, code: 'P3', name: 'A.CLOUET Sardines 425g' },
-      { id: 4, code: 'P4', name: 'UNILEVER Knorr Cube' },
-      { id: 5, code: 'P5', name: 'POWER ROOT Alicafe 3-in-1' },
-    ];
-  }
+  // If no priorities configured for this month, leave MONTHLY_PRIORITIES empty.
+  // UI will hide the priorities card + per-customer toggle field.
 }
 
 async function init() {
