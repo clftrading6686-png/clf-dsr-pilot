@@ -295,6 +295,11 @@ body {
     <select class="who-select" id="salesman-pick"></select>
   </div>
 
+  <div class="header-who">
+    <div class="who-label">Brand<span class="ml">Jenama</span></div>
+    <select class="who-select" id="brand-pick"></select>
+  </div>
+
   <div class="stats-row">
     <div class="stat-cell">
       <div class="lbl">Visits</div>
@@ -499,6 +504,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ============================================================
 let SALESMEN = [];          // pilot champions from Supabase
 let MONTHLY_PRIORITIES = []; // current month from Supabase
+let MENTAKAB_BRANDS = [];    // distinct zone codes (M-ACLO, M-MARS, ...) from Supabase
 // Customer search is server-side via Supabase ILIKE — never load full list
 
 // Kept here for backward-compat with search function (now unused)
@@ -548,6 +554,7 @@ const CUSTOMER_MASTER = [
 // State
 const state = {
   currentSalesmanId: 'LOKE-CP',
+  currentBrand: '',     // M-ACLO, M-MARS, etc. — set per-salesman default at init
   todayCustomers: [],   // { code, name, area, category, isNewOp?, entry }
   expandedCode: null,
   submitted: false,
@@ -849,7 +856,20 @@ function addNewOp() {
 // ============================================================
 function renderSalesmanDropdown() {
   $('salesman-pick').innerHTML = SALESMEN.map(s =>
-    `<option value="${s.sr_code}"${s.sr_code === state.currentSalesmanId ? ' selected' : ''}>${s.name} · ${s.area}</option>`
+    `<option value="${s.sr_code}"${s.sr_code === state.currentSalesmanId ? ' selected' : ''}>${s.name}</option>`
+  ).join('');
+}
+
+function renderBrandDropdown() {
+  // Default to this salesman's primary zone if no brand picked yet
+  const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+  if (!state.currentBrand && salesman?.area) {
+    state.currentBrand = MENTAKAB_BRANDS.includes(salesman.area) ? salesman.area : MENTAKAB_BRANDS[0];
+  } else if (!state.currentBrand && MENTAKAB_BRANDS.length) {
+    state.currentBrand = MENTAKAB_BRANDS[0];
+  }
+  $('brand-pick').innerHTML = MENTAKAB_BRANDS.map(z =>
+    `<option value="${z}"${z === state.currentBrand ? ' selected' : ''}>${z}</option>`
   ).join('');
 }
 
@@ -1212,11 +1232,14 @@ async function doSubmit() {
     const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
     if (!salesman) throw new Error('Salesman not found in loaded list');
 
-    // 1. Insert daily_reports row (upsert on (salesman_id, report_date) to allow re-submit)
+    // 1. Insert daily_reports row (upsert on (salesman_id, report_date, division_code))
+    //    A salesman can submit multiple DSRs per day — one per brand division.
+    if (!state.currentBrand) throw new Error('Pick a brand before submitting');
     const reportPayload = {
       salesman_id: salesman.id,
       report_date: todayMY,
       branch_code: branchCode,
+      division_code: state.currentBrand,
       week_day_code: $('route-pill').textContent.trim(),
       total_visits: visits,
       total_sales: sales,
@@ -1231,7 +1254,7 @@ async function doSubmit() {
     };
     const { data: report, error: reportErr } = await sb
       .from('daily_reports')
-      .upsert(reportPayload, { onConflict: 'salesman_id,report_date' })
+      .upsert(reportPayload, { onConflict: 'salesman_id,report_date,division_code' })
       .select()
       .single();
     if (reportErr) throw reportErr;
@@ -1333,10 +1356,28 @@ function updateDeadline() {
 // ============================================================
 function onSalesmanChange() {
   state.currentSalesmanId = $('salesman-pick').value;
+  // Reset brand to this salesman's primary zone, fallback to first available
+  const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+  state.currentBrand = (salesman?.area && MENTAKAB_BRANDS.includes(salesman.area))
+    ? salesman.area
+    : (MENTAKAB_BRANDS[0] || '');
   state.todayCustomers = [];
   state.expandedCode = null;
   state.submitted = false;
+  renderBrandDropdown();
   renderRouteHeader();
+  renderCustomers();
+  renderStats();
+}
+
+function onBrandChange() {
+  state.currentBrand = $('brand-pick').value;
+  // Brand affects which DSR we're working on. For pilot V1 we keep entries
+  // in-memory per browser session — switching brand means a fresh start
+  // for that (salesman, brand, today) DSR.
+  state.todayCustomers = [];
+  state.expandedCode = null;
+  state.submitted = false;
   renderCustomers();
   renderStats();
 }
@@ -1360,6 +1401,20 @@ async function loadInitialData() {
 
   if (SALESMEN.length === 0) {
     throw new Error('No pilot salesmen found. Contact admin.');
+  }
+
+  // Fetch distinct Mentakab brand zones for the Brand dropdown
+  const { data: zoneRows, error: zoneErr } = await sb
+    .from('salesmen')
+    .select('zone')
+    .eq('branch_code', 'M')
+    .not('zone', 'is', null)
+    .order('zone');
+  if (zoneErr) console.warn('zone fetch failed', zoneErr);
+  MENTAKAB_BRANDS = [...new Set((zoneRows || []).map(r => r.zone).filter(Boolean))].sort();
+  if (MENTAKAB_BRANDS.length === 0) {
+    // Fallback so the dropdown is never empty if zone query fails
+    MENTAKAB_BRANDS = ['M-ACLO','M-ANGENET','M-DL','M-GEN','M-GRO','M-GS','M-MARS','M-MDL','M-MRG','M-PANA','M-PHL','M-PWR','M-RBHC','M-UNL','M-UNZA'];
   }
 
   // Pick first salesman as default
@@ -1396,6 +1451,7 @@ async function init() {
   }
 
   renderSalesmanDropdown();
+  renderBrandDropdown();
   renderPriorities();
   renderRouteHeader();
   renderCustomers();
@@ -1404,6 +1460,7 @@ async function init() {
   setInterval(updateDeadline, 60000);
 
   $('salesman-pick').addEventListener('change', onSalesmanChange);
+  $('brand-pick').addEventListener('change', onBrandChange);
   $('open-search-btn').addEventListener('click', openSearchModal);
   $('open-newop-btn').addEventListener('click', openNewOpModal);
   $('search-input').addEventListener('input', onSearchInput);

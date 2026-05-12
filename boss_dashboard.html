@@ -599,7 +599,7 @@ async function fetchAll() {
 
   const [reportsRes, entriesRes, alertsRes, monthEntriesRes] = await Promise.all([
     sb.from('daily_reports')
-      .select('id, salesman_id, status, total_visits, total_sales, total_collection, effective_calls, strike_rate_pct, submitted_at, is_late, created_at')
+      .select('id, salesman_id, division_code, status, total_visits, total_sales, total_collection, effective_calls, strike_rate_pct, submitted_at, is_late, created_at')
       .eq('report_date', today).in('salesman_id', pilotIds),
 
     sb.from('dsr_entries')
@@ -643,14 +643,23 @@ function render({ reports, entries, alerts, monthEntries }) {
 }
 
 function renderKPIs(reports, alerts) {
-  const submitted  = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
-  const draft      = reports.filter(r => r.status === 'draft').length;
-  const total      = pilots.length;
-  const pending    = total - submitted;
+  // Multiple reports per salesman per day (one per brand). Count by distinct salesman.
+  const submittedIds = new Set(
+    reports.filter(r => r.status === 'submitted' || r.status === 'approved').map(r => r.salesman_id)
+  );
+  const draftIds     = new Set(
+    reports.filter(r => r.status === 'draft').map(r => r.salesman_id)
+  );
+  const submitted = submittedIds.size;
+  const draft     = draftIds.size;
+  const total     = pilots.length;
+  const pending   = total - submitted;
 
+  const totalBrandReports = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
   $('k-submitted').textContent = submitted + '/' + total;
   $('k-submitted-sub').textContent =
     (pending > 0 ? pending + ' pending' : 'all done ✓') +
+    (totalBrandReports > submitted ? ' · ' + totalBrandReports + ' brand reports' : '') +
     (draft > 0 ? ' · ' + draft + ' draft' : '');
   $('kpi-submitted').className = 'kpi ' + (submitted === total ? 'good' : (submitted === 0 ? 'bad' : 'warn'));
 
@@ -684,21 +693,20 @@ function setLayer(idPrefix, status, metric, detail, statusLabel) {
 
 function renderTrustLayers(reports, entries, alerts) {
   const total = pilots.length;
-  const submitted = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
+  // Q2-A: a Champion is "submitted" if ≥1 brand DSR submitted today (lenient)
+  const submittedSalesmen = new Set(
+    reports.filter(r => r.status === 'submitted' || r.status === 'approved').map(r => r.salesman_id)
+  );
+  const submitted = submittedSalesmen.size;
   const pending = total - submitted;
   const lateAlerts = alerts.filter(a => a.alert_type === 'late_submission');
 
   // ---------- LAYER 1: Submission Trust ----------
-  // Map salesman -> report status
-  const reportById = {};
-  reports.forEach(r => { reportById[r.salesman_id] = r; });
   const pendingNames = pilots
-    .filter(p => {
-      const r = reportById[p.id];
-      return !r || (r.status !== 'submitted' && r.status !== 'approved');
-    })
+    .filter(p => !submittedSalesmen.has(p.id))
     .map(p => p.sr_code || p.full_name || p.name)
     .filter(Boolean);
+  const totalBrandReports = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
 
   let l1Status, l1Label, l1Detail;
   if (lateAlerts.length > 0) {
@@ -707,7 +715,7 @@ function renderTrustLayers(reports, entries, alerts) {
       ' · ' + pendingNames.slice(0, 3).join(', ') + (pendingNames.length > 3 ? '...' : '');
   } else if (submitted === total) {
     l1Status = 'green'; l1Label = 'CLEAR';
-    l1Detail = 'All ' + total + ' champions submitted on time. No late alerts.';
+    l1Detail = 'All ' + total + ' champions submitted ≥1 brand DSR today (' + totalBrandReports + ' brand reports total).';
   } else if (submitted === 0) {
     l1Status = 'amber'; l1Label = 'WAITING';
     l1Detail = 'No submissions yet today. Deadline 23:59. ' + total + ' champions outstanding.';
@@ -779,44 +787,62 @@ function renderSubmissionStatus(reports) {
   const list = $('submission-list');
   if (!pilots.length) { list.innerHTML = '<div class="empty">No pilot salesmen configured</div>'; return; }
 
-  const byId = {};
-  reports.forEach(r => { byId[r.salesman_id] = r; });
+  // Group reports by salesman_id — each salesman may have multiple (one per brand)
+  const reportsBySalesman = {};
+  reports.forEach(r => {
+    (reportsBySalesman[r.salesman_id] = reportsBySalesman[r.salesman_id] || []).push(r);
+  });
 
   const ranked = pilots.map(p => {
-    const r = byId[p.id];
+    const myReports = reportsBySalesman[p.id] || [];
+    const submitted = myReports.filter(r => r.status === 'submitted' || r.status === 'approved');
+    const drafts    = myReports.filter(r => r.status === 'draft');
     let state, weight;
-    if (!r)                                                       { state = 'wait';  weight = 3; }
-    else if (r.status === 'submitted' || r.status === 'approved') { state = 'ok';    weight = 1; }
-    else if (r.status === 'draft')                                { state = 'draft'; weight = 2; }
-    else                                                          { state = 'wait';  weight = 3; }
-    return { p, r, state, weight };
+    if (submitted.length > 0)  { state = 'ok';    weight = 1; }
+    else if (drafts.length > 0) { state = 'draft'; weight = 2; }
+    else                        { state = 'wait';  weight = 3; }
+    return { p, myReports, submitted, drafts, state, weight };
   }).sort((a, b) => a.weight - b.weight || (a.p.full_name || '').localeCompare(b.p.full_name || ''));
 
-  list.innerHTML = ranked.map(({ p, r, state }) => {
+  list.innerHTML = ranked.map(({ p, myReports, submitted, drafts, state }) => {
     const name = p.full_name || p.name || p.sr_code;
-    const stat = state === 'ok'    ? { icon: '✓', label: 'Submitted' }
+    const stat = state === 'ok'    ? { icon: '✓', label: submitted.length + (submitted.length === 1 ? ' Brand ✓' : ' Brands ✓') }
               : state === 'draft' ? { icon: '✎', label: 'Draft' }
               :                      { icon: '◐', label: 'Pending' };
-    const visits = r?.total_visits ?? 0;
-    const sales  = r?.total_sales  ?? 0;
-    const sr     = r?.strike_rate_pct;
-    const subAt  = r?.submitted_at;
+    const totalVisits = myReports.reduce((s, r) => s + Number(r.total_visits || 0), 0);
+    const totalSales  = myReports.reduce((s, r) => s + Number(r.total_sales  || 0), 0);
+    // Newest submitted_at among submitted reports
+    const latestAt = submitted
+      .map(r => r.submitted_at)
+      .filter(Boolean)
+      .sort()
+      .slice(-1)[0];
+
+    // Render brand badges: ACLO ✓ · MARS ✓ · MDL ✎  (ACLO/MARS submitted, MDL draft)
+    const brandBadges = myReports
+      .sort((a, b) => (a.division_code || '').localeCompare(b.division_code || ''))
+      .map(r => {
+        const code = (r.division_code || '?').replace(/^M-/, '');
+        const isSubmitted = r.status === 'submitted' || r.status === 'approved';
+        const colour = isSubmitted ? 'var(--green-bright)' : 'var(--amber-bright)';
+        const symbol = isSubmitted ? '✓' : '✎';
+        return `<span style="color:${colour}; font-weight:600; font-size:10.5px; margin-right:8px;">${escHtml(code)} ${symbol}</span>`;
+      }).join('');
+
     return `
       <div class="sub-row">
         <div class="sub-icon ${state}">${stat.icon}</div>
         <div>
-          <div class="sub-name">${escHtml(name)}</div>
+          <div class="sub-name">${escHtml(name)} <span style="font-size:11px; color:var(--gray); font-weight:500;">· ${escHtml(p.sr_code || '')}</span></div>
           <div class="sub-meta">
-            <span>${escHtml(p.sr_code || '')}</span>
-            ${r ? `<span>${visits} visits</span>` : ''}
-            ${r && sr != null ? `<span>SR ${Number(sr).toFixed(0)}%</span>` : ''}
-            ${p.phone ? `<span>${escHtml(p.phone)}</span>` : ''}
+            ${brandBadges || '<span>—</span>'}
           </div>
+          ${myReports.length > 0 ? `<div class="sub-meta"><span>${totalVisits} visits total</span>${p.phone ? `<span>${escHtml(p.phone)}</span>` : ''}</div>` : ''}
         </div>
         <div class="sub-right">
           <div class="sub-status ${state}">${stat.label}</div>
-          ${sales > 0 ? `<div class="sub-sales">${fmtRM(sales)}</div>` : ''}
-          ${subAt ? `<div class="sub-time">${fmtHM(subAt)}</div>` : ''}
+          ${totalSales > 0 ? `<div class="sub-sales">${fmtRM(totalSales)}</div>` : ''}
+          ${latestAt ? `<div class="sub-time">${fmtHM(latestAt)}</div>` : ''}
         </div>
       </div>
     `;
