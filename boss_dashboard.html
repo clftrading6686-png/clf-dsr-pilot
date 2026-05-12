@@ -59,15 +59,6 @@ body {
 .logo span { font-size: 8px; color: var(--gold); margin-top: 2px; }
 .title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
 .title-block .sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
-.header-center {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border);
-  padding: 6px 14px; border-radius: 999px;
-  font-size: 13px;
-}
-.header-center .branch-flag { color: var(--gold-bright); font-weight: 600; }
-.header-center .pilot-flag { color: var(--gray-light); font-size: 11px; }
 .header-right { text-align: right; }
 .clock { font-size: 26px; font-weight: 600; font-family: 'Geist Mono', monospace; }
 .date-controls {
@@ -427,7 +418,7 @@ body {
   <div class="kpi">
     <div class="label">Collections</div>
     <div class="value" id="k-collect">RM 0</div>
-    <div class="value-sub">reported today</div>
+    <div class="value-sub">reported</div>
   </div>
   <div class="kpi">
     <div class="label">Strike Rate</div>
@@ -614,6 +605,8 @@ function setupDatePicker() {
   const picker = $('date-pick');
   picker.value = viewDate;
   picker.max   = todayMY();   // don't allow future
+  // Refresh max on focus so a stale tab past midnight still allows picking "real today"
+  picker.addEventListener('focus', () => { picker.max = todayMY(); });
   picker.addEventListener('change', () => {
     viewDate = picker.value || todayMY();
     onViewDateChange();
@@ -621,6 +614,7 @@ function setupDatePicker() {
   $('today-btn').addEventListener('click', () => {
     viewDate = todayMY();
     picker.value = viewDate;
+    picker.max   = todayMY();
     onViewDateChange();
   });
   onViewDateChange();  // initial state — also triggers fetchAll
@@ -757,7 +751,9 @@ function setLayer(idPrefix, status, metric, detail, statusLabel) {
 
 function renderTrustLayers(reports, entries, alerts) {
   const total = pilots.length;
-  // Q2-A: a Champion is "submitted" if ≥1 brand DSR submitted today (lenient)
+  const isToday = viewDate === todayMY();
+  const dayPhrase = isToday ? 'today' : 'on ' + viewDate;
+  // Q2-A: a Champion is "submitted" if ≥1 brand DSR submitted on the viewing date (lenient)
   const submittedSalesmen = new Set(
     reports.filter(r => r.status === 'submitted' || r.status === 'approved').map(r => r.salesman_id)
   );
@@ -779,10 +775,12 @@ function renderTrustLayers(reports, entries, alerts) {
       ' · ' + pendingNames.slice(0, 3).join(', ') + (pendingNames.length > 3 ? '...' : '');
   } else if (submitted === total) {
     l1Status = 'green'; l1Label = 'CLEAR';
-    l1Detail = 'All ' + total + ' champions submitted ≥1 brand DSR today (' + totalBrandReports + ' brand reports total).';
+    l1Detail = 'All ' + total + ' champions submitted ≥1 brand DSR ' + dayPhrase + ' (' + totalBrandReports + ' brand reports total).';
   } else if (submitted === 0) {
-    l1Status = 'amber'; l1Label = 'WAITING';
-    l1Detail = 'No submissions yet today. Deadline 23:59. ' + total + ' champions outstanding.';
+    l1Status = 'amber'; l1Label = isToday ? 'WAITING' : 'EMPTY';
+    l1Detail = isToday
+      ? 'No submissions yet today. Deadline 23:59. ' + total + ' champions outstanding.'
+      : 'No submissions recorded on ' + viewDate + '. ' + total + ' champions had no DSR that day.';
   } else {
     l1Status = 'amber'; l1Label = 'PARTIAL';
     l1Detail = pending + ' pending: ' + pendingNames.slice(0, 3).join(', ') + (pendingNames.length > 3 ? '...' : '');
@@ -805,7 +803,7 @@ function renderTrustLayers(reports, entries, alerts) {
   } else if (gpsEntries.length === 0 && gpsEntriesWithCheckin === 0) {
     l2Status = 'gray'; l2Label = 'NO DATA';
     l2Metric = '—';
-    l2Detail = 'No GPS check-ins captured today. (Pilot phase: customer GPS coords not in master yet — variance check inactive.)';
+    l2Detail = 'No GPS check-ins captured ' + dayPhrase + '. (Pilot phase: customer GPS coords not in master yet — variance check inactive.)';
   } else {
     l2Status = 'green'; l2Label = 'CLEAR';
     l2Metric = '0';

@@ -1371,10 +1371,26 @@ function onSalesmanChange() {
 }
 
 function onBrandChange() {
-  state.currentBrand = $('brand-pick').value;
-  // Brand affects which DSR we're working on. For pilot V1 we keep entries
-  // in-memory per browser session — switching brand means a fresh start
-  // for that (salesman, brand, today) DSR.
+  const newBrand = $('brand-pick').value;
+  const oldBrand = state.currentBrand;
+  if (newBrand === oldBrand) return;
+
+  // Brand affects which DSR we're working on. Switching brand means a fresh start
+  // for that (salesman, brand, today) DSR — so confirm if work-in-progress exists.
+  const hasWork = state.todayCustomers.length > 0;
+  if (hasWork) {
+    const ok = confirm(
+      `Switch from ${oldBrand} to ${newBrand}?\n\n` +
+      `Tukar dari ${oldBrand} ke ${newBrand}?\n\n` +
+      `Your ${state.todayCustomers.length} current entries will be cleared.\n` +
+      `${state.todayCustomers.length} rekod semasa akan dipadam.`
+    );
+    if (!ok) {
+      $('brand-pick').value = oldBrand;   // revert dropdown
+      return;
+    }
+  }
+  state.currentBrand = newBrand;
   state.todayCustomers = [];
   state.expandedCode = null;
   state.submitted = false;
