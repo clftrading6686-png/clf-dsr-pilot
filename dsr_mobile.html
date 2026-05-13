@@ -893,22 +893,22 @@ function renderSalesmanDropdown() {
 }
 
 function renderSalesmanConfirm() {
-  // Show validation state for the typed SR code: ✓ name / ✗ not found / empty
+  // Show validation state for the typed SR code (only after commit via blur/Enter).
+  // Privacy-first like customer search: name doesn't auto-reveal while typing.
   const el = $('who-confirm');
   const input = $('salesman-pick');
   if (!el || !input) return;
   const raw = (input.value || '').trim().toUpperCase();
   if (!raw) {
     el.className = 'who-confirm';
-    el.innerHTML = 'Type your SR code <span class="ml">Taipkan kod SR anda</span>';
+    el.innerHTML = 'Type your SR code, then press Enter <span class="ml">Taipkan kod SR, tekan Enter</span>';
     input.classList.remove('valid', 'invalid');
     return;
   }
   const sm = SALESMEN.find(s => s.sr_code.toUpperCase() === raw);
   if (sm) {
-    const brandCount = (SALESMAN_BRANDS[sm.id] || []).length;
     el.className = 'who-confirm ok';
-    el.innerHTML = `✓ ${escapeHtml(sm.name)}${brandCount > 0 ? ` · ${brandCount} brand${brandCount === 1 ? '' : 's'}` : ''}`;
+    el.innerHTML = `✓ ${escapeHtml(sm.name)}`;
     input.classList.add('valid');
     input.classList.remove('invalid');
   } else {
@@ -1702,8 +1702,17 @@ async function init() {
   updateDeadline();
   setInterval(updateDeadline, 60000);
 
-  // Validate live as user types; commit on change (blur or datalist pick)
-  $('salesman-pick').addEventListener('input',  renderSalesmanConfirm);
+  // Name reveals only on commit (blur, Enter, or datalist pick) — privacy-first like customer search.
+  // Hide any previously-shown name as soon as the user starts editing, so the screen feels private.
+  $('salesman-pick').addEventListener('input', () => {
+    const input = $('salesman-pick');
+    input.classList.remove('valid', 'invalid');
+    const el = $('who-confirm');
+    if (el) {
+      el.className = 'who-confirm';
+      el.innerHTML = 'Press Enter to confirm <span class="ml">Tekan Enter untuk sahkan</span>';
+    }
+  });
   $('salesman-pick').addEventListener('change', onSalesmanChange);
   $('salesman-pick').addEventListener('blur',   onSalesmanChange);
   $('brand-pick').addEventListener('change', onBrandChange);
