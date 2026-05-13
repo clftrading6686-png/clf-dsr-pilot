@@ -65,8 +65,14 @@ body {
 .header-who { padding: 6px 16px 12px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.08); }
 .who-label { font-size: 11px; color: #A8B4C5; line-height: 1.1; }
 .who-label .ml { display: block; font-size: 9px; color: #7A8A9C; }
-.who-select { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; outline: none; }
+.who-select { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; outline: none; text-transform: uppercase; }
 .who-select option { color: var(--text); background: white; }
+.who-select.invalid { border-color: #DC2626; }
+.who-select.valid { border-color: #4ADE80; }
+.who-confirm { padding: 6px 16px 8px; background: rgba(255,255,255,0.03); font-size: 12px; color: var(--gray-light); }
+.who-confirm.ok { color: var(--green-bright); }
+.who-confirm.bad { color: #FCA5A5; }
+.who-confirm .ml { color: #7A8A9C; font-size: 11px; margin-left: 6px; }
 
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(255,255,255,0.08); padding: 0; }
 .stat-cell { background: var(--navy); padding: 10px 8px; text-align: center; }
@@ -296,9 +302,13 @@ body {
   </div>
 
   <div class="header-who">
-    <div class="who-label">I am<span class="ml">Saya</span></div>
-    <select class="who-select" id="salesman-pick"></select>
+    <div class="who-label">SR Code<span class="ml">Kod SR</span></div>
+    <input type="text" class="who-select" id="salesman-pick"
+           list="salesman-codes-list" placeholder="e.g. LEN-KM"
+           autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <datalist id="salesman-codes-list"></datalist>
   </div>
+  <div class="who-confirm" id="who-confirm">Type your SR code <span class="ml">Taipkan kod SR anda</span></div>
 
   <div class="header-who">
     <div class="who-label">Brand<span class="ml">Jenama</span></div>
@@ -497,9 +507,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ============================================================
 // DATA (populated from Supabase on init)
 // ============================================================
-let SALESMEN = [];          // pilot champions from Supabase
+let SALESMEN = [];           // ALL active Mentakab salesmen from Supabase
 let MONTHLY_PRIORITIES = []; // current month from Supabase
-let MENTAKAB_BRANDS = [];    // distinct zone codes (M-ACLO, M-MARS, ...) from Supabase
+let MENTAKAB_BRANDS = [];    // distinct zone codes (M-ACLO, M-MARS, ...) — fallback only
+let SALESMAN_BRANDS = {};    // map: salesman_id → ['M-ACLO', 'M-MARS', ...] (their covered brands)
+
+// Map: brand zone code (M-XX) → DB brand name. Used to translate between
+// salesman_brands.brand_id (which joins on brands.name) and the M-* codes
+// shown to users in the Brand dropdown.
+const BRAND_CODE_TO_DB_NAME = {
+  'M-ACLO':'A.CLOUET','M-ANGENET':'ANGENET','M-DL':'DL','M-GEN':'GENERAL',
+  'M-GRO':'GROCERY','M-GS':'GS','M-GSK':'GSK','M-LPT':'LIPTON',
+  'M-MARS':'WRIGLEY','M-MDL':'MONDELEZ','M-MRG':'MARIGOLD','M-MYR':'MAYORA',
+  'M-NABATI':'NABATI','M-PANA':'PANASONIC','M-PHL':'PHILIPS','M-PWR':'P.ROOT',
+  'M-RBHC':'RBHC','M-UNL':'UNILEVER','M-UNZA':'UNZA'
+};
+const DB_NAME_TO_BRAND_CODE = Object.fromEntries(
+  Object.entries(BRAND_CODE_TO_DB_NAME).map(([k, v]) => [v, k])
+);
 // Customer search is server-side via Supabase ILIKE — never load full list
 
 // Kept here for backward-compat with search function (now unused)
@@ -851,9 +876,47 @@ function addNewOp() {
 // RENDERING
 // ============================================================
 function renderSalesmanDropdown() {
-  $('salesman-pick').innerHTML = SALESMEN.map(s =>
-    `<option value="${s.sr_code}"${s.sr_code === state.currentSalesmanId ? ' selected' : ''}>${s.name}</option>`
+  // Populate the datalist with all active Mentakab salesmen (SR code → name hint).
+  // Browser shows native autocomplete as user types.
+  $('salesman-codes-list').innerHTML = SALESMEN.map(s =>
+    `<option value="${escapeHtml(s.sr_code)}" label="${escapeHtml(s.name || '')}">`
   ).join('');
+  // Pre-fill input if we restored state.currentSalesmanId from localStorage
+  const input = $('salesman-pick');
+  if (state.currentSalesmanId) {
+    input.value = state.currentSalesmanId;
+    renderSalesmanConfirm();
+  } else {
+    input.value = '';
+    renderSalesmanConfirm();
+  }
+}
+
+function renderSalesmanConfirm() {
+  // Show validation state for the typed SR code: ✓ name / ✗ not found / empty
+  const el = $('who-confirm');
+  const input = $('salesman-pick');
+  if (!el || !input) return;
+  const raw = (input.value || '').trim().toUpperCase();
+  if (!raw) {
+    el.className = 'who-confirm';
+    el.innerHTML = 'Type your SR code <span class="ml">Taipkan kod SR anda</span>';
+    input.classList.remove('valid', 'invalid');
+    return;
+  }
+  const sm = SALESMEN.find(s => s.sr_code.toUpperCase() === raw);
+  if (sm) {
+    const brandCount = (SALESMAN_BRANDS[sm.id] || []).length;
+    el.className = 'who-confirm ok';
+    el.innerHTML = `✓ ${escapeHtml(sm.name)}${brandCount > 0 ? ` · ${brandCount} brand${brandCount === 1 ? '' : 's'}` : ''}`;
+    input.classList.add('valid');
+    input.classList.remove('invalid');
+  } else {
+    el.className = 'who-confirm bad';
+    el.innerHTML = `✗ SR code not found <span class="ml">Kod tidak dijumpai</span>`;
+    input.classList.add('invalid');
+    input.classList.remove('valid');
+  }
 }
 
 function renderBrandSummary() {
@@ -892,14 +955,20 @@ function renderBrandSummary() {
 }
 
 function renderBrandDropdown() {
-  // Default to this salesman's primary zone if no brand picked yet
+  // Filter brand options to this salesman's covered brands (from salesman_brands).
+  // Fallback: if salesman has no coverage data, show all Mentakab brands.
   const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
-  if (!state.currentBrand && salesman?.area) {
-    state.currentBrand = MENTAKAB_BRANDS.includes(salesman.area) ? salesman.area : MENTAKAB_BRANDS[0];
-  } else if (!state.currentBrand && MENTAKAB_BRANDS.length) {
-    state.currentBrand = MENTAKAB_BRANDS[0];
+  let available = (salesman && SALESMAN_BRANDS[salesman.id]) || [];
+  if (available.length === 0) available = MENTAKAB_BRANDS.slice();
+
+  // Default current brand to primary zone if in coverage, else first available
+  if (!state.currentBrand || !available.includes(state.currentBrand)) {
+    state.currentBrand = (salesman?.area && available.includes(salesman.area))
+      ? salesman.area
+      : (available[0] || '');
   }
-  $('brand-pick').innerHTML = MENTAKAB_BRANDS.map(z =>
+
+  $('brand-pick').innerHTML = available.map(z =>
     `<option value="${z}"${z === state.currentBrand ? ' selected' : ''}>${z}</option>`
   ).join('');
 }
@@ -1212,7 +1281,12 @@ function renderStats() {
   $('stat-target').textContent = targetPct + '%';
   $('bar-sales').textContent = `RM ${fmtRM(sales)}`;
   $('bar-coll').textContent = `RM ${fmtRM(coll)}`;
-  $('submit-btn').disabled = visits === 0 && state.todayCustomers.length === 0;
+
+  const hasValidSr = !!state.currentSalesmanId
+    && !!SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+  $('submit-btn').disabled = !hasValidSr || (visits === 0 && state.todayCustomers.length === 0);
+  $('open-search-btn').disabled = !hasValidSr;
+  $('open-newop-btn').disabled = !hasValidSr;
 }
 
 // ============================================================
@@ -1470,18 +1544,43 @@ function updateDeadline() {
 // INIT
 // ============================================================
 function onSalesmanChange() {
-  state.currentSalesmanId = $('salesman-pick').value;
-  // Reset brand to this salesman's primary zone, fallback to first available
-  const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
-  state.currentBrand = (salesman?.area && MENTAKAB_BRANDS.includes(salesman.area))
+  // SR Code text input (with datalist autocomplete). Normalize uppercase + trim.
+  const input = $('salesman-pick');
+  const typed = (input.value || '').trim().toUpperCase();
+  input.value = typed;
+  renderSalesmanConfirm();
+
+  const salesman = SALESMEN.find(s => s.sr_code.toUpperCase() === typed);
+  if (!salesman) {
+    // Invalid SR — clear any in-progress state to prevent silent submission as wrong identity
+    state.currentSalesmanId = '';
+    state.entriesByBrand = {};
+    state.todayCustomers = [];
+    state.expandedCode = null;
+    renderBrandDropdown();
+    renderCustomers();
+    renderStats();
+    renderBrandSummary();
+    return;
+  }
+
+  state.currentSalesmanId = salesman.sr_code;
+  // Persist for next session
+  try { localStorage.setItem('clf_dsr_sr_code', salesman.sr_code); } catch (e) {}
+
+  // Default brand = primary zone if in coverage, else first covered brand
+  const covered = SALESMAN_BRANDS[salesman.id] || MENTAKAB_BRANDS;
+  state.currentBrand = (salesman.area && covered.includes(salesman.area))
     ? salesman.area
-    : (MENTAKAB_BRANDS[0] || '');
+    : (covered[0] || '');
+
   // Changing salesman = brand-new DSR session — reset per-brand storage
   state.entriesByBrand = {};
   state.todayCustomers = [];
   state.entriesByBrand[state.currentBrand] = state.todayCustomers;  // link by reference
   state.expandedCode = null;
   state.submitted = false;
+
   renderBrandDropdown();
   renderCustomers();
   renderStats();
@@ -1509,13 +1608,13 @@ function onBrandChange() {
 }
 
 async function loadInitialData() {
-  // Fetch pilot champions (only is_pilot=true salesmen visible)
+  // Fetch ALL active Mentakab salesmen (no longer is_pilot=true — all 40 in pool)
   const { data: salesmen, error: smErr } = await sb
     .from('salesmen')
     .select('id, sr_code, name, full_name, phone, zone')
-    .eq('is_pilot', true)
+    .eq('branch_code', 'M')
     .eq('status', 'Active')
-    .order('full_name');
+    .order('sr_code');
   if (smErr) throw new Error('Failed to load salesmen: ' + smErr.message);
   SALESMEN = (salesmen || []).map(s => ({
     id: s.id,
@@ -1526,25 +1625,35 @@ async function loadInitialData() {
   }));
 
   if (SALESMEN.length === 0) {
-    throw new Error('No pilot salesmen found. Contact admin.');
+    throw new Error('No active Mentakab salesmen found. Contact admin.');
   }
 
-  // Fetch distinct Mentakab brand zones for the Brand dropdown
-  const { data: zoneRows, error: zoneErr } = await sb
-    .from('salesmen')
-    .select('zone')
-    .eq('branch_code', 'M')
-    .not('zone', 'is', null)
-    .order('zone');
-  if (zoneErr) console.warn('zone fetch failed', zoneErr);
-  MENTAKAB_BRANDS = [...new Set((zoneRows || []).map(r => r.zone).filter(Boolean))].sort();
-  if (MENTAKAB_BRANDS.length === 0) {
-    // Fallback so the dropdown is never empty if zone query fails
-    MENTAKAB_BRANDS = ['M-ACLO','M-ANGENET','M-DL','M-GEN','M-GRO','M-GS','M-MARS','M-MDL','M-MRG','M-PANA','M-PHL','M-PWR','M-RBHC','M-UNL','M-UNZA'];
-  }
+  // Fetch salesman_brands joined with brand.name → build SALESMAN_BRANDS map
+  // Key: salesman_id (UUID), value: ['M-ACLO','M-MARS',...] zone codes covered
+  const { data: sbRows, error: sbErr } = await sb
+    .from('salesman_brands')
+    .select('salesman_id, brands(name)');
+  if (sbErr) console.warn('salesman_brands fetch failed', sbErr);
+  SALESMAN_BRANDS = {};
+  (sbRows || []).forEach(r => {
+    const code = DB_NAME_TO_BRAND_CODE[r.brands?.name];
+    if (!code) return;
+    if (!SALESMAN_BRANDS[r.salesman_id]) SALESMAN_BRANDS[r.salesman_id] = [];
+    SALESMAN_BRANDS[r.salesman_id].push(code);
+  });
+  // Sort each salesman's brand list
+  Object.keys(SALESMAN_BRANDS).forEach(sid => SALESMAN_BRANDS[sid].sort());
 
-  // Pick first salesman as default
-  state.currentSalesmanId = SALESMEN[0].sr_code;
+  // Fallback Mentakab brand list (used if a salesman has no salesman_brands entry yet)
+  MENTAKAB_BRANDS = ['M-ACLO','M-ANGENET','M-DL','M-GEN','M-GRO','M-GS','M-GSK','M-LPT','M-MARS','M-MDL','M-MRG','M-MYR','M-NABATI','M-PANA','M-PHL','M-PWR','M-RBHC','M-UNL','M-UNZA'];
+
+  // Restore last-used SR code from localStorage if it matches an active salesman
+  const savedSr = (typeof localStorage !== 'undefined') ? localStorage.getItem('clf_dsr_sr_code') : null;
+  if (savedSr && SALESMEN.find(s => s.sr_code === savedSr)) {
+    state.currentSalesmanId = savedSr;
+  } else {
+    state.currentSalesmanId = '';  // force user to type SR code
+  }
 
   // Fetch monthly priorities for current month + Mentakab (or null for all branches)
   const monthYear = new Date().toISOString().slice(0, 7);
@@ -1565,19 +1674,25 @@ async function loadInitialData() {
 }
 
 async function init() {
-  // Show loading state
-  $('salesman-pick').innerHTML = '<option>⏳ Loading...</option>';
+  // Show loading state (input placeholder)
+  $('salesman-pick').placeholder = '⏳ Loading...';
 
   try {
     await loadInitialData();
   } catch (e) {
     showToast('❌ Load failed: ' + e.message, true);
-    $('salesman-pick').innerHTML = '<option>⚠ Connection failed</option>';
+    $('salesman-pick').placeholder = '⚠ Connection failed';
     return;
   }
+  $('salesman-pick').placeholder = 'e.g. LEN-KM';
 
-  renderSalesmanDropdown();
-  renderBrandDropdown();
+  renderSalesmanDropdown();         // populates datalist + pre-fills input from localStorage if any
+  // If we restored a valid SR code, run onSalesmanChange logic to set brand + state
+  if (state.currentSalesmanId) {
+    onSalesmanChange();
+  } else {
+    renderBrandDropdown();          // shows full fallback list until SR code is entered
+  }
   // Link the initial brand's storage slot to todayCustomers (so persist works from first edit)
   if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
   renderPriorities();
@@ -1587,7 +1702,10 @@ async function init() {
   updateDeadline();
   setInterval(updateDeadline, 60000);
 
+  // Validate live as user types; commit on change (blur or datalist pick)
+  $('salesman-pick').addEventListener('input',  renderSalesmanConfirm);
   $('salesman-pick').addEventListener('change', onSalesmanChange);
+  $('salesman-pick').addEventListener('blur',   onSalesmanChange);
   $('brand-pick').addEventListener('change', onBrandChange);
   $('open-search-btn').addEventListener('click', openSearchModal);
   $('open-newop-btn').addEventListener('click', openNewOpModal);
@@ -1600,7 +1718,12 @@ async function init() {
     });
   });
 
-  showToast(`✓ Welcome ${SALESMEN[0].name.split(' ')[0]}!`);
+  if (state.currentSalesmanId) {
+    const s = SALESMEN.find(x => x.sr_code === state.currentSalesmanId);
+    if (s) showToast(`✓ Welcome back ${s.name.split(' ')[0]}!`);
+  } else {
+    showToast(`👋 Type your SR code to begin`);
+  }
 }
 
 init();
