@@ -76,13 +76,6 @@ body {
 
 .container { padding: 12px; max-width: 600px; margin: 0 auto; }
 
-.route-banner { background: linear-gradient(135deg, var(--gold-light) 0%, #FFF 100%); border: 1px solid var(--gold); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-.route-icon { font-size: 22px; }
-.route-info { flex: 1; }
-.route-info .top { font-size: 13px; font-weight: 600; color: var(--gold-dark); }
-.route-info .top .ml { font-weight: 400; color: var(--gold-dark); opacity: 0.75; margin-left: 6px; font-size: 11px; }
-.route-info .meta { font-size: 11px; color: var(--text-2); margin-top: 2px; }
-.route-info .meta .pill { display: inline-block; background: white; padding: 1px 8px; border-radius: 999px; font-weight: 600; color: var(--gold-dark); margin-right: 4px; font-size: 10.5px; }
 
 .priorities-card { background: white; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); }
 .priorities-card .title { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
@@ -325,18 +318,6 @@ body {
 </div>
 
 <div class="container">
-
-  <div class="route-banner">
-    <div class="route-icon">🗺️</div>
-    <div class="route-info">
-      <div class="top">Today's Visits<span class="ml">Lawatan Hari Ini</span></div>
-      <div class="meta">
-        <span class="pill" id="route-pill">W3D2</span>
-        <span id="route-area">TRIANG</span> ·
-        <span id="route-date">14/05/2026</span>
-      </div>
-    </div>
-  </div>
 
   <div class="priorities-card">
     <div class="title">⭐ Monthly Priorities <span class="ml">· Keutamaan Bulanan</span></div>
@@ -886,15 +867,13 @@ function renderPriorities() {
   ).join('');
 }
 
-function renderRouteHeader() {
-  const s = SALESMEN.find(x => x.sr_code === state.currentSalesmanId) || {};
+// Compute the week_day_code (e.g. "W2D3") for stamping daily_reports on submit.
+function computeWeekDayCode() {
   const d = new Date();
   const dayOfMonth = d.getDate();
   const week = Math.ceil(dayOfMonth / 7);
-  const dow = ((d.getDay() + 6) % 7) + 1; // Mon=1 ... Sun=7
-  $('route-pill').textContent = `W${week}D${dow}`;
-  $('route-area').textContent = s.area || '-';
-  $('route-date').textContent = todayDisplay();
+  const dow  = ((d.getDay() + 6) % 7) + 1; // Mon=1 ... Sun=7
+  return `W${week}D${dow}`;
 }
 
 function renderCustomers() {
@@ -1240,7 +1219,7 @@ async function doSubmit() {
       report_date: todayMY,
       branch_code: branchCode,
       division_code: state.currentBrand,
-      week_day_code: $('route-pill').textContent.trim(),
+      week_day_code: computeWeekDayCode(),
       total_visits: visits,
       total_sales: sales,
       total_collection: coll,
@@ -1365,7 +1344,6 @@ function onSalesmanChange() {
   state.expandedCode = null;
   state.submitted = false;
   renderBrandDropdown();
-  renderRouteHeader();
   renderCustomers();
   renderStats();
 }
@@ -1469,7 +1447,6 @@ async function init() {
   renderSalesmanDropdown();
   renderBrandDropdown();
   renderPriorities();
-  renderRouteHeader();
   renderCustomers();
   renderStats();
   updateDeadline();
