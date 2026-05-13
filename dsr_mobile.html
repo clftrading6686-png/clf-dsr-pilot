@@ -81,6 +81,18 @@ body {
 .priorities-card .title { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
 .priorities-card .title .ml { text-transform: none; letter-spacing: 0; opacity: 0.75; font-weight: 500; }
 .priorities-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.brand-summary { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.brand-summary-chip {
+  padding: 5px 10px; background: var(--blue-light); border: 1px solid var(--blue);
+  color: var(--blue); border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  cursor: pointer; user-select: none; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.brand-summary-chip:hover { filter: brightness(0.95); }
+.brand-summary-chip.current { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+.brand-summary-chip .count { font-family: 'Geist Mono', monospace; opacity: 0.8; font-size: 10.5px; }
+.brand-summary-chip .submit-hint { font-size: 9.5px; opacity: 0.65; margin-left: 2px; }
+
 .priority-chip { background: var(--blue-light); color: var(--blue); padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .priority-chip .num { background: var(--blue); color: white; width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
 
@@ -324,6 +336,8 @@ body {
     <div class="priorities-list" id="priorities-list"></div>
   </div>
 
+  <div class="brand-summary" id="brand-summary"></div>
+
   <!-- ACTION BUTTONS — Privacy-first: search to add customer -->
   <div class="action-bar">
     <button class="action-btn search" id="open-search-btn">
@@ -536,7 +550,8 @@ const CUSTOMER_MASTER = [
 const state = {
   currentSalesmanId: 'LOKE-CP',
   currentBrand: '',     // M-ACLO, M-MARS, etc. — set per-salesman default at init
-  todayCustomers: [],   // { code, name, area, category, isNewOp?, entry }
+  todayCustomers: [],   // { code, name, area, category, isNewOp?, entry } — entries for state.currentBrand (alias of entriesByBrand[currentBrand])
+  entriesByBrand: {},   // { 'M-ACLO': [...], 'M-MARS': [...] } — persists when user switches brand; submitted as separate DSRs
   expandedCode: null,
   submitted: false,
   monthTarget: 299439,
@@ -839,6 +854,41 @@ function renderSalesmanDropdown() {
   $('salesman-pick').innerHTML = SALESMEN.map(s =>
     `<option value="${s.sr_code}"${s.sr_code === state.currentSalesmanId ? ' selected' : ''}>${s.name}</option>`
   ).join('');
+}
+
+function renderBrandSummary() {
+  // Show chips for brands that have ≥1 entry (allows quick switch).
+  // Hidden when only the current brand has entries (and current is empty).
+  const el = $('brand-summary');
+  if (!el) return;
+  const brandsWithEntries = Object.entries(state.entriesByBrand)
+    .filter(([_, arr]) => arr && arr.length > 0)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+  // No work yet → hide
+  if (brandsWithEntries.length === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  // Single brand and it's the current one → no need to show
+  if (brandsWithEntries.length === 1 && brandsWithEntries[0][0] === state.currentBrand) {
+    el.style.display = 'none'; el.innerHTML = ''; return;
+  }
+
+  el.style.display = 'flex';
+  el.innerHTML = brandsWithEntries.map(([b, arr]) =>
+    `<span class="brand-summary-chip ${b === state.currentBrand ? 'current' : ''}" data-brand="${escapeHtml(b)}">
+       ${escapeHtml(b)}
+       <span class="count">${arr.length}</span>
+       ${b === state.currentBrand ? '<span class="submit-hint">· editing</span>' : '<span class="submit-hint">· tap to switch</span>'}
+     </span>`
+  ).join('');
+  el.querySelectorAll('.brand-summary-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const b = chip.getAttribute('data-brand');
+      if (b && b !== state.currentBrand) {
+        $('brand-pick').value = b;
+        $('brand-pick').dispatchEvent(new Event('change'));
+      }
+    });
+  });
 }
 
 function renderBrandDropdown() {
@@ -1170,17 +1220,41 @@ function renderStats() {
 // ============================================================
 function openSubmitModal() {
   saveCurrentInputs();
-  const visits = visitedCount();
-  const eff = effectiveCalls();
-  const sales = totalSales();
-  const coll = totalCollection();
+  // Persist current brand's entries so the multi-brand totals are accurate
+  if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
+
+  // Aggregate across all brands with entries
+  const brandsWithEntries = Object.entries(state.entriesByBrand).filter(([_, arr]) => arr.length > 0);
+  let visits = 0, eff = 0, sales = 0, coll = 0, newOps = 0;
+  brandsWithEntries.forEach(([_, arr]) => {
+    arr.forEach(c => {
+      if (c.entry?.visited) visits++;
+      if ((c.entry?.total_sales || 0) > 0) eff++;
+      sales += Number(c.entry?.total_sales || 0);
+      coll  += Number(c.entry?.total_collection || 0);
+      if (c.isNewOp) newOps++;
+    });
+  });
   const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
   const mtdSales = state.mtdBeforeToday + sales;
   const targetPct = state.monthTarget > 0 ? ((mtdSales / state.monthTarget) * 100).toFixed(2) : 0;
-  const newOps = state.todayCustomers.filter(c => c.isNewOp).length;
+
+  // Per-brand breakdown rows
+  const brandRows = brandsWithEntries.map(([b, arr]) => {
+    const v = arr.filter(c => c.entry?.visited).length;
+    const s = arr.reduce((sum, c) => sum + Number(c.entry?.total_sales || 0), 0);
+    return `<div><span>${escapeHtml(b)}</span><span>${v} visits · RM ${fmtRM(s)}</span></div>`;
+  }).join('');
+
+  const brandCount = brandsWithEntries.length;
+  const dsrCountLabel = brandCount === 0
+    ? '0 — nothing to submit'
+    : brandCount + ' DSR' + (brandCount === 1 ? '' : 's') + ' (' + brandsWithEntries.map(([b]) => b).join(', ') + ')';
 
   $('submit-stats').innerHTML = `
-    <div><span>Total Visits</span><span>${visits}</span></div>
+    <div><span>Submitting</span><span><b>${dsrCountLabel}</b></span></div>
+    ${brandRows}
+    <div style="margin-top:6px; border-top:1px solid var(--border); padding-top:6px;"><span>Total Visits</span><span>${visits}</span></div>
     <div><span>Effective Calls</span><span>${eff}</span></div>
     <div><span>Strike Rate</span><span>${strike}%</span></div>
     <div><span>New Outlets Added</span><span>${newOps}</span></div>
@@ -1192,112 +1266,174 @@ function openSubmitModal() {
 }
 function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
 
+// Submit ONE brand's DSR (1 daily_report + N dsr_entries + photos).
+// Returns the inserted/updated report row. Throws on hard failure.
+async function submitOneBrand(brand, customers, ctx) {
+  // ctx = { now, dl, isLate, todayMY, branchCode, salesman }
+  const visits = customers.filter(c => c.entry?.visited).length;
+  const eff    = customers.filter(c => (c.entry?.total_sales || 0) > 0).length;
+  const sales  = customers.reduce((s, c) => s + Number(c.entry?.total_sales || 0), 0);
+  const coll   = customers.reduce((s, c) => s + Number(c.entry?.total_collection || 0), 0);
+  const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
+
+  const reportPayload = {
+    salesman_id: ctx.salesman.id,
+    report_date: ctx.todayMY,
+    branch_code: ctx.branchCode,
+    division_code: brand,
+    week_day_code: computeWeekDayCode(),
+    total_visits: visits,
+    total_sales: sales,
+    total_collection: coll,
+    effective_calls: eff,
+    strike_rate_pct: strike,
+    status: 'submitted',
+    submitted_at: ctx.now.toISOString(),
+    deadline_at: ctx.dl.toISOString(),
+    is_late: ctx.isLate,
+    monthly_priorities_snapshot: MONTHLY_PRIORITIES,
+  };
+  const { data: report, error: reportErr } = await sb
+    .from('daily_reports')
+    .upsert(reportPayload, { onConflict: 'salesman_id,report_date,division_code' })
+    .select()
+    .single();
+  if (reportErr) throw reportErr;
+
+  // Replace existing entries (idempotent re-submit)
+  await sb.from('dsr_entries').delete().eq('report_id', report.id);
+
+  const entries = customers.map((c, idx) => ({
+    report_id: report.id,
+    customer_id: c.isNewOp ? null : (c.customer_db_id || null),
+    customer_code: c.code,
+    customer_name: c.name,
+    is_new_outlet: !!c.isNewOp,
+    sales_objective: c.entry?.sales_objective || 0,
+    total_sales: Number(c.entry?.total_sales || 0),
+    total_collection: Number(c.entry?.total_collection || 0),
+    visited: !!c.entry?.visited,
+    visit_at: c.entry?.visited ? ctx.now.toISOString() : null,
+    reason_code: c.entry?.reason || null,
+    remark: c.entry?.remark || null,
+    priorities_pushed: c.entry?.priorities || [],
+    gps_checkin: c.entry?.gps || null,
+    sequence_no: idx + 1,
+  }));
+
+  let insertedEntries = [];
+  if (entries.length > 0) {
+    const { data, error: entriesErr } = await sb
+      .from('dsr_entries').insert(entries).select('id, customer_code');
+    if (entriesErr) throw entriesErr;
+    insertedEntries = data || [];
+
+    // Photos
+    const photoRows = [];
+    insertedEntries.forEach(ie => {
+      const c = customers.find(x => x.code === ie.customer_code);
+      if (c?.entry?.photo) {
+        photoRows.push({
+          entry_id: ie.id,
+          storage_path: c.entry.photo_path || '',
+          public_url: c.entry.photo,
+          photo_type: 'storefront',
+          taken_at: ctx.now.toISOString(),
+          gps_at_capture: c.entry.gps || null,
+        });
+      }
+    });
+    if (photoRows.length > 0) {
+      const { error: photoErr } = await sb.from('dsr_photos').insert(photoRows);
+      if (photoErr) console.warn('photo metadata insert failed for', brand, photoErr);
+    }
+  }
+  return { report, visits, eff, sales, coll };
+}
+
 async function doSubmit() {
   // Disable the modal Submit button to prevent double-tap
   const btn = $('submit-modal').querySelector('.btn-primary');
   if (btn) btn.disabled = true;
 
   try {
-    const visits = visitedCount();
-    const eff = effectiveCalls();
-    const sales = totalSales();
-    const coll = totalCollection();
-    const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
-    const now = new Date();
-    const dl = new Date(now); dl.setHours(23, 59, 0, 0);
-    const isLate = now > dl;
-    const todayMY = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
-    const branchCode = 'M';
+    saveCurrentInputs();
+    // Persist current brand's entries before iterating
+    if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
+
+    const brandsToSubmit = Object.entries(state.entriesByBrand)
+      .filter(([_, arr]) => arr && arr.length > 0);
+    if (brandsToSubmit.length === 0) {
+      showToast('Nothing to submit — add at least 1 customer first', true);
+      return;
+    }
+
     const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
     if (!salesman) throw new Error('Salesman not found in loaded list');
-
-    // 1. Insert daily_reports row (upsert on (salesman_id, report_date, division_code))
-    //    A salesman can submit multiple DSRs per day — one per brand division.
-    if (!state.currentBrand) throw new Error('Pick a brand before submitting');
-    const reportPayload = {
-      salesman_id: salesman.id,
-      report_date: todayMY,
-      branch_code: branchCode,
-      division_code: state.currentBrand,
-      week_day_code: computeWeekDayCode(),
-      total_visits: visits,
-      total_sales: sales,
-      total_collection: coll,
-      effective_calls: eff,
-      strike_rate_pct: strike,
-      status: 'submitted',
-      submitted_at: now.toISOString(),
-      deadline_at: dl.toISOString(),
-      is_late: isLate,
-      monthly_priorities_snapshot: MONTHLY_PRIORITIES,
+    const now = new Date();
+    const dl  = new Date(now); dl.setHours(23, 59, 0, 0);
+    const ctx = {
+      now, dl,
+      isLate: now > dl,
+      todayMY: new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10),
+      branchCode: 'M',
+      salesman
     };
-    const { data: report, error: reportErr } = await sb
-      .from('daily_reports')
-      .upsert(reportPayload, { onConflict: 'salesman_id,report_date,division_code' })
-      .select()
-      .single();
-    if (reportErr) throw reportErr;
 
-    // 2. Delete existing entries (if re-submit) then insert all current
-    await sb.from('dsr_entries').delete().eq('report_id', report.id);
-
-    const entries = state.todayCustomers.map((c, idx) => ({
-      report_id: report.id,
-      customer_id: c.isNewOp ? null : (c.customer_db_id || null),
-      customer_code: c.code,
-      customer_name: c.name,
-      is_new_outlet: !!c.isNewOp,
-      sales_objective: c.entry?.sales_objective || 0,
-      total_sales: Number(c.entry?.total_sales || 0),
-      total_collection: Number(c.entry?.total_collection || 0),
-      visited: !!c.entry?.visited,
-      visit_at: c.entry?.visited ? now.toISOString() : null,
-      reason_code: c.entry?.reason || null,
-      remark: c.entry?.remark || null,
-      priorities_pushed: c.entry?.priorities || [],
-      gps_checkin: c.entry?.gps || null,
-      sequence_no: idx + 1,
-    }));
-
-    if (entries.length > 0) {
-      const { data: insertedEntries, error: entriesErr } = await sb
-        .from('dsr_entries').insert(entries).select('id, customer_code');
-      if (entriesErr) throw entriesErr;
-
-      // Build dsr_photos for any entries with photos
-      const photoRows = [];
-      insertedEntries.forEach(ie => {
-        const c = state.todayCustomers.find(x => x.code === ie.customer_code);
-        if (c?.entry?.photo) {
-          photoRows.push({
-            entry_id: ie.id,
-            storage_path: c.entry.photo_path || '',
-            public_url: c.entry.photo,
-            photo_type: 'storefront',
-            taken_at: now.toISOString(),
-            gps_at_capture: c.entry.gps || null,
-          });
-        }
-      });
-      if (photoRows.length > 0) {
-        const { error: photoErr } = await sb.from('dsr_photos').insert(photoRows);
-        if (photoErr) console.warn('photo metadata insert failed:', photoErr);
+    const ok = [], failed = [];
+    let totalVisits = 0, totalEff = 0, totalSales = 0;
+    for (const [brand, customers] of brandsToSubmit) {
+      try {
+        const res = await submitOneBrand(brand, customers, ctx);
+        ok.push({ brand, ...res });
+        totalVisits += res.visits;
+        totalEff    += res.eff;
+        totalSales  += res.sales;
+      } catch (e) {
+        console.error('Submit', brand, 'failed:', e);
+        failed.push({ brand, error: e.message || String(e) });
       }
     }
 
     closeSubmitModal();
-    state.submitted = true;
 
-    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    $('success-stats').innerHTML = `
-      <div><span>Submitted at</span><span>${time}</span></div>
-      <div><span>Status</span><span>${isLate ? '⚠️ LATE' : '✅ On Time'}</span></div>
-      <div><span>Visits</span><span>${visits}</span></div>
-      <div><span>Effective</span><span>${eff}</span></div>
-      <div><span>Today Sales</span><span>RM ${fmtRM(sales)}</span></div>
-      <div><span>Report ID</span><span style="font-size:10px;">${report.id.slice(0, 8)}...</span></div>
-    `;
-    $('success-modal').classList.add('show');
+    if (failed.length === 0) {
+      state.submitted = true;
+      // Clear all brands' entries — fresh start
+      state.entriesByBrand = {};
+      state.todayCustomers = [];
+      state.entriesByBrand[state.currentBrand] = state.todayCustomers;
+
+      const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const brandList = ok.map(o => o.brand).join(', ');
+      $('success-stats').innerHTML = `
+        <div><span>Submitted at</span><span>${time}</span></div>
+        <div><span>Status</span><span>${ctx.isLate ? '⚠️ LATE' : '✅ On Time'}</span></div>
+        <div><span>DSRs created</span><span>${ok.length} (${escapeHtml(brandList)})</span></div>
+        <div><span>Total Visits</span><span>${totalVisits}</span></div>
+        <div><span>Effective</span><span>${totalEff}</span></div>
+        <div><span>Today Sales</span><span>RM ${fmtRM(totalSales)}</span></div>
+      `;
+      $('success-modal').classList.add('show');
+      renderCustomers();
+      renderStats();
+      renderBrandSummary();
+    } else {
+      // Mixed result — keep failed brands, drop successful from state
+      for (const o of ok) {
+        if (state.entriesByBrand[o.brand]) state.entriesByBrand[o.brand].length = 0;
+      }
+      // Re-point todayCustomers (it may have been emptied if current brand was in `ok`)
+      if (state.entriesByBrand[state.currentBrand]) {
+        state.todayCustomers = state.entriesByBrand[state.currentBrand];
+      }
+      const okList = ok.map(o => o.brand).join(', ') || 'none';
+      const failList = failed.map(f => f.brand).join(', ');
+      showToast(`⚠ ${ok.length} OK (${okList}) · ${failed.length} failed (${failList}) — retry failed brands`, true);
+      renderCustomers();
+      renderStats();
+      renderBrandSummary();
+    }
   } catch (e) {
     console.error('Submit failed:', e);
     showToast('❌ Submit failed: ' + (e.message || 'unknown error') + ' — try again or contact admin', true);
@@ -1340,12 +1476,16 @@ function onSalesmanChange() {
   state.currentBrand = (salesman?.area && MENTAKAB_BRANDS.includes(salesman.area))
     ? salesman.area
     : (MENTAKAB_BRANDS[0] || '');
+  // Changing salesman = brand-new DSR session — reset per-brand storage
+  state.entriesByBrand = {};
   state.todayCustomers = [];
+  state.entriesByBrand[state.currentBrand] = state.todayCustomers;  // link by reference
   state.expandedCode = null;
   state.submitted = false;
   renderBrandDropdown();
   renderCustomers();
   renderStats();
+  renderBrandSummary();
 }
 
 function onBrandChange() {
@@ -1353,27 +1493,19 @@ function onBrandChange() {
   const oldBrand = state.currentBrand;
   if (newBrand === oldBrand) return;
 
-  // Brand affects which DSR we're working on. Switching brand means a fresh start
-  // for that (salesman, brand, today) DSR — so confirm if work-in-progress exists.
-  const hasWork = state.todayCustomers.length > 0;
-  if (hasWork) {
-    const ok = confirm(
-      `Switch from ${oldBrand} to ${newBrand}?\n\n` +
-      `Tukar dari ${oldBrand} ke ${newBrand}?\n\n` +
-      `Your ${state.todayCustomers.length} current entries will be cleared.\n` +
-      `${state.todayCustomers.length} rekod semasa akan dipadam.`
-    );
-    if (!ok) {
-      $('brand-pick').value = oldBrand;   // revert dropdown
-      return;
-    }
-  }
+  // Plan 2: PERSIST entries across brand switches.
+  // Salesman fills multiple brands' visits during the session, then Submit
+  // creates a separate DSR for each brand that has entries.
+  saveCurrentInputs();    // flush any unsaved input from the expanded card
+  if (oldBrand) state.entriesByBrand[oldBrand] = state.todayCustomers;
+  if (!state.entriesByBrand[newBrand]) state.entriesByBrand[newBrand] = [];
+  state.todayCustomers = state.entriesByBrand[newBrand];
   state.currentBrand = newBrand;
-  state.todayCustomers = [];
   state.expandedCode = null;
   state.submitted = false;
   renderCustomers();
   renderStats();
+  renderBrandSummary();
 }
 
 async function loadInitialData() {
@@ -1446,9 +1578,12 @@ async function init() {
 
   renderSalesmanDropdown();
   renderBrandDropdown();
+  // Link the initial brand's storage slot to todayCustomers (so persist works from first edit)
+  if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
   renderPriorities();
   renderCustomers();
   renderStats();
+  renderBrandSummary();
   updateDeadline();
   setInterval(updateDeadline, 60000);
 
