@@ -102,7 +102,7 @@
   <tr><th>KPI</th><th>What it means</th><th>Color</th></tr>
   <tr>
     <td><strong>Submitted</strong></td>
-    <td>How many of the 5 Champions submitted ≥1 brand DSR. e.g. <code>3/5</code> means 3 done, 2 pending</td>
+    <td>How many active Mentakab salesmen submitted ≥1 brand DSR. e.g. <code>12/40</code> means 12 submitted, 28 pending</td>
     <td>Green if all done, amber if partial, red if zero</td>
   </tr>
   <tr>
@@ -112,7 +112,7 @@
   </tr>
   <tr>
     <td><strong>Sales Reported</strong></td>
-    <td>Total RM sales reported by all Champions</td>
+    <td>Total RM sales reported across the team</td>
     <td>Gold</td>
   </tr>
   <tr>
@@ -141,7 +141,7 @@
 <h3>Layer 1 — 📋 Submission Trust</h3>
 <p><strong>Question:</strong> Did everyone submit their DSR today?</p>
 <table>
-  <tr><td><span class="pill green">CLEAR</span></td><td>All 5 Champions submitted ≥1 brand DSR</td></tr>
+  <tr><td><span class="pill green">CLEAR</span></td><td>All active salesmen submitted ≥1 brand DSR</td></tr>
   <tr><td><span class="pill amber">WAITING</span></td><td>No one has submitted yet (early in day)</td></tr>
   <tr><td><span class="pill amber">PARTIAL</span></td><td>Some submitted, some pending — names listed below</td></tr>
   <tr><td><span class="pill red">LATE</span></td><td>Past 23:59 deadline and missing submissions detected</td></tr>
@@ -186,10 +186,10 @@
 <p>Use this to see momentum at a glance. A rising line week-on-week = good; a falling line = investigate.</p>
 
 <h3>🏆 Champion Leaderboard</h3>
-<p>Horizontal bars showing each of the 5 Champions ranked by sales on the selected day. Each Champion has their own colour. Bar label shows RM amount.</p>
+<p>Horizontal bars showing the top 8 salesmen ranked by sales on the selected day. Each bar has its own colour. Bar label shows RM amount.</p>
 <ul>
-  <li>Leader's name shown at top right</li>
-  <li>Champions with 0 sales appear as a grey stub</li>
+  <li>Leader's SR code shown at top right</li>
+  <li>Only salesmen with sales appear; if none yet, top 5 alphabetical stubs are shown</li>
 </ul>
 
 <h3>🥧 Brand Mix Donut</h3>
@@ -206,7 +206,7 @@
 
 <h2>6. 📋 Submission Status panel</h2>
 
-<p>For each of the 5 Champions, shows whether they submitted today and what brands:</p>
+<p>For each active Mentakab salesman, shows whether they submitted today and what brands. Submitted salesmen appear first, drafts next, then pending at the bottom (scroll to see all).</p>
 
 <ul>
   <li><strong>✓ ## Brands</strong> — green check, count of brand DSRs submitted</li>
@@ -264,7 +264,7 @@
 
 <h2>9. 📍 Recent Visits Detail panel</h2>
 
-<p>Latest visits across all Champions on the selected day. Each row shows:</p>
+<p>Latest visits across the team on the selected day. Each row shows:</p>
 <ul>
   <li>Customer name</li>
   <li>Champion who visited</li>
@@ -338,7 +338,7 @@
 
 <ul>
   <li>No login — anyone with the URL can view. Keep the URL private to your team for now.</li>
-  <li>5 Champions only. Will expand to all 23 active Mentakab salesmen after pilot success.</li>
+  <li>Pool = all 40 active Mentakab salesmen. Will expand to other branches (KT, KB, etc.) after Mentakab pilot success.</li>
   <li>Customer GPS coordinates not yet captured — Layer 2 currently dormant.</li>
   <li>Eficore not yet connected — Layer 3 currently dormant.</li>
   <li>AI alerts beyond "late submission" need Hermes to be programmed — coming in Phase 2.</li>
