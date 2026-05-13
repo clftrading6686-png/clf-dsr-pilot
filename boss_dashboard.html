@@ -6,6 +6,7 @@
 <title>CLF Trading — DSR Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <style>
 :root {
   --navy: #0B1F3A;
@@ -141,6 +142,88 @@ body {
 .kpi.bad .value  { color: var(--red-bright); }
 .kpi.good .value { color: var(--green-bright); }
 .kpi.gold .value { color: var(--gold-bright); }
+
+/* ---------- VISUAL INSIGHTS (charts) ---------- */
+.charts-section {
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.charts-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.charts-title {
+  font-size: 13px; font-weight: 600; color: white;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.charts-title .icon { color: var(--gold-bright); margin-right: 8px; }
+.charts-sub { font-size: 11px; color: var(--gray-light); }
+.charts-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px;
+}
+.chart-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  min-height: 280px;
+}
+.chart-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--gold);
+}
+.chart-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.chart-card-title {
+  font-size: 14px; font-weight: 600; color: white;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-card-title .icon { font-size: 17px; }
+.chart-card-sub {
+  font-size: 10px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 1.5px; font-weight: 600;
+}
+.chart-card-stat { display: flex; gap: 16px; margin-bottom: 6px; flex-wrap: wrap; }
+.chart-card-stat .group .num {
+  font-family: 'Geist Mono', monospace;
+  font-size: 20px; font-weight: 700; color: var(--gold-bright);
+  line-height: 1;
+}
+.chart-card-stat .group .num.green { color: var(--green-bright); }
+.chart-card-stat .group .num.red   { color: var(--red-bright); }
+.chart-card-stat .group .lbl {
+  font-size: 9.5px; color: var(--gray-light);
+  text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;
+}
+.chart-card-body { flex: 1; min-height: 200px; position: relative; }
+.chart-empty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; color: var(--gray); font-size: 12px;
+  padding: 16px;
+}
+
+/* Override ApexCharts default tooltip / legend / axis colors */
+.apexcharts-tooltip {
+  background: var(--navy-mid) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: white !important;
+  font-family: 'Geist', sans-serif !important;
+}
+.apexcharts-tooltip-title {
+  background: var(--navy-light) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.apexcharts-legend-text { color: var(--gray-light) !important; font-size: 11px !important; }
+.apexcharts-xaxis text, .apexcharts-yaxis text {
+  fill: var(--gray-light) !important;
+  font-family: 'Geist Mono', monospace !important;
+}
 
 /* ---------- TRUST + VERIFY LAYERS (4 cards) ---------- */
 .trust-section {
@@ -363,7 +446,8 @@ body {
 
 /* RESPONSIVE */
 @media (max-width: 1280px) {
-  .trust-grid { grid-template-columns: repeat(2, 1fr); }
+  .trust-grid  { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 1100px) {
   .kpis { grid-template-columns: repeat(3, 1fr); }
@@ -373,8 +457,8 @@ body {
   .main { grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); }
   .clock { font-size: 20px; }
   .header { padding: 12px 16px; }
-  .kpis, .trust-section { padding: 12px 16px; }
-  .trust-grid { gap: 10px; }
+  .kpis, .trust-section, .charts-section { padding: 12px 16px; }
+  .trust-grid, .charts-grid { gap: 10px; }
 }
 </style>
 </head>
@@ -429,6 +513,70 @@ body {
     <div class="label">Open Alerts</div>
     <div class="value" id="k-alerts">0</div>
     <div class="value-sub" id="k-alerts-sub">unresolved</div>
+  </div>
+</section>
+
+<section class="charts-section">
+  <div class="charts-header">
+    <div class="charts-title"><span class="icon">📊</span>Visual Insights</div>
+    <div class="charts-sub" id="charts-sub">7-day momentum · Champion leaderboard · Brand portfolio</div>
+  </div>
+  <div class="charts-grid">
+
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><span class="icon">📈</span>7-Day Sales Trend</div>
+        <div class="chart-card-sub" id="trend-window">Last 7 days</div>
+      </div>
+      <div class="chart-card-stat">
+        <div class="group">
+          <div class="num" id="trend-total">RM 0</div>
+          <div class="lbl">7-day total</div>
+        </div>
+        <div class="group">
+          <div class="num" id="trend-delta">—</div>
+          <div class="lbl">vs prior 7d</div>
+        </div>
+      </div>
+      <div class="chart-card-body" id="chart-trend"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><span class="icon">🏆</span>Champion Leaderboard</div>
+        <div class="chart-card-sub" id="lb-window">By sales</div>
+      </div>
+      <div class="chart-card-stat">
+        <div class="group">
+          <div class="num" id="lb-submitted">0/0</div>
+          <div class="lbl">submitted</div>
+        </div>
+        <div class="group">
+          <div class="num" id="lb-leader">—</div>
+          <div class="lbl">leading</div>
+        </div>
+      </div>
+      <div class="chart-card-body" id="chart-leaderboard"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><span class="icon">🥧</span>Brand Mix</div>
+        <div class="chart-card-sub" id="brands-window">By sales</div>
+      </div>
+      <div class="chart-card-stat">
+        <div class="group">
+          <div class="num" id="brands-count">0</div>
+          <div class="lbl">brands</div>
+        </div>
+        <div class="group">
+          <div class="num" id="brands-top">—</div>
+          <div class="lbl">top brand</div>
+        </div>
+      </div>
+      <div class="chart-card-body" id="chart-brands"></div>
+    </div>
+
   </div>
 </section>
 
@@ -599,6 +747,34 @@ function setLive(state) {
 let pilots = [];
 let priorities = [];
 let viewDate = todayMY();  // YYYY-MM-DD — the date the dashboard is viewing (default today)
+let trendChart = null, lbChart = null, brandsChart = null;  // ApexCharts instances (reused for smooth update)
+
+// Chart palette
+const C_NAVY    = '#0B1F3A';
+const C_GOLD    = '#C9A84C';
+const C_GOLD_B  = '#FFD66B';
+const C_BLUE_B  = '#60A5FA';
+const C_GREEN   = '#4ADE80';
+const C_PURPLE  = '#A78BFA';
+const C_AMBER   = '#FBBF24';
+const C_PINK    = '#F472B6';
+const C_TEAL    = '#5EEAD4';
+const C_RED     = '#EF4444';
+const C_GRAY    = '#6B7A8D';
+const C_GRAY_L  = '#A8B4C5';
+const BRAND_COLORS = [C_GOLD_B, C_BLUE_B, C_GREEN, C_PURPLE, C_AMBER, C_PINK, C_TEAL, C_RED, C_GRAY];
+
+// Add days to a YYYY-MM-DD string (preserves locale by working in UTC)
+function addDays(ymd, n) {
+  const d = new Date(ymd + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+// Short label like "5/12" for x-axis
+function shortDate(ymd) {
+  const d = new Date(ymd + 'T00:00:00Z');
+  return (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
+}
 
 // ===== DATE PICKER =====
 function setupDatePicker() {
@@ -650,12 +826,14 @@ async function loadStatic() {
 
 // ===== FETCH =====
 async function fetchAll() {
-  const today = viewDate;                  // user-selected date (default today)
-  const month = viewDate.slice(0, 7);      // month of selected date
-  const pilotIds = pilots.map(p => p.id);
+  const today      = viewDate;                  // user-selected date (default today)
+  const month      = viewDate.slice(0, 7);      // month of selected date
+  const trendStart = addDays(today, -6);        // 7-day window ending viewDate (inclusive)
+  const priorStart = addDays(today, -13);       // 14-day window (current 7 + prior 7) for delta
+  const pilotIds   = pilots.map(p => p.id);
   if (!pilotIds.length) { setLive('live'); return; }
 
-  const [reportsRes, entriesRes, alertsRes, monthEntriesRes] = await Promise.all([
+  const [reportsRes, entriesRes, alertsRes, monthEntriesRes, trendRes] = await Promise.all([
     sb.from('daily_reports')
       .select('id, salesman_id, division_code, status, total_visits, total_sales, total_collection, effective_calls, strike_rate_pct, submitted_at, is_late, created_at')
       .eq('report_date', today).in('salesman_id', pilotIds),
@@ -672,11 +850,17 @@ async function fetchAll() {
 
     sb.from('dsr_entries')
       .select('priorities_pushed, created_at, daily_reports!inner(salesman_id, report_date)')
-      .gte('daily_reports.report_date', month + '-01').in('daily_reports.salesman_id', pilotIds)
+      .gte('daily_reports.report_date', month + '-01').in('daily_reports.salesman_id', pilotIds),
+
+    // 14-day window (prior 7 + current 7) of submitted reports for trend + delta
+    sb.from('daily_reports')
+      .select('report_date, total_sales, status')
+      .gte('report_date', priorStart).lte('report_date', today)
+      .in('salesman_id', pilotIds).in('status', ['submitted', 'approved'])
   ]);
 
-  if (reportsRes.error || entriesRes.error || alertsRes.error || monthEntriesRes.error) {
-    console.error(reportsRes.error, entriesRes.error, alertsRes.error, monthEntriesRes.error);
+  if (reportsRes.error || entriesRes.error || alertsRes.error || monthEntriesRes.error || trendRes.error) {
+    console.error(reportsRes.error, entriesRes.error, alertsRes.error, monthEntriesRes.error, trendRes.error);
     setLive('offline'); return;
   }
   setLive('live');
@@ -685,13 +869,18 @@ async function fetchAll() {
     reports:      reportsRes.data || [],
     entries:      entriesRes.data || [],
     alerts:       alertsRes.data || [],
-    monthEntries: monthEntriesRes.data || []
+    monthEntries: monthEntriesRes.data || [],
+    trendReports: trendRes.data || [],
+    trendStart, priorStart, today
   });
 }
 
 // ===== RENDER =====
-function render({ reports, entries, alerts, monthEntries }) {
+function render({ reports, entries, alerts, monthEntries, trendReports, trendStart, priorStart, today }) {
   renderKPIs(reports, alerts);
+  renderTrendChart(trendReports, trendStart, priorStart, today);
+  renderLeaderboardChart(reports);
+  renderBrandMixChart(reports);
   renderTrustLayers(reports, entries, alerts);
   renderSubmissionStatus(reports);
   renderAlerts(alerts);
@@ -738,6 +927,195 @@ function renderKPIs(reports, alerts) {
   $('k-alerts').textContent = alerts.length;
   $('k-alerts-sub').textContent = high > 0 ? high + ' high/critical' : (alerts.length > 0 ? 'all medium/low' : 'all clear');
   $('kpi-alerts').className = 'kpi ' + (high > 0 ? 'bad' : (alerts.length > 0 ? 'warn' : 'good'));
+}
+
+// ----- CHARTS (Visual Insights) -----
+
+// 7-day trend area chart
+function renderTrendChart(trendReports, trendStart, priorStart, today) {
+  // Build sum-per-date map across the 14-day window
+  const byDate = {};
+  trendReports.forEach(r => {
+    byDate[r.report_date] = (byDate[r.report_date] || 0) + Number(r.total_sales || 0);
+  });
+  // Walk 14 days to ensure every date is present (0 if no submissions)
+  const allDays = [];
+  for (let d = priorStart; d <= today; d = addDays(d, 1)) allDays.push(d);
+  const last7 = allDays.slice(-7);
+  const prior7 = allDays.slice(0, 7);
+  const last7Total  = last7.reduce((s, d) => s + (byDate[d] || 0), 0);
+  const prior7Total = prior7.reduce((s, d) => s + (byDate[d] || 0), 0);
+  const deltaPct = prior7Total > 0 ? (last7Total - prior7Total) / prior7Total * 100 : null;
+
+  // Update stat boxes
+  $('trend-total').textContent = fmtRM(last7Total);
+  if (deltaPct == null) {
+    $('trend-delta').textContent = '—';
+    $('trend-delta').className   = 'num';
+  } else {
+    $('trend-delta').textContent = (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(0) + '%';
+    $('trend-delta').className   = 'num ' + (deltaPct >= 0 ? 'green' : 'red');
+  }
+  $('trend-window').textContent = shortDate(trendStart) + ' – ' + shortDate(today);
+
+  const values = last7.map(d => byDate[d] || 0);
+  const labels = last7.map(d => shortDate(d));
+  // Highlight today as the last marker
+
+  const opts = {
+    chart: { type: 'area', height: 220, toolbar: { show: false }, zoom: { enabled: false }, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
+    series: [{ name: 'Sales', data: values }],
+    xaxis: {
+      categories: labels,
+      labels: { style: { colors: C_GRAY_L, fontSize: '10px' } },
+      axisBorder: { color: 'rgba(255,255,255,0.1)' },
+      axisTicks: { color: 'rgba(255,255,255,0.1)' }
+    },
+    yaxis: {
+      labels: { style: { colors: C_GRAY_L, fontSize: '10px' }, formatter: v => v >= 1000 ? 'RM ' + (v/1000).toFixed(1) + 'K' : 'RM ' + v.toFixed(0) }
+    },
+    stroke: { curve: 'smooth', width: 3, colors: [C_GOLD] },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05, stops: [0, 100] } },
+    colors: [C_GOLD],
+    markers: { size: 4, colors: [C_GOLD_B], strokeColors: C_NAVY, strokeWidth: 2, hover: { size: 6 } },
+    dataLabels: { enabled: false },
+    grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3, padding: { left: 10, right: 10 } },
+    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') } }
+  };
+
+  if (!trendChart) {
+    trendChart = new ApexCharts(document.querySelector('#chart-trend'), opts);
+    trendChart.render();
+  } else {
+    trendChart.updateOptions(opts);
+  }
+}
+
+// Champion leaderboard horizontal bar
+function renderLeaderboardChart(reports) {
+  // Sum sales per salesman across all their (multi-brand) DSRs for viewDate
+  const byId = {};
+  reports.forEach(r => {
+    if (r.status !== 'submitted' && r.status !== 'approved') return;
+    byId[r.salesman_id] = (byId[r.salesman_id] || 0) + Number(r.total_sales || 0);
+  });
+  // Include all pilots (so 0-sales Champions still show as a stub)
+  const points = pilots.map(p => ({
+    sr: p.sr_code || p.name || '?',
+    name: p.full_name || p.name || p.sr_code || '?',
+    sales: byId[p.id] || 0
+  })).sort((a, b) => b.sales - a.sales);
+
+  // Stat boxes
+  const submittedCount = Object.keys(byId).length;
+  $('lb-submitted').textContent = submittedCount + '/' + pilots.length;
+  $('lb-leader').textContent    = (points[0]?.sales > 0 ? points[0].sr : '—');
+
+  const data = points.map((p, i) => ({
+    x: p.sr,
+    y: p.sales,
+    fillColor: p.sales > 0 ? BRAND_COLORS[i % BRAND_COLORS.length] : C_GRAY
+  }));
+
+  const opts = {
+    chart: { type: 'bar', height: 220, toolbar: { show: false }, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
+    series: [{ name: 'Sales', data }],
+    plotOptions: {
+      bar: { horizontal: true, barHeight: '65%', distributed: true, borderRadius: 4 }
+    },
+    dataLabels: {
+      enabled: true, textAnchor: 'start', offsetX: 8,
+      style: { colors: ['white'], fontSize: '11px', fontWeight: 600, fontFamily: 'Geist Mono, monospace' },
+      formatter: v => v >= 1 ? 'RM ' + Number(v).toLocaleString('en-MY') : ''
+    },
+    legend: { show: false },
+    xaxis: {
+      labels: { style: { colors: C_GRAY_L, fontSize: '10px' }, formatter: v => v >= 1000 ? (v/1000) + 'K' : v.toFixed(0) },
+      axisBorder: { color: 'rgba(255,255,255,0.1)' },
+      axisTicks: { color: 'rgba(255,255,255,0.1)' }
+    },
+    yaxis: { labels: { style: { colors: C_GRAY_L, fontSize: '11px', fontFamily: 'Geist Mono, monospace' } } },
+    grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3 },
+    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') } }
+  };
+
+  if (!lbChart) {
+    lbChart = new ApexCharts(document.querySelector('#chart-leaderboard'), opts);
+    lbChart.render();
+  } else {
+    lbChart.updateOptions(opts);
+  }
+}
+
+// Brand mix donut
+function renderBrandMixChart(reports) {
+  // Sum sales per division_code (submitted/approved only)
+  const byBrand = {};
+  reports.forEach(r => {
+    if (r.status !== 'submitted' && r.status !== 'approved') return;
+    const b = r.division_code || 'Unknown';
+    byBrand[b] = (byBrand[b] || 0) + Number(r.total_sales || 0);
+  });
+  const entries = Object.entries(byBrand)
+    .filter(([_, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((s, [_, v]) => s + v, 0);
+
+  $('brands-count').textContent = entries.length;
+  $('brands-top').textContent   = entries.length ? entries[0][0].replace(/^M-/, '') : '—';
+
+  const host = document.querySelector('#chart-brands');
+  if (entries.length === 0) {
+    // Destroy old chart if exists, show empty state
+    if (brandsChart) { brandsChart.destroy(); brandsChart = null; }
+    host.innerHTML = '<div class="chart-empty">No sales recorded — awaiting submissions</div>';
+    return;
+  }
+  // Restore chart host if we previously stuffed it with empty state
+  if (!host.querySelector('.apexcharts-canvas') && !brandsChart) {
+    host.innerHTML = '';
+  }
+
+  const labels = entries.map(([k]) => k);
+  const values = entries.map(([, v]) => v);
+  const topLabel = entries[0][0].replace(/^M-/, '');
+
+  const opts = {
+    chart: { type: 'donut', height: 240, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
+    series: values,
+    labels,
+    colors: BRAND_COLORS.slice(0, values.length),
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '60%',
+          labels: {
+            show: true,
+            name:  { color: C_GRAY_L, fontSize: '10px', fontFamily: 'Geist, sans-serif', offsetY: 0 },
+            value: { color: 'white', fontSize: '20px', fontFamily: 'Geist Mono, monospace', fontWeight: 700, formatter: v => Math.round(v/total*100) + '%' },
+            total: { show: true, label: 'Top brand', fontSize: '10px', color: C_GOLD, fontFamily: 'Geist, sans-serif', fontWeight: 600, formatter: () => topLabel }
+          }
+        }
+      }
+    },
+    dataLabels: { enabled: false },
+    stroke: { width: 2, colors: [C_NAVY] },
+    legend: {
+      position: 'bottom', horizontalAlign: 'center',
+      fontSize: '10px', fontFamily: 'Geist Mono, monospace',
+      labels: { colors: C_GRAY_L },
+      markers: { width: 8, height: 8, radius: 2 },
+      itemMargin: { horizontal: 4, vertical: 2 }
+    },
+    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') + ' (' + Math.round(v/total*100) + '%)' } }
+  };
+
+  if (!brandsChart) {
+    brandsChart = new ApexCharts(host, opts);
+    brandsChart.render();
+  } else {
+    brandsChart.updateOptions(opts);
+  }
 }
 
 // ----- Trust + Verify (4 layers) -----
