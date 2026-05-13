@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSR Mobile App — User Guide for Salesmen · CLF Trading</title>
+<style>
+  body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  h1, h2, h3 { font-weight: 600; line-height: 1.3; }
+  h1 { font-size: 28px; margin: 0 0 8px; border-bottom: 1px solid #ddd; padding-bottom: 14px; }
+  h2 { font-size: 22px; margin: 40px 0 12px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p, ul, ol { margin: 8px 0 12px; }
+  ul, ol { padding-left: 24px; }
+  li { margin: 4px 0; }
+  code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    background: #f4f4f4; padding: 1px 6px; border-radius: 3px;
+    font-size: 14px;
+  }
+  blockquote {
+    border-left: 3px solid #ccc;
+    background: #fafafa;
+    margin: 12px 0;
+    padding: 10px 16px;
+    color: #444;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 15px; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #fafafa; font-weight: 600; }
+  .lead { color: #555; font-size: 17px; margin: 8px 0 24px; }
+  .url {
+    display: inline-block; background: #f0f0f0; padding: 4px 10px; border-radius: 4px;
+    font-family: 'SF Mono', monospace; font-size: 14px; word-break: break-all;
+  }
+  .step-num {
+    display: inline-block; background: #1a1a1a; color: white;
+    width: 22px; height: 22px; border-radius: 50%; text-align: center;
+    line-height: 22px; font-size: 13px; font-weight: 600; margin-right: 8px;
+  }
+  .ml { color: #888; font-size: 14px; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<h1>DSR Mobile App — User Guide</h1>
+<p class="lead">For Mentakab Pilot Champions · Daily Sales Report on your phone</p>
+
+<p><strong>App URL:</strong> <span class="url">https://clftrading6686-png.github.io/clf-dsr-pilot/dsr_mobile.html</span></p>
+
+<p>Open the link on your phone's browser (Chrome / Safari). For faster access, add to home screen.</p>
+
+<hr>
+
+<h2>1. What is this app?</h2>
+
+<p>This is your <strong>digital Daily Sales Report (DSR)</strong> — it replaces the paper form you've been filling at the end of each day.</p>
+
+<p>Why use it instead of paper:</p>
+<ul>
+  <li><strong>Faster</strong> — type once, no admin re-keying into Eficore</li>
+  <li><strong>Real-time</strong> — boss sees your numbers within seconds, not days</li>
+  <li><strong>Per-brand</strong> — if you cover multiple brands (e.g. M-ACLO and M-MARS), record each separately in one session</li>
+  <li><strong>Optional photo + GPS</strong> — proves you visited, helps everyone trust the data</li>
+</ul>
+
+<p>The pilot runs with 5 Champions in Mentakab. Your feedback shapes the rollout to all 23 active salesmen.</p>
+
+<hr>
+
+<h2>2. Opening the app</h2>
+
+<ol>
+  <li>Tap the link above in WhatsApp / Telegram</li>
+  <li>It opens in Chrome (Android) or Safari (iPhone)</li>
+  <li><strong>Add to home screen</strong> for faster access:
+    <ul>
+      <li>Android: Chrome menu → <em>Add to Home screen</em></li>
+      <li>iPhone: Share button → <em>Add to Home Screen</em></li>
+    </ul>
+  </li>
+  <li>First time: allow location access when the browser asks (needed for GPS check-in)</li>
+</ol>
+
+<hr>
+
+<h2>3. The screen, top to bottom</h2>
+
+<h3>3.1 Header</h3>
+<p>The dark blue bar at the top shows:</p>
+<ul>
+  <li><strong>CLF Trading · Daily Sales Report</strong> — app name</li>
+  <li><strong>Deadline countdown</strong> on the right (e.g. <code>5h 30m</code>) — submit before 23:59 to avoid being flagged late</li>
+</ul>
+
+<h3>3.2 "I am" — pick your name <span class="ml">Saya</span></h3>
+<p>Drop-down with the 5 Champion names. Pick yourself. Only you should select your own name — this is on your honour for the pilot.</p>
+
+<h3>3.3 "Brand" — pick which brand you're reporting <span class="ml">Jenama</span></h3>
+<p>Drop-down with 15 Mentakab brand codes (M-ACLO, M-MARS, M-GEN, …). Defaults to your primary zone.</p>
+
+<blockquote>
+  <strong>Important:</strong> if you covered multiple brands today, you can record them all in one session. See section 6.
+</blockquote>
+
+<h3>3.4 Stats row</h3>
+<table>
+  <tr><th>Field</th><th>Meaning</th></tr>
+  <tr><td>Visits</td><td>How many customers you've visited today (visited / total added)</td></tr>
+  <tr><td>Sales</td><td>Total sales recorded today, in RM</td></tr>
+  <tr><td>Strike</td><td>% of visited customers that resulted in sales</td></tr>
+  <tr><td>Target</td><td>% of your monthly target reached so far (MTD)</td></tr>
+</table>
+<p>These update live as you fill in customer entries.</p>
+
+<h3>3.5 Brand summary chips (multi-brand feature)</h3>
+<p>If you've started filling visits for more than one brand, you'll see chips like:</p>
+<blockquote>
+  <code>M-ACLO 5</code> &nbsp; <code>M-MARS 2 · editing</code>
+</blockquote>
+<p>Tap any chip to jump to that brand's customer list. Your work is never lost when switching.</p>
+
+<h3>3.6 "⭐ Monthly Priorities" card</h3>
+<p>Top 5 products the boss wants pushed this month. <em>Hidden when boss hasn't set the list yet.</em> When set, each customer card will let you tick which priorities you sold.</p>
+
+<h3>3.7 Search & Add Customer / New Outlet buttons</h3>
+<p>Two big buttons:</p>
+<ul>
+  <li><strong>🔍 Search & Add Customer</strong> <span class="ml">Cari & Tambah Pelanggan</span> — type customer name or code, pick from results</li>
+  <li><strong>➕ New Outlet</strong> <span class="ml">Baru</span> — for shops not yet in the master list</li>
+</ul>
+
+<h3>3.8 Today's Visits list <span class="ml">Lawatan Hari Ini</span></h3>
+<p>Each customer you've added shows up here as a card. Tap to expand and fill in details.</p>
+
+<h3>3.9 Submit button (floating bottom)</h3>
+<p>The orange Submit button appears once you've added at least one customer. Tap to review and submit.</p>
+
+<hr>
+
+<h2>4. Adding a customer visit</h2>
+
+<ol>
+  <li><span class="step-num">1</span>Tap <strong>🔍 Search & Add Customer</strong></li>
+  <li><span class="step-num">2</span>Type part of the shop's name or customer code (e.g. <code>kedai 99</code> or <code>30M-00220</code>)</li>
+  <li><span class="step-num">3</span>Pick the right one from the search results</li>
+  <li><span class="step-num">4</span>The customer appears in your "Today's Visits" list — tap to expand</li>
+</ol>
+
+<h3>If the shop is not in the system</h3>
+<p>Tap <strong>➕ New Outlet</strong>, fill in the shop name + area, save. It'll be added as <em>NEW OUTLET</em> on this DSR.</p>
+
+<hr>
+
+<h2>5. Filling in a visit (expanded card)</h2>
+
+<p>When you tap a customer to expand the card, you see:</p>
+
+<table>
+  <tr><th>Field</th><th>What to enter</th></tr>
+  <tr><td>Total Sales <span class="ml">Jualan</span></td><td>RM amount sold to this customer today. Leave 0 if no sale.</td></tr>
+  <tr><td>Collection <span class="ml">Kutipan</span></td><td>RM collected (cash / cheque). Leave 0 if no collection.</td></tr>
+  <tr><td>Pushed Monthly Priorities <span class="ml">Promosi yang dijual</span></td><td>Tap the priority buttons (P1, P2…) for products you sold. <em>Only appears when boss has set priorities.</em></td></tr>
+  <tr><td>Reason (if no sale) <span class="ml">Sebab tiada jualan</span></td><td>Tap A / B / C / D / E:<br>A = Stock Enough · B = Boss Not In · C = Closed · D = Payment Problem · E = Other</td></tr>
+  <tr><td>Remark <span class="ml">Catatan</span></td><td>Free text. Anything important the boss should know.</td></tr>
+  <tr><td>📍 GPS</td><td>Tap to capture your current location. Optional but recommended.</td></tr>
+  <tr><td>📸 Photo</td><td>Tap to take a photo of the storefront or invoice. Optional but recommended.</td></tr>
+  <tr><td>Visited <span class="ml">Dilawati</span></td><td>Toggle ON if you actually went to this shop today.</td></tr>
+</table>
+
+<blockquote>
+  <strong>Tip:</strong> GPS and photo are optional today but help the boss <em>trust + verify</em> your work — if your numbers ever look strange to him, GPS shows you really went. Use them when convenient.
+</blockquote>
+
+<hr>
+
+<h2>6. Multi-brand: covering more than one brand in one session</h2>
+
+<p>If today you sold for two brands (e.g. M-ACLO at some shops and M-MARS at others):</p>
+
+<ol>
+  <li><span class="step-num">1</span>Pick your name; brand defaults to M-ACLO (your zone)</li>
+  <li><span class="step-num">2</span>Add the 5 customers where you sold M-ACLO; fill each in</li>
+  <li><span class="step-num">3</span>Now change the <strong>Brand</strong> drop-down to <code>M-MARS</code></li>
+  <li><span class="step-num">4</span>The list <strong>switches to empty</strong> — but your M-ACLO 5 customers are <strong>still saved</strong> in memory (you'll see chip <code>M-ACLO 5</code> at the top)</li>
+  <li><span class="step-num">5</span>Add your M-MARS customers; fill each in</li>
+  <li><span class="step-num">6</span>Tap <strong>Submit</strong> — the app creates <em>2 separate DSRs</em>, one per brand, all at once</li>
+</ol>
+
+<blockquote>
+  <strong>Don't worry about losing data</strong> — switching brands does NOT delete your earlier entries. They're held in memory until you submit.
+</blockquote>
+
+<p>Tap a chip like <code>M-ACLO 5</code> to jump back to that brand's list and review or edit.</p>
+
+<hr>
+
+<h2>7. Submitting your DSR</h2>
+
+<ol>
+  <li><span class="step-num">1</span>When done, tap the orange <strong>Submit</strong> button (bottom of screen)</li>
+  <li><span class="step-num">2</span>A review modal pops up showing:
+    <ul>
+      <li>How many DSRs you're submitting (1 per brand)</li>
+      <li>Per-brand breakdown: visits and sales</li>
+      <li>Total visits, effective calls, strike rate</li>
+      <li>Today's sales, collection</li>
+      <li>MTD vs target</li>
+    </ul>
+  </li>
+  <li><span class="step-num">3</span>Check carefully, then tap <strong>Confirm</strong></li>
+  <li><span class="step-num">4</span>Success modal shows time submitted + DSR count</li>
+</ol>
+
+<h3>Late submission</h3>
+<p>If you submit after <strong>23:59</strong>, the system marks it LATE. The boss sees this on his dashboard. Submit on time when you can.</p>
+
+<h3>If submit fails</h3>
+<p>If you have no internet, the submit will fail with a red error toast. Try again when you have signal. <em>(For now, work-in-progress is only kept in memory — don't close the browser tab until submitted.)</em></p>
+
+<hr>
+
+<h2>8. Tips for daily use</h2>
+
+<ul>
+  <li><strong>Add customers as you visit</strong>, not at the end of the day. Easier to remember details.</li>
+  <li><strong>Capture GPS at the customer site</strong>, not afterward — the boss can see if your GPS is far from the shop.</li>
+  <li><strong>Take a photo</strong> when you place a big order — proves the order is real.</li>
+  <li><strong>Fill the Reason</strong> when no sale — A / B / C / D / E. The boss values this for understanding patterns.</li>
+  <li><strong>Don't switch salesman</strong> drop-down during a session — that resets everything. Only pick your own name once at the start.</li>
+  <li><strong>Submit by 21:00</strong> ideally — gives boss time to review same night.</li>
+</ul>
+
+<hr>
+
+<h2>9. Troubleshooting</h2>
+
+<table>
+  <tr><th>Problem</th><th>Try this</th></tr>
+  <tr><td>App won't load</td><td>Check internet. Refresh page (pull down). Clear browser cache if stuck.</td></tr>
+  <tr><td>GPS keeps failing</td><td>Open phone Settings → enable Location for Chrome / Safari. Try again outdoors.</td></tr>
+  <tr><td>Photo upload slow</td><td>Try on Wi-Fi instead of 4G/5G. Photo is compressed automatically but still takes a few seconds.</td></tr>
+  <tr><td>Forgot to add a customer</td><td>Before submitting, add them. After submitting — tell admin / boss.</td></tr>
+  <tr><td>Submitted wrong brand</td><td>For now, contact admin to delete it. (Self-correction coming in V2.)</td></tr>
+  <tr><td>My name is not in the list</td><td>Contact admin — only the 5 pilot Champions are enabled right now.</td></tr>
+</table>
+
+<hr>
+
+<h2>10. What's coming next (not yet live)</h2>
+
+<ul>
+  <li><strong>Phone OTP login</strong> — currently no login (pilot trust). Will be added when we extend to all 23 salesmen.</li>
+  <li><strong>Offline backup</strong> — work-in-progress saved automatically; never lose data when signal drops.</li>
+  <li><strong>Route plan integration</strong> — supervisor pre-sets which customers you should visit each day.</li>
+  <li><strong>Photo scan</strong> — take a photo of your old paper DSR, AI extracts the data automatically.</li>
+  <li><strong>GPS variance check</strong> — system alerts boss when your check-in GPS is far from the customer's known location.</li>
+</ul>
+
+<hr>
+
+<h2>11. Contact</h2>
+
+<p>Bug reports / suggestions / questions during pilot: WhatsApp the project owner directly. Feedback this week shapes what we build next.</p>
+
+<p style="color: #888; font-size: 13px; margin-top: 40px; text-align: center;">
+  CLF Trading Sdn Bhd · Mentakab Pilot · Internal use only<br>
+  Last updated: 2026-05-12
+</p>
+
+</body>
+</html>
