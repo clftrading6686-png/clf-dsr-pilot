@@ -60,6 +60,18 @@ body {
 .logo span { font-size: 8px; color: var(--gold); margin-top: 2px; }
 .title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
 .title-block .sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+.header-center { display: flex; align-items: center; }
+.branch-pick {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-strong);
+  color: white;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.branch-pick:hover, .branch-pick:focus { border-color: var(--gold); outline: none; }
 .header-right { text-align: right; }
 .clock { font-size: 26px; font-weight: 600; font-family: 'Geist Mono', monospace; }
 .date-controls {
@@ -472,6 +484,16 @@ body {
       <div class="sub">Daily Sales Report — 4-Layer Trust + Verify</div>
     </div>
   </div>
+  <div class="header-center">
+    <select class="branch-pick" id="branch-pick">
+      <option value="ALL">All branches</option>
+      <option value="M" selected>Mentakab (M)</option>
+      <option value="K">Kuantan (K)</option>
+      <option value="KM">Kemaman (KM)</option>
+      <option value="KT">Kuala Terengganu (KT)</option>
+      <option value="KB">Kota Bahru (KB)</option>
+    </select>
+  </div>
   <div class="header-right">
     <div class="clock" id="clock">--:--:--</div>
     <div class="date-controls">
@@ -744,9 +766,17 @@ function setLive(state) {
 }
 
 // ===== STATE =====
-let pilots = [];
+let pilots = [];                       // master list of all 116 active salesmen
 let priorities = [];
-let viewDate = todayMY();  // YYYY-MM-DD — the date the dashboard is viewing (default today)
+let viewDate = todayMY();              // YYYY-MM-DD — the date the dashboard is viewing (default today)
+let currentBranch = 'M';               // 'ALL' / 'M' / 'K' / 'KM' / 'KT' / 'KB' — defaults to Mentakab
+
+// Returns pilots filtered by the currently selected branch
+function pool() {
+  return currentBranch === 'ALL'
+    ? pilots
+    : pilots.filter(p => p.branch_code === currentBranch);
+}
 let trendChart = null, lbChart = null, brandsChart = null;  // ApexCharts instances (reused for smooth update)
 
 // Chart palette
@@ -806,12 +836,14 @@ function onViewDateChange() {
 // ===== STATIC LOAD =====
 async function loadStatic() {
   const month = monthMY();
-  // Aligned with DSR app: all Active Mentakab salesmen (was is_pilot=true / 5 Champions)
+  // Aligned with DSR app: all 116 active salesmen across 5 branches (M, K, KM, KT, KB),
+  // emp_no required (Staff ID — emp_no=null means legacy/inactive row not in pool).
   const { data: ps, error: e1 } = await sb
     .from('salesmen')
-    .select('id, sr_code, full_name, name, phone, branch_code')
-    .eq('branch_code', 'M').eq('status', 'Active')
-    .order('sr_code');
+    .select('id, sr_code, emp_no, full_name, name, phone, branch_code')
+    .in('branch_code', ['M','K','KM','KT','KB']).eq('status', 'Active')
+    .not('emp_no', 'is', null)
+    .order('emp_no');
   if (e1) console.error('salesmen', e1);
   pilots = ps || [];
 
@@ -831,7 +863,7 @@ async function fetchAll() {
   const month      = viewDate.slice(0, 7);      // month of selected date
   const trendStart = addDays(today, -6);        // 7-day window ending viewDate (inclusive)
   const priorStart = addDays(today, -13);       // 14-day window (current 7 + prior 7) for delta
-  const pilotIds   = pilots.map(p => p.id);
+  const pilotIds   = pool().map(p => p.id);
   if (!pilotIds.length) { setLive('live'); return; }
 
   const [reportsRes, entriesRes, alertsRes, monthEntriesRes, trendRes] = await Promise.all([
@@ -891,6 +923,7 @@ function render({ reports, entries, alerts, monthEntries, trendReports, trendSta
 }
 
 function renderKPIs(reports, alerts) {
+  const pilots = pool();   // shadow with branch-filtered list
   // Multiple reports per salesman per day (one per brand). Count by distinct salesman.
   const submittedIds = new Set(
     reports.filter(r => r.status === 'submitted' || r.status === 'approved').map(r => r.salesman_id)
@@ -994,6 +1027,7 @@ function renderTrendChart(trendReports, trendStart, priorStart, today) {
 
 // Top Salesmen horizontal bar (top 8 by sales on viewDate)
 function renderLeaderboardChart(reports) {
+  const pilots = pool();   // shadow with branch-filtered list
   // Sum sales per salesman across all their (multi-brand) DSRs for viewDate
   const byId = {};
   reports.forEach(r => {
@@ -1134,6 +1168,7 @@ function setLayer(idPrefix, status, metric, detail, statusLabel) {
 }
 
 function renderTrustLayers(reports, entries, alerts) {
+  const pilots = pool();   // shadow with branch-filtered list
   const total = pilots.length;
   const isToday = viewDate === todayMY();
   const dayPhrase = isToday ? 'today' : 'on ' + viewDate;
@@ -1228,10 +1263,11 @@ function renderTrustLayers(reports, entries, alerts) {
                  greens + ' of 4 layers clear · Layer 3 awaits Eficore';
 }
 
-// ----- Submission Status (all active salesmen) -----
+// ----- Submission Status (all active salesmen for the selected branch) -----
 function renderSubmissionStatus(reports) {
+  const pilots = pool();   // shadow with branch-filtered list
   const list = $('submission-list');
-  if (!pilots.length) { list.innerHTML = '<div class="empty">No pilot salesmen configured</div>'; return; }
+  if (!pilots.length) { list.innerHTML = '<div class="empty">No active salesmen for this branch</div>'; return; }
 
   // Group reports by salesman_id — each salesman may have multiple (one per brand)
   const reportsBySalesman = {};
@@ -1388,6 +1424,7 @@ function renderPriorities(todayEntries, monthEntries) {
 
 // ----- Recent Visits Detail -----
 function renderVisitsDetail(entries) {
+  const pilots = pool();   // shadow with branch-filtered list
   const list = $('visits-list');
   const visited = entries.filter(e => e.visited).slice(0, 12);
   if (!visited.length) { list.innerHTML = '<div class="empty">No visits recorded on this day</div>'; return; }
@@ -1422,6 +1459,7 @@ function renderVisitsDetail(entries) {
 
 // ----- Live Feed -----
 function renderFeed(entries) {
+  const pilots = pool();   // shadow with branch-filtered list
   const feed = $('feed-list');
   const recent = entries.slice(0, 10);
   if (!recent.length) { feed.innerHTML = '<div class="empty" style="flex:1; padding:22px;">No entries on this day</div>'; return; }
@@ -1466,9 +1504,20 @@ function setupRealtime() {
     .subscribe();
 }
 
+// ===== BRANCH PICKER =====
+function setupBranchPicker() {
+  const pick = $('branch-pick');
+  pick.value = currentBranch;
+  pick.addEventListener('change', () => {
+    currentBranch = pick.value || 'M';
+    fetchAll();
+  });
+}
+
 // ===== BOOT =====
 async function boot() {
   await loadStatic();
+  setupBranchPicker();
   setupDatePicker();   // wires up date picker and triggers initial fetchAll
   setupRealtime();
   setInterval(fetchAll, REFRESH_MS);

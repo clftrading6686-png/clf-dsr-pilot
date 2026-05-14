@@ -302,13 +302,13 @@ body {
   </div>
 
   <div class="header-who">
-    <div class="who-label">SR Code<span class="ml">Kod SR</span></div>
+    <div class="who-label">Staff ID<span class="ml">No Pekerja</span></div>
     <input type="text" class="who-select" id="salesman-pick"
-           list="salesman-codes-list" placeholder="e.g. LEN-KM"
+           list="salesman-codes-list" placeholder="e.g. TER017"
            autocomplete="off" autocapitalize="characters" spellcheck="false">
     <datalist id="salesman-codes-list"></datalist>
   </div>
-  <div class="who-confirm" id="who-confirm">Type your SR code <span class="ml">Taipkan kod SR anda</span></div>
+  <div class="who-confirm" id="who-confirm">Type your Staff ID, then press Enter <span class="ml">Taipkan No Pekerja, tekan Enter</span></div>
 
   <div class="header-who">
     <div class="who-label">Brand<span class="ml">Jenama</span></div>
@@ -512,18 +512,42 @@ let MONTHLY_PRIORITIES = []; // current month from Supabase
 let MENTAKAB_BRANDS = [];    // distinct zone codes (M-ACLO, M-MARS, ...) — fallback only
 let SALESMAN_BRANDS = {};    // map: salesman_id → ['M-ACLO', 'M-MARS', ...] (their covered brands)
 
-// Map: brand zone code (M-XX) → DB brand name. Used to translate between
-// salesman_brands.brand_id (which joins on brands.name) and the M-* codes
-// shown to users in the Brand dropdown.
-const BRAND_CODE_TO_DB_NAME = {
+// Map: division zone code → DB brand name. Multiple zone codes can map to the
+// same brand (e.g. K-GEN1, K-NGEN2, K-NGEN3 all → GENERAL). When showing the
+// Brand dropdown we reverse-map but filter by the salesman's branch prefix.
+const DIVISION_TO_BRAND_NAME = {
+  // Mentakab (M)
   'M-ACLO':'A.CLOUET','M-ANGENET':'ANGENET','M-DL':'DL','M-GEN':'GENERAL',
   'M-GRO':'GROCERY','M-GS':'GS','M-GSK':'GSK','M-LPT':'LIPTON',
   'M-MARS':'WRIGLEY','M-MDL':'MONDELEZ','M-MRG':'MARIGOLD','M-MYR':'MAYORA',
   'M-NABATI':'NABATI','M-PANA':'PANASONIC','M-PHL':'PHILIPS','M-PWR':'P.ROOT',
-  'M-RBHC':'RBHC','M-UNL':'UNILEVER','M-UNZA':'UNZA'
+  'M-RBHC':'RBHC','M-RB':'RBHC','M-UNL':'UNILEVER','M-UNZA':'UNZA',
+  // Kuantan (K)
+  'K-DARLIE':'DARLIE','K-GEN1':'GENERAL','K-GS':'GS','K-KAO':'KAO',
+  'K-MAMEE':'MAMEE','K-MARS':'WRIGLEY','K-MDL':'MONDELEZ','K-MYR':'MAYORA',
+  'K-NGEN2':'GENERAL','K-NGEN3':'GENERAL','K-PANA':'PANASONIC','K-PWR':'P.ROOT',
+  'K-RBHC':'RBHC','K-UNL':'UNILEVER','K-UNZA':'UNZA',
+  // Kota Bahru (KB)
+  'KB-GEN':'GENERAL','KB-MARS':'WRIGLEY','KB-PHL':'PHILIPS',
+  // Kemaman (KM)
+  'KM-DARLIE':'DARLIE','KM-GEN':'GENERAL','KM-LPT':'LIPTON','KM-PANA':'PANASONIC',
+  'KM-PHL':'PHILIPS','KM-PWR':'P.ROOT','KM-UNL':'UNILEVER','KM-YEELEE':'YEELEE',
+  // Kuala Terengganu (KT)
+  'KT-GEN':'GENERAL','KT-MARS':'WRIGLEY','KT-RBHC':'RBHC',
 };
+
+// Reverse: DB brand name → all division codes (across all branches).
+// At UI render time we filter further to the salesman's own branch prefix.
+const BRAND_TO_DIVISIONS = {};
+Object.entries(DIVISION_TO_BRAND_NAME).forEach(([div, brand]) => {
+  if (!BRAND_TO_DIVISIONS[brand]) BRAND_TO_DIVISIONS[brand] = [];
+  BRAND_TO_DIVISIONS[brand].push(div);
+});
+
+// Keep legacy aliases for any code that still references old names.
+const BRAND_CODE_TO_DB_NAME = DIVISION_TO_BRAND_NAME;
 const DB_NAME_TO_BRAND_CODE = Object.fromEntries(
-  Object.entries(BRAND_CODE_TO_DB_NAME).map(([k, v]) => [v, k])
+  Object.entries(BRAND_TO_DIVISIONS).map(([k, v]) => [k, v[0]])
 );
 // Customer search is server-side via Supabase ILIKE — never load full list
 
@@ -876,12 +900,12 @@ function addNewOp() {
 // RENDERING
 // ============================================================
 function renderSalesmanDropdown() {
-  // Populate the datalist with all active Mentakab salesmen (SR code → name hint).
+  // Populate the datalist with all 116 active salesmen (Staff ID → name hint).
   // Browser shows native autocomplete as user types.
   $('salesman-codes-list').innerHTML = SALESMEN.map(s =>
-    `<option value="${escapeHtml(s.sr_code)}" label="${escapeHtml(s.name || '')}">`
+    `<option value="${escapeHtml(s.emp_no)}" label="${escapeHtml(s.name || '')}">`
   ).join('');
-  // Pre-fill input if we restored state.currentSalesmanId from localStorage
+  // Pre-fill input if we restored state.currentSalesmanId (emp_no) from localStorage
   const input = $('salesman-pick');
   if (state.currentSalesmanId) {
     input.value = state.currentSalesmanId;
@@ -893,7 +917,7 @@ function renderSalesmanDropdown() {
 }
 
 function renderSalesmanConfirm() {
-  // Show validation state for the typed SR code (only after commit via blur/Enter).
+  // Show validation state for the typed Staff ID (only after commit via blur/Enter).
   // Privacy-first like customer search: name doesn't auto-reveal while typing.
   const el = $('who-confirm');
   const input = $('salesman-pick');
@@ -901,11 +925,11 @@ function renderSalesmanConfirm() {
   const raw = (input.value || '').trim().toUpperCase();
   if (!raw) {
     el.className = 'who-confirm';
-    el.innerHTML = 'Type your SR code, then press Enter <span class="ml">Taipkan kod SR, tekan Enter</span>';
+    el.innerHTML = 'Type your Staff ID, then press Enter <span class="ml">Taipkan No Pekerja, tekan Enter</span>';
     input.classList.remove('valid', 'invalid');
     return;
   }
-  const sm = SALESMEN.find(s => s.sr_code.toUpperCase() === raw);
+  const sm = SALESMEN.find(s => (s.emp_no || '').toUpperCase() === raw);
   if (sm) {
     el.className = 'who-confirm ok';
     el.innerHTML = `✓ ${escapeHtml(sm.name)}`;
@@ -913,7 +937,7 @@ function renderSalesmanConfirm() {
     input.classList.remove('invalid');
   } else {
     el.className = 'who-confirm bad';
-    el.innerHTML = `✗ SR code not found <span class="ml">Kod tidak dijumpai</span>`;
+    el.innerHTML = `✗ Staff ID not found <span class="ml">No Pekerja tidak dijumpai</span>`;
     input.classList.add('invalid');
     input.classList.remove('valid');
   }
@@ -955,9 +979,9 @@ function renderBrandSummary() {
 }
 
 function renderBrandDropdown() {
-  // Filter brand options to this salesman's covered brands (from salesman_brands).
+  // Filter brand options to this salesman's covered brands (from salesman_brands, filtered by branch prefix).
   // Fallback: if salesman has no coverage data, show all Mentakab brands.
-  const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+  const salesman = SALESMEN.find(s => s.emp_no === state.currentSalesmanId);
   let available = (salesman && SALESMAN_BRANDS[salesman.id]) || [];
   if (available.length === 0) available = MENTAKAB_BRANDS.slice();
 
@@ -1283,7 +1307,7 @@ function renderStats() {
   $('bar-coll').textContent = `RM ${fmtRM(coll)}`;
 
   const hasValidSr = !!state.currentSalesmanId
-    && !!SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+    && !!SALESMEN.find(s => s.emp_no === state.currentSalesmanId);
   $('submit-btn').disabled = !hasValidSr || (visits === 0 && state.todayCustomers.length === 0);
   $('open-search-btn').disabled = !hasValidSr;
   $('open-newop-btn').disabled = !hasValidSr;
@@ -1442,7 +1466,7 @@ async function doSubmit() {
       return;
     }
 
-    const salesman = SALESMEN.find(s => s.sr_code === state.currentSalesmanId);
+    const salesman = SALESMEN.find(s => s.emp_no === state.currentSalesmanId);
     if (!salesman) throw new Error('Salesman not found in loaded list');
     const now = new Date();
     const dl  = new Date(now); dl.setHours(23, 59, 0, 0);
@@ -1544,15 +1568,15 @@ function updateDeadline() {
 // INIT
 // ============================================================
 function onSalesmanChange() {
-  // SR Code text input (with datalist autocomplete). Normalize uppercase + trim.
+  // Staff ID (emp_no) text input with datalist autocomplete. Normalize uppercase + trim.
   const input = $('salesman-pick');
   const typed = (input.value || '').trim().toUpperCase();
   input.value = typed;
   renderSalesmanConfirm();
 
-  const salesman = SALESMEN.find(s => s.sr_code.toUpperCase() === typed);
+  const salesman = SALESMEN.find(s => (s.emp_no || '').toUpperCase() === typed);
   if (!salesman) {
-    // Invalid SR — clear any in-progress state to prevent silent submission as wrong identity
+    // Invalid Staff ID — clear any in-progress state
     state.currentSalesmanId = '';
     state.entriesByBrand = {};
     state.todayCustomers = [];
@@ -1564,9 +1588,9 @@ function onSalesmanChange() {
     return;
   }
 
-  state.currentSalesmanId = salesman.sr_code;
-  // Persist for next session
-  try { localStorage.setItem('clf_dsr_sr_code', salesman.sr_code); } catch (e) {}
+  state.currentSalesmanId = salesman.emp_no;
+  // Persist for next session (new key — old 'clf_dsr_sr_code' becomes stale, harmless)
+  try { localStorage.setItem('clf_dsr_emp_no', salesman.emp_no); } catch (e) {}
 
   // Default brand = primary zone if in coverage, else first covered brand
   const covered = SALESMAN_BRANDS[salesman.id] || MENTAKAB_BRANDS;
@@ -1608,51 +1632,66 @@ function onBrandChange() {
 }
 
 async function loadInitialData() {
-  // Fetch ALL active Mentakab salesmen (no longer is_pilot=true — all 40 in pool)
+  // Fetch all 116 active salesmen across 5 branches (M, K, KM, KT, KB) — emp_no required
   const { data: salesmen, error: smErr } = await sb
     .from('salesmen')
-    .select('id, sr_code, name, full_name, phone, zone')
-    .eq('branch_code', 'M')
+    .select('id, sr_code, emp_no, name, full_name, phone, zone, branch_code')
+    .in('branch_code', ['M','K','KM','KT','KB'])
     .eq('status', 'Active')
-    .order('sr_code');
+    .not('emp_no', 'is', null)
+    .order('emp_no');
   if (smErr) throw new Error('Failed to load salesmen: ' + smErr.message);
   SALESMEN = (salesmen || []).map(s => ({
     id: s.id,
+    emp_no: s.emp_no,
     sr_code: s.sr_code,
     name: s.full_name || s.name,
     phone: s.phone,
-    area: s.zone || 'MENTAKAB',
+    branch_code: s.branch_code,
+    area: s.zone || s.branch_code,
   }));
 
   if (SALESMEN.length === 0) {
-    throw new Error('No active Mentakab salesmen found. Contact admin.');
+    throw new Error('No active salesmen found. Contact admin.');
   }
 
   // Fetch salesman_brands joined with brand.name → build SALESMAN_BRANDS map
-  // Key: salesman_id (UUID), value: ['M-ACLO','M-MARS',...] zone codes covered
+  // Key: salesman_id (UUID), value: ['M-ACLO','M-MARS',...] zone codes covered (filtered to that salesman's branch)
   const { data: sbRows, error: sbErr } = await sb
     .from('salesman_brands')
     .select('salesman_id, brands(name)');
   if (sbErr) console.warn('salesman_brands fetch failed', sbErr);
-  SALESMAN_BRANDS = {};
+  // Group by salesman_id → list of brand names
+  const brandsBySalesman = {};
   (sbRows || []).forEach(r => {
-    const code = DB_NAME_TO_BRAND_CODE[r.brands?.name];
-    if (!code) return;
-    if (!SALESMAN_BRANDS[r.salesman_id]) SALESMAN_BRANDS[r.salesman_id] = [];
-    SALESMAN_BRANDS[r.salesman_id].push(code);
+    const bname = r.brands?.name;
+    if (!bname) return;
+    if (!brandsBySalesman[r.salesman_id]) brandsBySalesman[r.salesman_id] = new Set();
+    brandsBySalesman[r.salesman_id].add(bname);
   });
-  // Sort each salesman's brand list
-  Object.keys(SALESMAN_BRANDS).forEach(sid => SALESMAN_BRANDS[sid].sort());
+  // For each salesman, expand brand names → division codes for their branch
+  SALESMAN_BRANDS = {};
+  SALESMEN.forEach(s => {
+    const brands = brandsBySalesman[s.id] || new Set();
+    const divisions = [];
+    brands.forEach(bname => {
+      const allDivs = BRAND_TO_DIVISIONS[bname] || [];
+      // Filter to divisions whose prefix matches this salesman's branch (e.g. 'M-' for M)
+      const prefix = s.branch_code + '-';
+      allDivs.filter(d => d.startsWith(prefix)).forEach(d => divisions.push(d));
+    });
+    SALESMAN_BRANDS[s.id] = [...new Set(divisions)].sort();
+  });
 
-  // Fallback Mentakab brand list (used if a salesman has no salesman_brands entry yet)
+  // Fallback brand list per branch (used if a salesman has no salesman_brands data)
   MENTAKAB_BRANDS = ['M-ACLO','M-ANGENET','M-DL','M-GEN','M-GRO','M-GS','M-GSK','M-LPT','M-MARS','M-MDL','M-MRG','M-MYR','M-NABATI','M-PANA','M-PHL','M-PWR','M-RBHC','M-UNL','M-UNZA'];
 
-  // Restore last-used SR code from localStorage if it matches an active salesman
-  const savedSr = (typeof localStorage !== 'undefined') ? localStorage.getItem('clf_dsr_sr_code') : null;
-  if (savedSr && SALESMEN.find(s => s.sr_code === savedSr)) {
-    state.currentSalesmanId = savedSr;
+  // Restore last-used Staff ID (emp_no) from localStorage if it matches an active salesman
+  const savedEmp = (typeof localStorage !== 'undefined') ? localStorage.getItem('clf_dsr_emp_no') : null;
+  if (savedEmp && SALESMEN.find(s => s.emp_no === savedEmp)) {
+    state.currentSalesmanId = savedEmp;
   } else {
-    state.currentSalesmanId = '';  // force user to type SR code
+    state.currentSalesmanId = '';  // force user to type Staff ID
   }
 
   // Fetch monthly priorities for current month + Mentakab (or null for all branches)
@@ -1728,10 +1767,10 @@ async function init() {
   });
 
   if (state.currentSalesmanId) {
-    const s = SALESMEN.find(x => x.sr_code === state.currentSalesmanId);
+    const s = SALESMEN.find(x => x.emp_no === state.currentSalesmanId);
     if (s) showToast(`✓ Welcome back ${s.name.split(' ')[0]}!`);
   } else {
-    showToast(`👋 Type your SR code to begin`);
+    showToast(`👋 Type your Staff ID to begin`);
   }
 }
 
