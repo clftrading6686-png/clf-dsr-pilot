@@ -56,7 +56,7 @@
 <body>
 
 <h1>DSR Dashboard — User Guide</h1>
-<p class="lead">For the Owner / Boss · Real-time view of Mentakab pilot operations</p>
+<p class="lead">For the Owner / Boss · Real-time view of all 5 branches (116 active salesmen)</p>
 
 <p><strong>Dashboard URL:</strong> <span class="url">https://clftrading6686-png.github.io/clf-dsr-pilot/boss_dashboard.html</span></p>
 
@@ -66,7 +66,7 @@
 
 <h2>1. What this dashboard does</h2>
 
-<p>This is your live window into the Mentakab Daily Sales Report pilot. It shows, for any chosen day:</p>
+<p>This is your live window into the company Daily Sales Report operation across all 5 branches (Mentakab, Kuantan, Kemaman, Kuala Terengganu, Kota Bahru). It shows, for the selected branch and date:</p>
 
 <ul>
   <li><strong>Who submitted</strong> their DSR and what they reported</li>
@@ -85,6 +85,7 @@
 <table>
   <tr><th>Element</th><th>Meaning</th></tr>
   <tr><td>CLF logo + "DSR Dashboard"</td><td>App identity</td></tr>
+  <tr><td><strong>Branch picker</strong> (center pill)</td><td>Switch view between branches: All / Mentakab (M) / Kuantan (K) / Kemaman (KM) / Kuala Terengganu (KT) / Kota Bahru (KB). Default = Mentakab. Switching reloads every panel for that branch.</td></tr>
   <tr><td>Clock <code>22:30:45</code></td><td>Current time (your local Malaysia time)</td></tr>
   <tr><td>Date picker</td><td>Click to pick any past date and view that day's data</td></tr>
   <tr><td><span class="pill amber">Historical</span> pill</td><td>Appears when viewing a past date</td></tr>
@@ -102,7 +103,7 @@
   <tr><th>KPI</th><th>What it means</th><th>Color</th></tr>
   <tr>
     <td><strong>Submitted</strong></td>
-    <td>How many active Mentakab salesmen submitted ≥1 brand DSR. e.g. <code>12/40</code> means 12 submitted, 28 pending</td>
+    <td>How many active salesmen in the selected branch submitted ≥1 brand DSR. e.g. for Mentakab branch <code>12/19</code> means 12 of 19 submitted; for "All" it's out of 116</td>
     <td>Green if all done, amber if partial, red if zero</td>
   </tr>
   <tr>
@@ -338,7 +339,7 @@
 
 <ul>
   <li>No login — anyone with the URL can view. Keep the URL private to your team for now.</li>
-  <li>Pool = all 40 active Mentakab salesmen. Will expand to other branches (KT, KB, etc.) after Mentakab pilot success.</li>
+  <li>Pool = all 116 active salesmen across 5 branches (M / K / KM / KT / KB), based on the HR Sales Team Listing. Use the branch picker in the header to switch views.</li>
   <li>Customer GPS coordinates not yet captured — Layer 2 currently dormant.</li>
   <li>Eficore not yet connected — Layer 3 currently dormant.</li>
   <li>AI alerts beyond "late submission" need Hermes to be programmed — coming in Phase 2.</li>
