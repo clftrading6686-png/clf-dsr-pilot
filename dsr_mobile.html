@@ -282,28 +282,21 @@ body {
 .muted { color: var(--gray); font-size: 11.5px; line-height: 1.4; margin-top: 4px; }
 .muted .ml { display: block; opacity: 0.85; font-size: 11px; }
 
-/* RESUME BANNER (draft from today exists) */
-.resume-banner {
-  background: linear-gradient(180deg, var(--gold-light) 0%, #FFEFC2 100%);
-  border: 2px solid var(--gold);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  box-shadow: var(--shadow-md);
+/* CARD ACTIONS — explicit Edit/Delete on collapsed customer cards */
+.card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--border); background: #FAFBFC; }
+.card-act { padding: 9px 8px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; line-height: 1.25; border: 1.5px solid var(--border); background: white; }
+.card-act .ml { display: block; font-size: 9.5px; font-weight: 500; opacity: 0.7; }
+.card-act.edit { color: var(--blue); border-color: var(--blue); }
+.card-act.edit:active { background: var(--blue-light); }
+.card-act.del { color: var(--red-bright); border-color: #F0C4C4; }
+.card-act.del:active { background: var(--red-light); }
+
+/* CLEAR ALL link (start fresh — only shows when Today has entries) */
+.clear-all-link {
+  font-size: 12px; font-weight: 600; color: var(--red-bright);
+  cursor: pointer; user-select: none; text-decoration: underline;
 }
-.resume-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
-.resume-text { flex: 1; min-width: 0; }
-.resume-title { font-size: 13.5px; font-weight: 700; color: var(--gold-dark); }
-.resume-sub { font-size: 11px; color: var(--gold-dark); opacity: 0.85; margin-top: 1px; }
-.resume-meta { font-size: 11px; color: var(--text-2); margin-top: 6px; font-family: 'Geist Mono', monospace; }
-.resume-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
-.resume-btn { padding: 7px 14px; font-size: 11.5px; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; white-space: nowrap; }
-.resume-btn.continue { background: var(--gold); color: var(--navy); box-shadow: 0 2px 4px rgba(201,168,76,0.4); }
-.resume-btn.continue:active { transform: scale(0.97); }
-.resume-btn.discard { background: white; color: var(--gray); border: 1px solid var(--border); }
+.clear-all-link:active { opacity: 0.6; }
 
 /* AUTOSAVE HINT */
 .autosave-hint {
@@ -445,20 +438,6 @@ body.history-mode .submit-bar { display: none; }
   <!-- VIEW: TODAY -->
   <div id="view-today">
 
-    <!-- RESUME BANNER (shows when today's draft exists) -->
-    <div class="resume-banner" id="resume-banner" style="display:none;">
-      <div class="resume-icon">📝</div>
-      <div class="resume-text">
-        <div class="resume-title">You have unsaved entries from today</div>
-        <div class="resume-sub">Anda ada catatan belum dihantar dari hari ini</div>
-        <div class="resume-meta" id="resume-meta"></div>
-      </div>
-      <div class="resume-actions">
-        <button class="resume-btn continue" id="resume-continue">Resume ✓</button>
-        <button class="resume-btn discard" id="resume-discard">Discard</button>
-      </div>
-    </div>
-
     <div class="priorities-card">
       <div class="title">⭐ Monthly Priorities <span class="ml">· Keutamaan Bulanan</span></div>
       <div class="priorities-list" id="priorities-list"></div>
@@ -486,7 +465,10 @@ body.history-mode .submit-bar { display: none; }
 
     <div class="section-title">
       <div class="h">📋 Today's Visits <span class="ml">· Hari Ini</span></div>
-      <div class="progress" id="route-progress">0 visited</div>
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <span class="clear-all-link" id="clear-all-link" style="display:none;">Clear all · Mula semula</span>
+        <span class="progress" id="route-progress">0 visited</span>
+      </div>
     </div>
 
     <div class="customer-list" id="customer-list"></div>
@@ -1371,26 +1353,35 @@ function renderCustomers() {
     return;
   }
   list.innerHTML = state.todayCustomers.map((c, i) => renderCard(c, i + 1)).join('');
+  // Tap the header row → expand/collapse (edit)
   $$('.customer-header').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (e.target.classList.contains('customer-remove-btn')) return;
-      toggleExpand(el.dataset.code);
-    });
+    el.addEventListener('click', () => toggleExpand(el.dataset.code));
   });
-  $$('.customer-remove-btn').forEach(el => {
-    el.addEventListener('click', () => {
-      if (confirm('Remove this customer? · Buang pelanggan ini?')) removeCustomer(el.dataset.code);
+  // Explicit Edit / Delete buttons on collapsed cards
+  $$('.card-act').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const code = el.dataset.code;
+      if (el.dataset.action === 'edit') {
+        toggleExpand(code);
+      } else if (el.dataset.action === 'del') {
+        const c = state.todayCustomers.find(x => x.code === code);
+        const nm = c ? c.name : 'this customer';
+        if (confirm(`Delete ${nm}? · Padam pelanggan ini?`)) removeCustomer(code);
+      }
     });
   });
   if (state.expandedCode) wireExpandedEvents();
-  const visited = state.todayCustomers.filter(c => c.entry.visited).length;
+  const visited = state.todayCustomers.filter(entryIsVisit).length;
   $('route-progress').textContent = `${visited} / ${state.todayCustomers.length} visited`;
+  renderClearAll();
 }
 
 function renderCard(c, num) {
   const e = c.entry || {};
   const hasSale = (e.total_sales || 0) > 0;
-  const visited = e.visited;
+  const visited = entryIsVisit(c);
+  const hasPhoto = !!e.photo;
   const expanded = state.expandedCode === c.code;
   let cls = '';
   if (expanded) cls = 'expanded';
@@ -1398,6 +1389,9 @@ function renderCard(c, num) {
   else if (visited) cls = 'no-sale';
   if (c.isNewOp) cls += ' new-outlet';
   const icon = expanded ? '🔽' : (hasSale ? '✅' : (visited ? '⚪' : '⏳'));
+  // Warn on the collapsed card if this counts as a visit but has no photo
+  const photoWarn = (!expanded && visited && !hasPhoto)
+    ? ' <span style="color:var(--red-bright);font-weight:700;">· 📸 needed</span>' : '';
 
   return `
     <div class="customer-card ${cls}" id="card-${c.code}">
@@ -1405,14 +1399,17 @@ function renderCard(c, num) {
         <div class="customer-num">${num}</div>
         <div>
           <div class="customer-name">${escapeHtml(c.name)}${c.isNewOp ? ' <span style="font-size:10px;color:var(--gold-dark);font-weight:600;">[NEW]</span>' : ''}</div>
-          <div class="customer-code">${escapeHtml(c.code)} · ${escapeHtml(c.area || '')}${hasSale ? ` · sold RM ${fmtRM(e.total_sales)}` : ''}</div>
+          <div class="customer-code">${escapeHtml(c.code)} · ${escapeHtml(c.area || '')}${hasSale ? ` · sold RM ${fmtRM(e.total_sales)}` : ''}${photoWarn}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="customer-status-icon">${icon}</span>
-          <span class="customer-remove-btn" data-code="${c.code}" title="Remove">✕</span>
         </div>
       </div>
-      ${expanded ? renderEntryForm(c) : ''}
+      ${expanded ? renderEntryForm(c) : `
+      <div class="card-actions">
+        <button class="card-act edit" data-code="${c.code}" data-action="edit">✏️ Edit <span class="ml">Ubah</span></button>
+        <button class="card-act del" data-code="${c.code}" data-action="del">🗑️ Delete <span class="ml">Padam</span></button>
+      </div>`}
     </div>
   `;
 }
@@ -1618,8 +1615,19 @@ function wireExpandedEvents() {
 // ============================================================
 // STATS
 // ============================================================
+// A customer counts as VISITED if there's any real activity — not only when
+// the salesman explicitly tapped "Add Entry". Field staff often fill the
+// numbers and Submit directly; without this they'd post sales with visits=0
+// and bypass the photo requirement.
+function entryIsVisit(c) {
+  const e = c.entry || {};
+  return !!(e.visited
+    || Number(e.total_sales || 0) > 0
+    || Number(e.total_collection || 0) > 0
+    || e.reason);
+}
 function visitedCount() {
-  return state.todayCustomers.filter(c => c.entry.visited).length;
+  return state.todayCustomers.filter(entryIsVisit).length;
 }
 function totalSales() {
   return state.todayCustomers.reduce((s, c) => s + Number(c.entry.total_sales || 0), 0);
@@ -1668,7 +1676,7 @@ function openSubmitModal() {
   let visits = 0, eff = 0, sales = 0, coll = 0, newOps = 0;
   brandsWithEntries.forEach(([_, arr]) => {
     arr.forEach(c => {
-      if (c.entry?.visited) visits++;
+      if (entryIsVisit(c)) visits++;
       if ((c.entry?.total_sales || 0) > 0) eff++;
       sales += Number(c.entry?.total_sales || 0);
       coll  += Number(c.entry?.total_collection || 0);
@@ -1681,7 +1689,7 @@ function openSubmitModal() {
 
   // Per-brand breakdown rows
   const brandRows = brandsWithEntries.map(([b, arr]) => {
-    const v = arr.filter(c => c.entry?.visited).length;
+    const v = arr.filter(entryIsVisit).length;
     const s = arr.reduce((sum, c) => sum + Number(c.entry?.total_sales || 0), 0);
     return `<div><span>${escapeHtml(b)}</span><span>${v} visits · RM ${fmtRM(s)}</span></div>`;
   }).join('');
@@ -1710,7 +1718,7 @@ function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
 // Returns the inserted/updated report row. Throws on hard failure.
 async function submitOneBrand(brand, customers, ctx) {
   // ctx = { now, dl, isLate, todayMY, branchCode, salesman }
-  const visits = customers.filter(c => c.entry?.visited).length;
+  const visits = customers.filter(entryIsVisit).length;
   const eff    = customers.filter(c => (c.entry?.total_sales || 0) > 0).length;
   const sales  = customers.reduce((s, c) => s + Number(c.entry?.total_sales || 0), 0);
   const coll   = customers.reduce((s, c) => s + Number(c.entry?.total_collection || 0), 0);
@@ -1752,8 +1760,8 @@ async function submitOneBrand(brand, customers, ctx) {
     sales_objective: c.entry?.sales_objective || 0,
     total_sales: Number(c.entry?.total_sales || 0),
     total_collection: Number(c.entry?.total_collection || 0),
-    visited: !!c.entry?.visited,
-    visit_at: c.entry?.visited ? ctx.now.toISOString() : null,
+    visited: entryIsVisit(c),
+    visit_at: entryIsVisit(c) ? ctx.now.toISOString() : null,
     reason_code: c.entry?.reason || null,
     remark: c.entry?.remark || null,
     priorities_pushed: c.entry?.priorities || [],
@@ -1808,11 +1816,13 @@ async function doSubmit() {
       return;
     }
 
-    // 📸 Photo gate — every visited entry must have a photo (M Boss policy 2026-05-15)
+    // 📸 Photo gate — any entry that counts as a visit must have a photo
+    // (uses entryIsVisit so filling sales/coll/reason without tapping
+    // "Add Entry" can't bypass the requirement). M Boss policy 2026-05-15.
     const missing = [];
     for (const [brand, customers] of brandsToSubmit) {
       for (const c of customers) {
-        if (c.entry?.visited && !c.entry?.photo) {
+        if (entryIsVisit(c) && !c.entry?.photo) {
           missing.push(`${brand}: ${c.name}`);
         }
       }
@@ -2091,54 +2101,54 @@ function closePhotoLightbox() {
 }
 
 // ============================================================
-// RESUME BANNER — show on valid Staff ID if a draft exists for today
+// AUTO-RESTORE — on valid Staff ID, silently reload today's draft into the
+// Today view (no banner to tap — field staff missed it). A small "Clear all"
+// link lets them start fresh when needed.
 // ============================================================
-function checkResumeBanner() {
-  const banner = $('resume-banner');
-  if (!banner) return;
-  const emp = state.currentSalesmanId;
-  if (!emp || !SALESMEN.find(s => s.emp_no === emp)) { banner.style.display = 'none'; return; }
-  // If we already loaded the draft into state, no banner.
-  const inMemoryTotal = Object.values(state.entriesByBrand)
-    .reduce((n, arr) => n + (arr?.length || 0), 0);
-  if (inMemoryTotal > 0) { banner.style.display = 'none'; return; }
-  const info = draftHasEntries(emp);
-  if (!info.count) { banner.style.display = 'none'; return; }
-  const savedTime = info.savedAt ? new Date(info.savedAt) : null;
-  const timeLabel = savedTime
-    ? `${String(savedTime.getHours()).padStart(2,'0')}:${String(savedTime.getMinutes()).padStart(2,'0')}`
-    : '?';
-  $('resume-meta').textContent = `${info.count} entr${info.count===1?'y':'ies'} across ${info.brands.length} brand${info.brands.length===1?'':'s'} · last saved ${timeLabel}`;
-  banner.style.display = 'flex';
-}
-
-function resumeDraft() {
-  const emp = state.currentSalesmanId;
+function autoRestoreDraft(emp) {
+  if (!emp || !SALESMEN.find(s => s.emp_no === emp)) return 0;
   const draft = loadDraft(emp);
-  if (!draft) { $('resume-banner').style.display = 'none'; return; }
-  state.entriesByBrand = draft.entriesByBrand || {};
-  // Pick a brand: prefer saved currentBrand, else first non-empty
+  if (!draft || !draft.entriesByBrand) return 0;
+  const total = Object.values(draft.entriesByBrand).reduce((n, arr) => n + (arr?.length || 0), 0);
+  if (total === 0) return 0;
+
+  state.entriesByBrand = draft.entriesByBrand;
+  // Prefer the brand the salesman was last on, else first non-empty
   let brand = draft.currentBrand;
   if (!brand || !state.entriesByBrand[brand]) {
     brand = Object.keys(state.entriesByBrand).find(b => state.entriesByBrand[b]?.length > 0) || state.currentBrand;
   }
   state.currentBrand = brand;
-  state.todayCustomers = state.entriesByBrand[brand] || [];
+  // Guarantee todayCustomers is the SAME array reference stored in
+  // entriesByBrand[brand] — saveCurrentInputs/saveDraft rely on this link.
+  if (!Array.isArray(state.entriesByBrand[brand])) state.entriesByBrand[brand] = [];
+  state.todayCustomers = state.entriesByBrand[brand];
   state.expandedCode = null;
-  $('brand-pick').value = brand;
-  $('resume-banner').style.display = 'none';
+  const bp = $('brand-pick');
+  if (bp) bp.value = brand;
+  return total;
+}
+
+// Re-render the small "Clear all" control: only visible when Today has entries
+function renderClearAll() {
+  const el = $('clear-all-link');
+  if (!el) return;
+  const total = Object.values(state.entriesByBrand).reduce((n, arr) => n + (arr?.length || 0), 0);
+  el.style.display = total > 0 ? 'inline' : 'none';
+}
+
+function clearAllEntries() {
+  if (!confirm('Clear ALL entries and start fresh? This cannot be undone.\n\nKosongkan SEMUA & mula semula? Tidak boleh dibatalkan.')) return;
+  clearDraft(state.currentSalesmanId);
+  state.entriesByBrand = {};
+  state.todayCustomers = [];
+  if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
+  state.expandedCode = null;
   renderBrandSummary();
   renderCustomers();
   renderStats();
-  const totalCount = Object.values(state.entriesByBrand).reduce((n, arr) => n + (arr?.length || 0), 0);
-  showToast(`✓ Resumed ${totalCount} entr${totalCount===1?'y':'ies'}`);
-}
-
-function discardDraft() {
-  if (!confirm('Discard all unsaved entries from today? · Buang semua catatan?')) return;
-  clearDraft(state.currentSalesmanId);
-  $('resume-banner').style.display = 'none';
-  showToast('Draft discarded');
+  renderClearAll();
+  showToast('Cleared — starting fresh');
 }
 
 // ============================================================
@@ -2184,7 +2194,7 @@ function onSalesmanChange() {
     renderCustomers();
     renderStats();
     renderBrandSummary();
-    $('resume-banner').style.display = 'none';
+    renderClearAll();
     return;
   }
 
@@ -2205,12 +2215,17 @@ function onSalesmanChange() {
   state.expandedCode = null;
   state.submitted = false;
 
+  // Auto-restore today's draft for this salesman (no banner — load it straight in)
+  const restored = autoRestoreDraft(salesman.emp_no);
+
   renderBrandDropdown();
   renderCustomers();
   renderStats();
   renderBrandSummary();
-  // Resume banner shows ONLY if today's localStorage draft exists for this emp_no
-  checkResumeBanner();
+  renderClearAll();
+  if (restored > 0) {
+    showToast(`✓ Restored ${restored} entr${restored===1?'y':'ies'} — review, then Submit`);
+  }
   // Reset history cache so the History tab re-fetches for the new salesman
   _historyLoadedFor = null;
 }
@@ -2373,9 +2388,8 @@ async function init() {
   $('tab-history').addEventListener('click', () => switchTab('history'));
   $('history-refresh').addEventListener('click', () => loadHistoryIfNeeded(true));
 
-  // Resume banner buttons
-  $('resume-continue').addEventListener('click', resumeDraft);
-  $('resume-discard').addEventListener('click',  discardDraft);
+  // Clear-all link (start fresh)
+  $('clear-all-link').addEventListener('click', clearAllEntries);
 
   $$('.modal-overlay').forEach(el => {
     el.addEventListener('click', (e) => {
@@ -2385,9 +2399,17 @@ async function init() {
 
   if (state.currentSalesmanId) {
     const s = SALESMEN.find(x => x.emp_no === state.currentSalesmanId);
-    if (s) showToast(`✓ Welcome back ${s.name.split(' ')[0]}!`);
-    // After welcome, check if there's a draft from earlier today (e.g. crash recovery)
-    checkResumeBanner();
+    // Auto-restore today's draft (covers tab-close / crash / coming back mid-day)
+    const restored = autoRestoreDraft(state.currentSalesmanId);
+    renderBrandSummary();
+    renderCustomers();
+    renderStats();
+    renderClearAll();
+    if (restored > 0) {
+      showToast(`✓ Welcome back ${s ? s.name.split(' ')[0] : ''} — restored ${restored} entr${restored===1?'y':'ies'}`);
+    } else if (s) {
+      showToast(`✓ Welcome back ${s.name.split(' ')[0]}!`);
+    }
   } else {
     showToast(`👋 Type your Staff ID to begin`);
   }
