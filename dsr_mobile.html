@@ -281,6 +281,107 @@ body {
 .hidden { display: none !important; }
 .muted { color: var(--gray); font-size: 11.5px; line-height: 1.4; margin-top: 4px; }
 .muted .ml { display: block; opacity: 0.85; font-size: 11px; }
+
+/* RESUME BANNER (draft from today exists) */
+.resume-banner {
+  background: linear-gradient(180deg, var(--gold-light) 0%, #FFEFC2 100%);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: var(--shadow-md);
+}
+.resume-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
+.resume-text { flex: 1; min-width: 0; }
+.resume-title { font-size: 13.5px; font-weight: 700; color: var(--gold-dark); }
+.resume-sub { font-size: 11px; color: var(--gold-dark); opacity: 0.85; margin-top: 1px; }
+.resume-meta { font-size: 11px; color: var(--text-2); margin-top: 6px; font-family: 'Geist Mono', monospace; }
+.resume-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.resume-btn { padding: 7px 14px; font-size: 11.5px; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; white-space: nowrap; }
+.resume-btn.continue { background: var(--gold); color: var(--navy); box-shadow: 0 2px 4px rgba(201,168,76,0.4); }
+.resume-btn.continue:active { transform: scale(0.97); }
+.resume-btn.discard { background: white; color: var(--gray); border: 1px solid var(--border); }
+
+/* AUTOSAVE HINT */
+.autosave-hint {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; margin-bottom: 10px;
+  background: var(--green-light); color: var(--green);
+  border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  width: fit-content; max-width: 100%;
+}
+.autosave-hint .ml { opacity: 0.75; font-weight: 500; font-size: 10.5px; margin-left: 2px; }
+
+/* BOTTOM TAB BAR */
+.tab-bar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: white;
+  border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+  z-index: 60;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  background: transparent; border: none; padding: 10px 8px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--gray); font-family: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; line-height: 1.2;
+  border-top: 3px solid transparent;
+}
+.tab-btn.active { color: var(--navy); border-top-color: var(--gold); background: var(--gold-light); }
+.tab-icon { font-size: 19px; }
+.tab-btn .ml { display: block; font-size: 9.5px; font-weight: 500; opacity: 0.75; margin-top: 1px; }
+
+/* shift Submit Bar up so it sits above Tab Bar */
+.submit-bar { bottom: 64px; }
+body { padding-bottom: 156px; }
+body.history-mode { padding-bottom: 80px; }
+body.history-mode .submit-bar { display: none; }
+
+/* HISTORY VIEW */
+.history-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
+.history-header h2 { font-size: 17px; font-weight: 700; color: var(--text); }
+.history-header h2 .ml { font-size: 12px; font-weight: 400; color: var(--gray); margin-left: 6px; }
+.history-refresh-btn { background: var(--gray-light); color: var(--text-2); border: 1px solid var(--border); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.history-day-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden; }
+.history-day-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--navy); color: white; }
+.history-date { font-size: 13.5px; font-weight: 700; font-family: 'Geist Mono', monospace; }
+.history-day-meta { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.history-day-total { font-size: 14px; font-weight: 700; color: var(--gold-bright); font-family: 'Geist Mono', monospace; }
+.history-brand-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 10px 14px; cursor: pointer; border-top: 1px solid var(--border); transition: background 0.15s; }
+.history-brand-row:hover, .history-brand-row:active { background: var(--gold-light); }
+.history-brand-row .hb-code { font-size: 13px; font-weight: 700; color: var(--navy); font-family: 'Geist Mono', monospace; }
+.history-brand-row .hb-stats { font-size: 11px; color: var(--text-2); }
+.history-brand-row .hb-photos { font-size: 11px; color: var(--green); font-weight: 600; }
+.history-brand-row .hb-chevron { color: var(--gray); font-size: 16px; }
+.history-empty { background: white; border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 20px; text-align: center; }
+.history-empty .icon { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
+.history-empty .title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+.history-empty .ml { display: block; opacity: 0.85; font-size: 11.5px; margin-top: 3px; color: var(--gray); }
+.history-loading { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 13px; }
+
+/* HISTORY DETAIL ENTRY */
+.hd-entry { background: var(--gray-light); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.hd-entry .hd-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.hd-entry .hd-code { font-size: 10.5px; color: var(--gray); font-family: 'Geist Mono', monospace; margin-top: 2px; }
+.hd-entry .hd-amount { font-size: 13px; font-weight: 700; font-family: 'Geist Mono', monospace; color: var(--green); text-align: right; }
+.hd-entry .hd-amount.zero { color: var(--gray); }
+.hd-entry .hd-reason { display: inline-block; background: var(--amber-light); color: var(--amber); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-top: 3px; }
+.hd-entry .hd-photo { width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; cursor: pointer; border: 1px solid var(--border); }
+.hd-entry .hd-no-photo { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--red-light); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.hd-summary { background: var(--blue-light); padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 12px; line-height: 1.5; }
+.hd-summary .row { display: flex; justify-content: space-between; }
+.hd-summary .row .v { font-family: 'Geist Mono', monospace; font-weight: 600; }
+
+/* PHOTO LIGHTBOX */
+.photo-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 400; padding: 16px; }
+.photo-lightbox.show { display: flex; }
+.photo-lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.photo-lightbox-close { position: absolute; top: 12px; right: 16px; color: white; font-size: 32px; cursor: pointer; line-height: 1; background: rgba(0,0,0,0.5); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 </style>
 </head>
 <body>
@@ -341,37 +442,71 @@ body {
 
 <div class="container">
 
-  <div class="priorities-card">
-    <div class="title">⭐ Monthly Priorities <span class="ml">· Keutamaan Bulanan</span></div>
-    <div class="priorities-list" id="priorities-list"></div>
+  <!-- VIEW: TODAY -->
+  <div id="view-today">
+
+    <!-- RESUME BANNER (shows when today's draft exists) -->
+    <div class="resume-banner" id="resume-banner" style="display:none;">
+      <div class="resume-icon">📝</div>
+      <div class="resume-text">
+        <div class="resume-title">You have unsaved entries from today</div>
+        <div class="resume-sub">Anda ada catatan belum dihantar dari hari ini</div>
+        <div class="resume-meta" id="resume-meta"></div>
+      </div>
+      <div class="resume-actions">
+        <button class="resume-btn continue" id="resume-continue">Resume ✓</button>
+        <button class="resume-btn discard" id="resume-discard">Discard</button>
+      </div>
+    </div>
+
+    <div class="priorities-card">
+      <div class="title">⭐ Monthly Priorities <span class="ml">· Keutamaan Bulanan</span></div>
+      <div class="priorities-list" id="priorities-list"></div>
+    </div>
+
+    <div class="brand-summary" id="brand-summary"></div>
+
+    <!-- ACTION BUTTONS — Privacy-first: search to add customer -->
+    <div class="action-bar">
+      <button class="action-btn search" id="open-search-btn">
+        <span class="icon">🔍</span>
+        <span>
+          Search & Add Customer
+          <span class="ml">Cari & Tambah Pelanggan</span>
+        </span>
+      </button>
+      <button class="action-btn new" id="open-newop-btn">
+        <span class="icon">➕</span>
+        <span>
+          New Outlet
+          <span class="ml">Baru</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="section-title">
+      <div class="h">📋 Today's Visits <span class="ml">· Hari Ini</span></div>
+      <div class="progress" id="route-progress">0 visited</div>
+    </div>
+
+    <div class="customer-list" id="customer-list"></div>
+
   </div>
 
-  <div class="brand-summary" id="brand-summary"></div>
-
-  <!-- ACTION BUTTONS — Privacy-first: search to add customer -->
-  <div class="action-bar">
-    <button class="action-btn search" id="open-search-btn">
-      <span class="icon">🔍</span>
-      <span>
-        Search & Add Customer
-        <span class="ml">Cari & Tambah Pelanggan</span>
-      </span>
-    </button>
-    <button class="action-btn new" id="open-newop-btn">
-      <span class="icon">➕</span>
-      <span>
-        New Outlet
-        <span class="ml">Baru</span>
-      </span>
-    </button>
+  <!-- VIEW: HISTORY -->
+  <div id="view-history" style="display:none;">
+    <div class="history-header">
+      <h2>📚 My Last 7 Days <span class="ml">7 Hari Terakhir</span></h2>
+      <button class="history-refresh-btn" id="history-refresh">↻ Refresh</button>
+    </div>
+    <div class="history-loading" id="history-loading" style="display:none;">⏳ Loading your submissions...<br><span style="font-size:11px;opacity:0.7;">Memuat laporan</span></div>
+    <div class="history-empty" id="history-empty" style="display:none;">
+      <div class="icon">📋</div>
+      <div class="title">No submissions yet</div>
+      <span class="ml">Belum ada laporan dihantar. Hantar laporan hari ini, kemudian lihat di sini.</span>
+    </div>
+    <div class="history-list" id="history-list"></div>
   </div>
-
-  <div class="section-title">
-    <div class="h">📋 Today's Visits <span class="ml">· Hari Ini</span></div>
-    <div class="progress" id="route-progress">0 visited</div>
-  </div>
-
-  <div class="customer-list" id="customer-list"></div>
 
 </div>
 
@@ -491,6 +626,40 @@ body {
       OK <span class="ml">OK</span>
     </button>
   </div>
+</div>
+
+<!-- MODAL: HISTORY DETAIL (entries within one daily_report) -->
+<div class="modal-overlay" id="history-detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span id="history-detail-title">DSR Detail</span>
+        <span class="ml" id="history-detail-sub"></span>
+      </div>
+      <div class="modal-close" onclick="closeHistoryDetail()">✕</div>
+    </div>
+    <div class="modal-body" id="history-detail-body">
+      <div class="history-loading">⏳ Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO LIGHTBOX -->
+<div class="photo-lightbox" id="photo-lightbox" onclick="closePhotoLightbox()">
+  <div class="photo-lightbox-close">✕</div>
+  <img id="photo-lightbox-img" src="" alt="">
+</div>
+
+<!-- BOTTOM TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="today" id="tab-today">
+    <span class="tab-icon">📋</span>
+    <span>Today<span class="ml">Hari Ini</span></span>
+  </button>
+  <button class="tab-btn" data-tab="history" id="tab-history">
+    <span class="tab-icon">📚</span>
+    <span>History<span class="ml">Sejarah</span></span>
+  </button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -664,46 +833,117 @@ async function captureGPS(customer, code) {
 }
 
 // ============================================================
-// PHOTO — capture + compress + upload to Supabase Storage
+// PHOTO — capture + HEIC convert + compress + retry upload
+// Storage bucket: `dsr-photos` (private). Per-entry photo is REQUIRED for
+// any visited customer; doSubmit() refuses to send without it.
 // ============================================================
+function isHeic(file) {
+  const t = (file.type || '').toLowerCase();
+  if (t === 'image/heic' || t === 'image/heif') return true;
+  const n = (file.name || '').toLowerCase();
+  return n.endsWith('.heic') || n.endsWith('.heif');
+}
+
+// Lazy-load heic2any only when an iPhone user actually uploads a HEIC.
+// ~150KB gzipped — Android users never pay this cost.
+let _heic2anyPromise = null;
+function loadHeic2Any() {
+  if (window.heic2any) return Promise.resolve(window.heic2any);
+  if (_heic2anyPromise) return _heic2anyPromise;
+  _heic2anyPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    s.onload = () => window.heic2any ? resolve(window.heic2any) : reject(new Error('heic2any global missing'));
+    s.onerror = () => reject(new Error('HEIC converter download failed — change camera to JPEG'));
+    document.head.appendChild(s);
+  });
+  return _heic2anyPromise;
+}
+
+async function convertHeicToJpeg(file) {
+  const heic2any = await loadHeic2Any();
+  const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+  const blob = Array.isArray(result) ? result[0] : result;
+  return new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+}
+
 async function capturePhoto(customer, code) {
   return new Promise(resolve => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';   // prefer rear camera on mobile
+    input.accept = 'image/*,.heic,.heif';
+    input.capture = 'environment';
     input.style.display = 'none';
     document.body.appendChild(input);
 
     input.onchange = async (e) => {
       const file = e.target.files?.[0];
       document.body.removeChild(input);
-      if (!file) { resolve(); return; }
+      if (!file) { resolve(false); return; }
 
       try {
-        showToast('📸 Uploading photo...');
-        const compressed = await compressImage(file, 1280, 0.85);
+        // Step 1 — HEIC convert (iPhone default format) if needed
+        let processed = file;
+        if (isHeic(file)) {
+          showToast('🔄 Converting HEIC → JPEG... / Menukar foto...');
+          processed = await convertHeicToJpeg(file);
+        }
+
+        // Step 2 — Compress to 1280px / quality 0.85
+        showToast('📸 Compressing... / Memampatkan...');
+        const compressed = await compressImage(processed, 1280, 0.85);
+
+        // Step 3 — Upload with retry (3 attempts, backoff 0s/1s/3s)
         const filename = `${state.currentSalesmanId}/${todayDateMY()}/${code}_${Date.now()}.jpg`;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          if (attempt === 1) showToast('☁ Uploading photo... / Memuat naik...');
+          else showToast(`☁ Retry ${attempt-1}/2... / Cuba semula`, false);
 
-        const { data: uploadData, error: uploadErr } = await sb.storage
-          .from('dsr-photos')
-          .upload(filename, compressed, { contentType: 'image/jpeg', upsert: false });
+          const { error: uploadErr } = await sb.storage
+            .from('dsr-photos')
+            .upload(filename, compressed, { contentType: 'image/jpeg', upsert: false });
 
-        if (uploadErr) throw uploadErr;
-
-        // Get public URL
-        const { data: { publicUrl } } = sb.storage.from('dsr-photos').getPublicUrl(filename);
-        customer.entry.photo = publicUrl;
-        customer.entry.photo_path = filename;
-        showToast(`✅ Photo uploaded (${Math.round(compressed.size / 1024)}KB)`);
+          if (!uploadErr) {
+            const { data: { publicUrl } } = sb.storage.from('dsr-photos').getPublicUrl(filename);
+            customer.entry.photo = publicUrl;
+            customer.entry.photo_path = filename;
+            // Share with same customer's entries under other brands today (save salesman retake)
+            reusePhotoAcrossBrands(customer.code, publicUrl, filename);
+            saveDraft();
+            showToast(`✅ Photo saved (${Math.round(compressed.size / 1024)}KB)`);
+            resolve(true);
+            return;
+          }
+          lastErr = uploadErr;
+          if (attempt < 3) {
+            await new Promise(r => setTimeout(r, attempt === 1 ? 1000 : 3000));
+          }
+        }
+        throw lastErr || new Error('upload failed');
       } catch (err) {
         console.error('Photo upload error:', err);
-        showToast('Photo upload failed: ' + (err.message || 'check connection'), true);
+        const msg = err.message || 'unknown error';
+        showToast('❌ Photo failed: ' + msg + ' — please retry / Cuba lagi', true);
+        resolve(false);
       }
-      resolve();
     };
     input.click();
   });
+}
+
+// If the same customer appears in entries under another brand TODAY and that
+// brand entry has no photo yet, copy the URL over so the salesman doesn't
+// have to walk back and re-shoot the same storefront.
+function reusePhotoAcrossBrands(customerCode, photoUrl, photoPath) {
+  for (const [brand, customers] of Object.entries(state.entriesByBrand)) {
+    if (brand === state.currentBrand) continue;
+    const otherEntry = (customers || []).find(c => c.code === customerCode);
+    if (otherEntry && otherEntry.entry && !otherEntry.entry.photo) {
+      otherEntry.entry.photo = photoUrl;
+      otherEntry.entry.photo_path = photoPath;
+    }
+  }
 }
 
 // Compress image using canvas — max width X px, JPEG quality Q
@@ -732,6 +972,87 @@ function compressImage(file, maxWidth = 1280, quality = 0.85) {
 
 function todayDateMY() {
   return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// ============================================================
+// DRAFT AUTOSAVE — localStorage, keyed by emp_no + date.
+// Submitted DSRs always go to Supabase; the draft only catches
+// in-progress entries so the salesman doesn't lose work on a
+// refresh/tab-close/incoming call.
+// ============================================================
+const DRAFT_KEY_PREFIX = 'clf_dsr_draft_';
+function draftKey(empNo, date) {
+  return `${DRAFT_KEY_PREFIX}${empNo}_${date}`;
+}
+
+function saveDraft() {
+  if (!state.currentSalesmanId) return;
+  const date = todayDateMY();
+  // Persist current brand's in-memory entries into the map first
+  if (state.currentBrand) state.entriesByBrand[state.currentBrand] = state.todayCustomers;
+  // Skip writing if there's literally nothing
+  const totalEntries = Object.values(state.entriesByBrand)
+    .reduce((n, arr) => n + (arr?.length || 0), 0);
+  if (totalEntries === 0) { clearDraft(state.currentSalesmanId); return; }
+  const payload = {
+    empNo: state.currentSalesmanId,
+    date,
+    currentBrand: state.currentBrand,
+    entriesByBrand: state.entriesByBrand,
+    savedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(draftKey(state.currentSalesmanId, date), JSON.stringify(payload));
+  } catch (e) {
+    console.warn('Draft save failed (quota?):', e);
+  }
+}
+
+function loadDraft(empNo) {
+  if (!empNo) return null;
+  const date = todayDateMY();
+  try {
+    const raw = localStorage.getItem(draftKey(empNo, date));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || data.date !== date) return null;
+    return data;
+  } catch (e) {
+    console.warn('Draft load failed:', e);
+    return null;
+  }
+}
+
+function clearDraft(empNo) {
+  if (!empNo) return;
+  const date = todayDateMY();
+  try { localStorage.removeItem(draftKey(empNo, date)); } catch (e) {}
+}
+
+// Quick check (no JSON parse) — does today's draft contain any entries?
+function draftHasEntries(empNo) {
+  const d = loadDraft(empNo);
+  if (!d) return { count: 0, brands: [], savedAt: null };
+  let count = 0;
+  const brands = [];
+  for (const [b, arr] of Object.entries(d.entriesByBrand || {})) {
+    if (arr && arr.length > 0) { count += arr.length; brands.push(b); }
+  }
+  return { count, brands, savedAt: d.savedAt };
+}
+
+// Remove drafts older than 7 days — runs on init, no UI
+function cleanupOldDrafts() {
+  const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(DRAFT_KEY_PREFIX)) continue;
+    const parts = k.split('_');
+    const date = parts[parts.length - 1];
+    if (date && date < cutoff) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    }
+  }
 }
 
 // ============================================================
@@ -838,12 +1159,21 @@ function addFromSearch(code) {
   const c = (window._lastSearchResults || []).find(x => x.code === code);
   if (!c) return;
   if (state.todayCustomers.some(x => x.code === code)) return;
+  // If the same customer already has a photo under another brand today, reuse it
+  let prefillPhoto = null, prefillPath = null;
+  for (const [b, arr] of Object.entries(state.entriesByBrand)) {
+    if (b === state.currentBrand) continue;
+    const other = (arr || []).find(x => x.code === code);
+    if (other?.entry?.photo) { prefillPhoto = other.entry.photo; prefillPath = other.entry.photo_path; break; }
+  }
   state.todayCustomers.push({
     code: c.code, name: c.name, area: c.area, category: c.category,
-    isNewOp: false, entry: {}
+    isNewOp: false,
+    entry: prefillPhoto ? { photo: prefillPhoto, photo_path: prefillPath } : {},
   });
   closeSearchModal();
   state.expandedCode = code;
+  saveDraft();
   renderCustomers();
   renderStats();
   setTimeout(() => {
@@ -856,6 +1186,7 @@ function addFromSearch(code) {
 function removeCustomer(code) {
   state.todayCustomers = state.todayCustomers.filter(c => c.code !== code);
   if (state.expandedCode === code) state.expandedCode = null;
+  saveDraft();
   renderCustomers();
   renderStats();
   showToast('Removed');
@@ -887,13 +1218,17 @@ function addNewOp() {
     entry: {
       total_sales: Number($('newop-sales').value) || 0,
       total_collection: Number($('newop-coll').value) || 0,
-      visited: true,
+      // visited stays false until photo is taken — enforce same gate as regular customers
+      visited: false,
     }
   });
   closeNewOpModal();
+  // Auto-expand so the salesman is taken straight to photo capture
+  state.expandedCode = code;
+  saveDraft();
   renderCustomers();
   renderStats();
-  showToast(`✓ ${name} added`);
+  showToast(`✓ ${name} added — take photo to confirm visit`);
 }
 
 // ============================================================
@@ -1148,24 +1483,24 @@ function renderEntryForm(c) {
       <div class="media-row">
         <div class="media-btn ${e.photo ? 'captured' : ''}" data-code="${c.code}" data-action="photo">
           <span class="icon">${e.photo ? '✅' : '📸'}</span>
-          ${e.photo ? 'Photo captured' : 'Take Photo'}
-          <span class="ml">${e.photo ? 'Foto disimpan' : 'Ambil Foto'}</span>
+          ${e.photo ? 'Photo ✓ (tap to retake)' : 'Take Photo (required)'}
+          <span class="ml">${e.photo ? 'Foto disimpan' : 'Ambil Foto (wajib)'}</span>
         </div>
         <div class="media-btn ${e.gps ? 'captured' : ''}" data-code="${c.code}" data-action="gps">
           <span class="icon">${e.gps ? '✅' : '📍'}</span>
-          ${e.gps ? 'GPS captured' : 'Capture GPS'}
+          ${e.gps ? 'GPS captured' : 'Capture GPS (optional)'}
           <span class="ml">${e.gps ? 'GPS disimpan' : 'Tangkap GPS'}</span>
         </div>
       </div>
 
       <div class="entry-actions">
         <button class="btn-secondary" data-code="${c.code}" data-action="skip">
-          Skip / No Visit
-          <span class="ml">Langkau</span>
+          Did Not Visit
+          <span class="ml">Tidak Lawat</span>
         </button>
         <button class="btn-primary" data-code="${c.code}" data-action="save">
-          Save Entry ✓
-          <span class="ml">Simpan ✓</span>
+          Add Entry ✓
+          <span class="ml">Tambah ✓</span>
         </button>
       </div>
     </div>
@@ -1196,6 +1531,7 @@ function saveCurrentInputs() {
   if (sales) c.entry.total_sales = Number(sales.value) || 0;
   if (coll) c.entry.total_collection = Number(coll.value) || 0;
   if (remark) c.entry.remark = remark.value;
+  saveDraft();   // persist every keystroke flush so a refresh never loses input
 }
 
 function wireExpandedEvents() {
@@ -1253,19 +1589,25 @@ function wireExpandedEvents() {
       if (!c) return;
       c.entry = c.entry || {};
       if (action === 'save') {
+        if (!c.entry.photo) {
+          showToast('📸 Photo required · Foto wajib — please take photo first', true);
+          return;
+        }
         if ((c.entry.total_sales || 0) === 0 && !c.entry.reason) {
           showToast('Pls select a reason if no sale · Pilih sebab', true);
           return;
         }
         c.entry.visited = true;
         state.expandedCode = null;
-        showToast('✅ Entry saved');
+        saveDraft();
+        showToast('✅ Added — Auto-saved, safe to close app');
       } else if (action === 'skip') {
         c.entry.visited = false;
         c.entry.total_sales = 0;
         c.entry.total_collection = 0;
         state.expandedCode = null;
-        showToast('Skipped');
+        saveDraft();
+        showToast('Marked as not visited');
       }
       renderCustomers();
       renderStats();
@@ -1466,6 +1808,23 @@ async function doSubmit() {
       return;
     }
 
+    // 📸 Photo gate — every visited entry must have a photo (M Boss policy 2026-05-15)
+    const missing = [];
+    for (const [brand, customers] of brandsToSubmit) {
+      for (const c of customers) {
+        if (c.entry?.visited && !c.entry?.photo) {
+          missing.push(`${brand}: ${c.name}`);
+        }
+      }
+    }
+    if (missing.length > 0) {
+      closeSubmitModal();
+      const preview = missing.slice(0, 3).join('; ');
+      const more = missing.length > 3 ? ` (+${missing.length - 3} more)` : '';
+      showToast(`📸 Photo required for ${missing.length} entr${missing.length===1?'y':'ies'}: ${preview}${more}`, true);
+      return;
+    }
+
     const salesman = SALESMEN.find(s => s.emp_no === state.currentSalesmanId);
     if (!salesman) throw new Error('Salesman not found in loaded list');
     const now = new Date();
@@ -1497,6 +1856,10 @@ async function doSubmit() {
 
     if (failed.length === 0) {
       state.submitted = true;
+      // Submit succeeded → wipe the localStorage draft (it's now in Supabase)
+      clearDraft(state.currentSalesmanId);
+      // Force history to refetch next time the tab is opened
+      _historyLoadedFor = null;
       // Clear all brands' entries — fresh start
       state.entriesByBrand = {};
       state.todayCustomers = [];
@@ -1543,6 +1906,242 @@ async function doSubmit() {
 function closeSuccessModal() { $('success-modal').classList.remove('show'); }
 
 // ============================================================
+// TAB SWITCH (Today / History)
+// ============================================================
+let _historyLoadedFor = null;  // emp_no last loaded — avoid refetching needlessly
+
+function switchTab(name) {
+  const isHistory = name === 'history';
+  $('view-today').style.display    = isHistory ? 'none' : '';
+  $('view-history').style.display  = isHistory ? '' : 'none';
+  document.body.classList.toggle('history-mode', isHistory);
+  $('tab-today').classList.toggle('active', !isHistory);
+  $('tab-history').classList.toggle('active', isHistory);
+  window.scrollTo(0, 0);
+  if (isHistory) loadHistoryIfNeeded();
+}
+
+async function loadHistoryIfNeeded(force = false) {
+  const emp = state.currentSalesmanId;
+  if (!emp) {
+    $('history-list').innerHTML = '';
+    $('history-loading').style.display = 'none';
+    $('history-empty').style.display = '';
+    $('history-empty').querySelector('.title').textContent = 'Type your Staff ID first';
+    $('history-empty').querySelector('.ml').textContent = 'Taipkan No Pekerja dahulu di tab "Today"';
+    return;
+  }
+  if (!force && _historyLoadedFor === emp) return;
+  await loadHistory(emp);
+}
+
+async function loadHistory(emp) {
+  $('history-list').innerHTML = '';
+  $('history-empty').style.display = 'none';
+  $('history-loading').style.display = '';
+  try {
+    const { data, error } = await sb.rpc('get_my_history', { p_emp_no: emp, p_days: 7 });
+    if (error) throw error;
+    _historyLoadedFor = emp;
+    renderHistory(data || []);
+  } catch (e) {
+    console.error('History load failed:', e);
+    $('history-loading').style.display = 'none';
+    $('history-empty').style.display = '';
+    $('history-empty').querySelector('.title').textContent = '⚠ Failed to load history';
+    $('history-empty').querySelector('.ml').textContent = (e.message || 'check connection') + ' — pull down to retry';
+  }
+}
+
+function renderHistory(rows) {
+  $('history-loading').style.display = 'none';
+  const listEl = $('history-list');
+  if (!rows.length) {
+    $('history-empty').style.display = '';
+    $('history-empty').querySelector('.title').textContent = 'No submissions yet';
+    $('history-empty').querySelector('.ml').textContent = 'Belum ada laporan dihantar. Hantar laporan hari ini, kemudian lihat di sini.';
+    listEl.innerHTML = '';
+    return;
+  }
+  $('history-empty').style.display = 'none';
+
+  // Group rows by report_date
+  const byDate = {};
+  for (const r of rows) {
+    if (!byDate[r.report_date]) byDate[r.report_date] = [];
+    byDate[r.report_date].push(r);
+  }
+  const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+  listEl.innerHTML = sortedDates.map(date => {
+    const dayRows = byDate[date];
+    const dayTotal = dayRows.reduce((s, r) => s + Number(r.total_sales || 0), 0);
+    const dayEntries = dayRows.reduce((s, r) => s + Number(r.entry_count || 0), 0);
+    const dayPhotos  = dayRows.reduce((s, r) => s + Number(r.photo_count || 0), 0);
+    const d = new Date(date + 'T00:00:00');
+    const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+    const dateLabel = `${date} (${dow})`;
+    const brandRows = dayRows.map(r => {
+      const isLate = r.submitted_at ? (new Date(r.submitted_at).getHours() >= 24) : false;
+      return `
+        <div class="history-brand-row" data-id="${escapeHtml(r.daily_report_id)}" data-brand="${escapeHtml(r.division_code)}" data-date="${escapeHtml(date)}">
+          <div>
+            <div class="hb-code">${escapeHtml(r.division_code)}</div>
+            <div class="hb-stats">${r.total_visits || 0} visits · RM ${fmtRM(r.total_sales)}${Number(r.total_collection) > 0 ? ' · Coll RM ' + fmtRM(r.total_collection) : ''}</div>
+          </div>
+          <div class="hb-photos">📸 ${r.photo_count || 0}/${r.entry_count || 0}</div>
+          <div class="hb-chevron">›</div>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="history-day-card">
+        <div class="history-day-header">
+          <div>
+            <div class="history-date">${dateLabel}</div>
+            <div class="history-day-meta">${dayRows.length} brand${dayRows.length>1?'s':''} · ${dayEntries} entries · 📸 ${dayPhotos}</div>
+          </div>
+          <div class="history-day-total">RM ${fmtRMshort(dayTotal)}</div>
+        </div>
+        ${brandRows}
+      </div>
+    `;
+  }).join('');
+
+  // Wire up drill-down
+  listEl.querySelectorAll('.history-brand-row').forEach(el => {
+    el.addEventListener('click', () => {
+      openHistoryDetail(el.dataset.id, el.dataset.brand, el.dataset.date);
+    });
+  });
+}
+
+async function openHistoryDetail(daily_report_id, brand, date) {
+  $('history-detail-title').textContent = `${brand} · ${date}`;
+  $('history-detail-sub').textContent   = 'Tap thumbnail to enlarge · Ketuk foto kecil';
+  $('history-detail-body').innerHTML    = '<div class="history-loading">⏳ Loading entries...</div>';
+  $('history-detail-modal').classList.add('show');
+  try {
+    const { data, error } = await sb.rpc('get_my_history_detail', {
+      p_emp_no: state.currentSalesmanId,
+      p_daily_report_id: daily_report_id,
+    });
+    if (error) throw error;
+    renderHistoryDetail(data || []);
+  } catch (e) {
+    console.error('History detail load failed:', e);
+    $('history-detail-body').innerHTML = `<div class="history-empty"><div class="icon">⚠</div><div class="title">Failed to load</div><span class="ml">${escapeHtml(e.message || 'unknown')}</span></div>`;
+  }
+}
+function closeHistoryDetail() { $('history-detail-modal').classList.remove('show'); }
+
+function renderHistoryDetail(entries) {
+  const body = $('history-detail-body');
+  if (!entries.length) {
+    body.innerHTML = '<div class="history-empty"><div class="icon">📋</div><div class="title">No entries</div><span class="ml">Tiada catatan</span></div>';
+    return;
+  }
+  // Summary
+  const visited = entries.filter(e => e.visited).length;
+  const totalSales = entries.reduce((s, e) => s + Number(e.total_sales || 0), 0);
+  const totalColl  = entries.reduce((s, e) => s + Number(e.total_collection || 0), 0);
+  const photoCount = entries.filter(e => e.photo_url).length;
+
+  const summaryHtml = `
+    <div class="hd-summary">
+      <div class="row"><span>Total visits / Lawatan</span><span class="v">${visited}/${entries.length}</span></div>
+      <div class="row"><span>Total sales / Jualan</span><span class="v">RM ${fmtRM(totalSales)}</span></div>
+      <div class="row"><span>Total collection / Kutipan</span><span class="v">RM ${fmtRM(totalColl)}</span></div>
+      <div class="row"><span>Photos / Foto</span><span class="v">${photoCount}/${entries.length}</span></div>
+    </div>
+  `;
+
+  const REASON_MAP = {A:'Stock OK', B:'Boss out', C:'Closed', D:'Payment', E:'Other'};
+  const rowsHtml = entries.map(e => {
+    const photoCell = e.photo_url
+      ? `<img class="hd-photo" src="${escapeHtml(e.photo_url)}" alt="" onclick="openPhotoLightbox('${escapeHtml(e.photo_url)}')">`
+      : '<div class="hd-no-photo">📷</div>';
+    const reasonChip = e.reason_code ? `<span class="hd-reason">${escapeHtml(e.reason_code)} · ${escapeHtml(REASON_MAP[e.reason_code] || '')}</span>` : '';
+    const salesAmt = Number(e.total_sales || 0);
+    return `
+      <div class="hd-entry">
+        <div>
+          <div class="hd-name">${escapeHtml(e.customer_name || '(no name)')}</div>
+          <div class="hd-code">${escapeHtml(e.customer_code || '')}</div>
+          ${reasonChip}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="hd-amount ${salesAmt === 0 ? 'zero' : ''}">RM ${fmtRM(salesAmt)}</span>
+          ${photoCell}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  body.innerHTML = summaryHtml + rowsHtml;
+}
+
+function openPhotoLightbox(url) {
+  $('photo-lightbox-img').src = url;
+  $('photo-lightbox').classList.add('show');
+}
+function closePhotoLightbox() {
+  $('photo-lightbox').classList.remove('show');
+  $('photo-lightbox-img').src = '';
+}
+
+// ============================================================
+// RESUME BANNER — show on valid Staff ID if a draft exists for today
+// ============================================================
+function checkResumeBanner() {
+  const banner = $('resume-banner');
+  if (!banner) return;
+  const emp = state.currentSalesmanId;
+  if (!emp || !SALESMEN.find(s => s.emp_no === emp)) { banner.style.display = 'none'; return; }
+  // If we already loaded the draft into state, no banner.
+  const inMemoryTotal = Object.values(state.entriesByBrand)
+    .reduce((n, arr) => n + (arr?.length || 0), 0);
+  if (inMemoryTotal > 0) { banner.style.display = 'none'; return; }
+  const info = draftHasEntries(emp);
+  if (!info.count) { banner.style.display = 'none'; return; }
+  const savedTime = info.savedAt ? new Date(info.savedAt) : null;
+  const timeLabel = savedTime
+    ? `${String(savedTime.getHours()).padStart(2,'0')}:${String(savedTime.getMinutes()).padStart(2,'0')}`
+    : '?';
+  $('resume-meta').textContent = `${info.count} entr${info.count===1?'y':'ies'} across ${info.brands.length} brand${info.brands.length===1?'':'s'} · last saved ${timeLabel}`;
+  banner.style.display = 'flex';
+}
+
+function resumeDraft() {
+  const emp = state.currentSalesmanId;
+  const draft = loadDraft(emp);
+  if (!draft) { $('resume-banner').style.display = 'none'; return; }
+  state.entriesByBrand = draft.entriesByBrand || {};
+  // Pick a brand: prefer saved currentBrand, else first non-empty
+  let brand = draft.currentBrand;
+  if (!brand || !state.entriesByBrand[brand]) {
+    brand = Object.keys(state.entriesByBrand).find(b => state.entriesByBrand[b]?.length > 0) || state.currentBrand;
+  }
+  state.currentBrand = brand;
+  state.todayCustomers = state.entriesByBrand[brand] || [];
+  state.expandedCode = null;
+  $('brand-pick').value = brand;
+  $('resume-banner').style.display = 'none';
+  renderBrandSummary();
+  renderCustomers();
+  renderStats();
+  const totalCount = Object.values(state.entriesByBrand).reduce((n, arr) => n + (arr?.length || 0), 0);
+  showToast(`✓ Resumed ${totalCount} entr${totalCount===1?'y':'ies'}`);
+}
+
+function discardDraft() {
+  if (!confirm('Discard all unsaved entries from today? · Buang semua catatan?')) return;
+  clearDraft(state.currentSalesmanId);
+  $('resume-banner').style.display = 'none';
+  showToast('Draft discarded');
+}
+
+// ============================================================
 // DEADLINE
 // ============================================================
 function updateDeadline() {
@@ -1585,6 +2184,7 @@ function onSalesmanChange() {
     renderCustomers();
     renderStats();
     renderBrandSummary();
+    $('resume-banner').style.display = 'none';
     return;
   }
 
@@ -1609,6 +2209,10 @@ function onSalesmanChange() {
   renderCustomers();
   renderStats();
   renderBrandSummary();
+  // Resume banner shows ONLY if today's localStorage draft exists for this emp_no
+  checkResumeBanner();
+  // Reset history cache so the History tab re-fetches for the new salesman
+  _historyLoadedFor = null;
 }
 
 function onBrandChange() {
@@ -1626,6 +2230,7 @@ function onBrandChange() {
   state.currentBrand = newBrand;
   state.expandedCode = null;
   state.submitted = false;
+  saveDraft();
   renderCustomers();
   renderStats();
   renderBrandSummary();
@@ -1713,6 +2318,9 @@ async function loadInitialData() {
 }
 
 async function init() {
+  // Clean up any drafts older than 7 days before doing anything else
+  cleanupOldDrafts();
+
   // Show loading state (input placeholder)
   $('salesman-pick').placeholder = '⏳ Loading...';
 
@@ -1723,7 +2331,7 @@ async function init() {
     $('salesman-pick').placeholder = '⚠ Connection failed';
     return;
   }
-  $('salesman-pick').placeholder = 'e.g. LEN-KM';
+  $('salesman-pick').placeholder = 'e.g. TER017';
 
   renderSalesmanDropdown();         // populates datalist + pre-fills input from localStorage if any
   // If we restored a valid SR code, run onSalesmanChange logic to set brand + state
@@ -1760,6 +2368,15 @@ async function init() {
   $('search-input').addEventListener('input', onSearchInput);
   $('submit-btn').addEventListener('click', openSubmitModal);
 
+  // Tab bar (Today / History)
+  $('tab-today').addEventListener('click',   () => switchTab('today'));
+  $('tab-history').addEventListener('click', () => switchTab('history'));
+  $('history-refresh').addEventListener('click', () => loadHistoryIfNeeded(true));
+
+  // Resume banner buttons
+  $('resume-continue').addEventListener('click', resumeDraft);
+  $('resume-discard').addEventListener('click',  discardDraft);
+
   $$('.modal-overlay').forEach(el => {
     el.addEventListener('click', (e) => {
       if (e.target === el) el.classList.remove('show');
@@ -1769,6 +2386,8 @@ async function init() {
   if (state.currentSalesmanId) {
     const s = SALESMEN.find(x => x.emp_no === state.currentSalesmanId);
     if (s) showToast(`✓ Welcome back ${s.name.split(' ')[0]}!`);
+    // After welcome, check if there's a draft from earlier today (e.g. crash recovery)
+    checkResumeBanner();
   } else {
     showToast(`👋 Type your Staff ID to begin`);
   }
