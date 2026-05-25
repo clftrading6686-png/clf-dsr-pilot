@@ -66,7 +66,7 @@ body {
 .brand-sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; }
 
 .who-block {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 8px;
 }
 .who-block label { font-size: 12px; color: #A8B4C5; white-space: nowrap; }
@@ -76,6 +76,18 @@ body {
   font-family: inherit; padding: 2px 4px; min-width: 200px;
 }
 .who-block select option { color: var(--text); background: white; }
+/* Branch filter pills */
+#branch-filter-row { display: none; }
+#branch-filter-row.show { display: flex; flex-basis: 100%; }
+.branch-pill {
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08); color: #cbd5e1;
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: all .15s;
+}
+.branch-pill:hover:not(.active) { background: rgba(255,255,255,0.15); }
+.branch-pill.active { background: #2563eb; border-color: #2563eb; color: white; }
 
 /* CONTAINER */
 .container { max-width: 1280px; margin: 0 auto; padding: 20px 24px; }
@@ -316,6 +328,15 @@ body {
     </div>
     <div class="who-block">
       <label>View</label>
+      <div id="branch-filter-row" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:6px;align-items:center;">
+        <span style="font-size:11px;color:#94A3B8;">Branch:</span>
+        <button class="branch-pill active" data-branch="ALL" type="button">All</button>
+        <button class="branch-pill" data-branch="M" type="button">M · Mentakab</button>
+        <button class="branch-pill" data-branch="K" type="button">K · Kuantan</button>
+        <button class="branch-pill" data-branch="KM" type="button">KM · Kemaman</button>
+        <button class="branch-pill" data-branch="KT" type="button">KT · K. Terengganu</button>
+        <button class="branch-pill" data-branch="KB" type="button">KB · K. Bahru</button>
+      </div>
       <select id="salesman-select">
         <option value="">Loading...</option>
       </select>
@@ -456,6 +477,7 @@ const state = {
   salesmen: [],
   collections: [],
   selectedSalesmanId: 'ALL',
+  branchFilter: 'ALL',
   filter: 'all',
 };
 
@@ -534,7 +556,7 @@ async function init() {
 
 function populateSalesmenDropdown() {
   const sel = $('salesman-select');
-  // Salesman role: lock to own data, hide dropdown options
+  // Salesman role: lock to own data, hide dropdown options + branch filter
   if (window.LOCK_SALESMAN_ID) {
     const me = state.salesmen.find(s => s.id === window.LOCK_SALESMAN_ID);
     sel.innerHTML = '';
@@ -547,31 +569,27 @@ function populateSalesmenDropdown() {
     state.selectedSalesmanId = window.LOCK_SALESMAN_ID;
     return;
   }
-  // Boss/manager: group by branch
+
+  // Boss/manager: show branch filter pills + filtered dropdown
+  const filterRow = $('branch-filter-row');
+  if (filterRow) filterRow.classList.add('show');
+
+  const branch = state.branchFilter || 'ALL';
+  const filtered = branch === 'ALL'
+    ? state.salesmen
+    : state.salesmen.filter(s => (s.branch_code || '') === branch);
+
   const BRANCH_LABELS = {
-    'M':  'Mentakab',
-    'K':  'Kuantan',
-    'KM': 'Kemaman',
-    'KT': 'Kuala Terengganu',
-    'KB': 'Kota Bahru',
+    'M':  'Mentakab', 'K':  'Kuantan', 'KM': 'Kemaman',
+    'KT': 'K. Terengganu', 'KB': 'K. Bahru',
   };
-  sel.innerHTML = '<option value="ALL">📋 All Salesmen (Boss View)</option>';
-  const byBranch = {};
-  state.salesmen.forEach(s => {
-    const b = s.branch_code || '?';
-    if (!byBranch[b]) byBranch[b] = [];
-    byBranch[b].push(s);
-  });
-  Object.keys(byBranch).sort().forEach(branch => {
-    const grp = document.createElement('optgroup');
-    grp.label = `Branch ${branch}${BRANCH_LABELS[branch] ? ' · ' + BRANCH_LABELS[branch] : ''} (${byBranch[branch].length})`;
-    byBranch[branch].forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = `${s.emp_no} · ${s.name}${s.zone ? ' · ' + s.zone : ''}`;
-      grp.appendChild(opt);
-    });
-    sel.appendChild(grp);
+  const branchLabel = branch === 'ALL' ? 'All Branches' : `Branch ${branch} · ${BRANCH_LABELS[branch] || ''}`;
+  sel.innerHTML = `<option value="ALL">📋 ${branchLabel} (${filtered.length} staff)</option>`;
+  filtered.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.emp_no} · ${s.name}${s.zone ? ' · ' + s.zone : ''}`;
+    sel.appendChild(opt);
   });
   sel.value = 'ALL';
   state.selectedSalesmanId = 'ALL';
@@ -593,6 +611,17 @@ async function loadCollections() {
 
   if (state.selectedSalesmanId !== 'ALL') {
     query = query.eq('salesman_id', state.selectedSalesmanId);
+  } else if (state.branchFilter && state.branchFilter !== 'ALL') {
+    // Filter by branch: only collections from salesmen of that branch
+    const ids = state.salesmen
+      .filter(s => (s.branch_code || '') === state.branchFilter)
+      .map(s => s.id);
+    if (ids.length === 0) {
+      // No salesmen in that branch — return empty
+      query = query.eq('salesman_id', '00000000-0000-0000-0000-000000000000');
+    } else {
+      query = query.in('salesman_id', ids);
+    }
   }
 
   const { data, error } = await query;
@@ -804,6 +833,17 @@ async function advanceStatus(id, action) {
 $('salesman-select').addEventListener('change', async (e) => {
   state.selectedSalesmanId = e.target.value;
   await loadCollections();
+});
+
+// Branch filter pills: narrow the salesman dropdown to one branch
+document.querySelectorAll('.branch-pill[data-branch]').forEach(pill => {
+  pill.addEventListener('click', async () => {
+    document.querySelectorAll('.branch-pill[data-branch]').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    state.branchFilter = pill.dataset.branch;
+    populateSalesmenDropdown();  // re-render dropdown with new filter
+    await loadCollections();      // re-query with new scope
+  });
 });
 
 document.querySelectorAll('.chip[data-filter]').forEach(chip => {
