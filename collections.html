@@ -693,10 +693,14 @@ function render() {
 }
 
 function renderCard(c) {
-  // DSR-sourced collections are simple receipts (no order, no due date, no pipeline)
   const isDsr = !!c.dsr_entry_id;
-  const overdue = !isDsr && isOverdue(c);
-  const due = isDsr ? { cls: '', text: '' } : dueLabel(c.due_date, c.status);
+  // DSR pending = credit sale waiting payment (use amount_due + due_date)
+  // DSR collected = cash received (use amount_collected + visit_at)
+  const isDsrPending   = isDsr && c.status === 'pending';
+  const isDsrCollected = isDsr && c.status === 'collected';
+
+  const overdue = isOverdue(c);  // works for both DSR pending and order rows
+  const due = (isDsrCollected) ? { cls: '', text: '' } : dueLabel(c.due_date, c.status);
   const cardCls = c.status === 'banked' ? 'banked' : (overdue ? 'overdue' : (due.cls === 'warn' ? 'due-soon' : ''));
 
   const status = overdue ? 'overdue' : c.status;
@@ -712,14 +716,26 @@ function renderCard(c) {
   const sName = c.salesmen?.name || '?';
   const salesmanName = empNo ? `${empNo} · ${sName}` : sName;
   const salesmanZone = c.salesmen?.zone || '';
-  // DSR: show visit date instead of due date; main amount is amount_collected
+  // Decide what to display based on row type:
   const visitDate = (c.dsr_entries?.visit_at || c.dsr_entries?.daily_reports?.report_date || '').slice(0, 10);
-  const mainAmount = isDsr ? c.amount_collected : c.amount_due;
-  const mainAmtLabel = isDsr ? 'collected' : 'amount due';
-  const dateLine = isDsr ? visitDate : (c.due_date || '—');
-  const dateTag = isDsr
-    ? `<div class="due-tag" style="color:#16a34a;">DSR visit</div>`
-    : `<div class="due-tag ${due.cls}">${due.text}</div>`;
+  let mainAmount, mainAmtLabel, dateLine, dateTag;
+  if (isDsrCollected) {
+    mainAmount   = c.amount_collected;
+    mainAmtLabel = 'collected';
+    dateLine     = visitDate;
+    dateTag      = `<div class="due-tag" style="color:#16a34a;">DSR visit</div>`;
+  } else if (isDsrPending) {
+    mainAmount   = c.amount_due;
+    mainAmtLabel = 'pending payment';
+    dateLine     = c.due_date || '—';
+    dateTag      = `<div class="due-tag ${due.cls}">${due.text || 'due ' + (c.due_date || '')}</div>`;
+  } else {
+    // Order-based row
+    mainAmount   = c.amount_due;
+    mainAmtLabel = 'amount due';
+    dateLine     = c.due_date || '—';
+    dateTag      = `<div class="due-tag ${due.cls}">${due.text}</div>`;
+  }
 
   const showSalesman = state.selectedSalesmanId === 'ALL';
 
@@ -734,7 +750,7 @@ function renderCard(c) {
           ${showSalesman ? `<span>👤 ${escapeHtml(salesmanName)}${salesmanZone ? ' · ' + escapeHtml(salesmanZone) : ''}</span>` : ''}
           <span>🏷️ ${escapeHtml(brandName)}</span>
           ${customerArea ? `<span>📍 ${escapeHtml(customerArea)}</span>` : ''}
-          ${!isDsr && creditDays ? `<span>⏱ ${creditDays}-day terms</span>` : ''}
+          ${(!isDsrCollected) && creditDays ? `<span>⏱ ${creditDays}-day terms</span>` : ''}
           ${isDsr ? '<span style="color:#16a34a;font-weight:600;">📋 From DSR</span>' : ''}
         </div>
       </div>
@@ -746,7 +762,7 @@ function renderCard(c) {
         <div class="due-date">${dateLine || '—'}</div>
         ${dateTag}
       </div>
-      ${isDsr ? '' : renderPipeline(c)}
+      ${isDsrCollected ? '' : renderPipeline(c)}
     </div>
   `;
 }
