@@ -125,41 +125,54 @@
 }
 
 /* ============================================================
- * Legacy tokens (DO NOT REMOVE — selectors still depend on these).
- * Migration to DS v1 happens in a later pass.
+ * Legacy tokens — REMAPPED to light theme on 2026-05-26.
+ * Names preserved so existing selectors keep working;
+ * values now point to DS v1 light palette.
+ * Per light_theme_migration.md §1.1.
  * ============================================================ */
 :root {
-  --navy: #0B1F3A;
-  --navy-mid: #1A3A5C;
-  --navy-light: #2A4A6C;
-  --blue: #185FA5;
-  --gold: #C9A84C;
-  --gold-light: #F5E6B8;
-  --gold-bright: #FFD66B;
-  --green: #3B6D11;
-  --green-bright: #4ADE80;
-  --amber: #F59E0B;
-  --amber-bright: #FBBF24;
-  --red: #A32D2D;
-  --red-bright: #EF4444;
-  --gray: #6B7A8D;
-  --gray-light: #A8B4C5;
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.14);
+  /* Legacy navy tokens kept ONLY for the few places that need a dark accent
+     (e.g. logo text on white). Most surface usages of var(--navy) have been
+     migrated to var(--surface-card) / var(--gray-50) at the selector level. */
+  --navy:        #111827;    /* legacy "navy" → now gray-900 (dark text) */
+  --navy-mid:    #FFFFFF;    /* tooltip bg → light card */
+  --navy-light:  #F9FAFB;    /* tooltip title → light page */
+  --blue:        #2563EB;    /* primary — bumped to blue-600 */
+  --blue-light:  #DBEAFE;    /* blue-100 — chip / hover bg */
+  --blue-dark:   #1D4ED8;    /* blue-700 — pressed */
+  --gold:        #EAB308;    /* gold-500 — only rank #1 / big-order / deadline */
+  --gold-light:  #FEFCE8;    /* gold-50 */
+  --gold-bright: #A16207;    /* gold-700 — on light bg switch to deeper gold */
+  --green:       #047857;    /* success-700 */
+  --green-bright:#047857;    /* on light bg, use success-700 not bright */
+  --success-500: #10B981;
+  --success-light:#D1FAE5;
+  --amber:       #F59E0B;    /* warning-500 */
+  --amber-bright:#B45309;    /* warning-700 (was bright on dark) */
+  --warning-500: #F59E0B;
+  --warning-light:#FEF3C7;
+  --red:         #B91C1C;    /* danger-700 */
+  --red-bright:  #B91C1C;    /* on light bg, use danger-700 */
+  --danger-500:  #EF4444;
+  --danger-light:#FEE2E2;
+  --gray:        #6B7280;    /* gray-500 */
+  --gray-light:  #9CA3AF;    /* gray-400 (secondary text) */
+  --border:        #E5E7EB;
+  --border-strong: #D1D5DB;
+  --text:        #111827;    /* gray-900 */
+  --text-2:      #374151;    /* gray-700 */
+  --surface-card-leg: #FFFFFF;   /* alias for light card bg (in addition to --surface-card from DS block) */
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   min-height: 100vh;
   font-family: 'Geist', -apple-system, sans-serif;
-  background: var(--navy);
-  color: white;
+  background: var(--gray-50);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 body {
-  background:
-    radial-gradient(ellipse at top right, rgba(201,168,76,0.08), transparent 50%),
-    radial-gradient(ellipse at bottom left, rgba(24,95,165,0.12), transparent 50%),
-    var(--navy);
+  background: var(--gray-50);
   display: flex; flex-direction: column;
   min-height: 100vh;
 }
@@ -168,53 +181,55 @@ body {
 .header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 32px;
-  border-bottom: 1px solid var(--border);
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 2px rgba(17,24,39,0.04);
   flex-shrink: 0;
 }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .logo {
-  width: 48px; height: 48px; background: white; border-radius: 12px;
+  width: 48px; height: 48px; background: var(--blue-600); border-radius: 12px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: var(--navy); line-height: 1;
+  font-size: 14px; font-weight: 700; color: #FFFFFF; line-height: 1;
 }
 .logo span { font-size: 8px; color: var(--gold); margin-top: 2px; }
-.title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
-.title-block .sub { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+.title-block .title { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; color: var(--gray-900); }
+.title-block .sub { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 2px; }
 .header-center { display: flex; align-items: center; }
 .branch-pick {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border-strong);
-  color: white;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-900);
   font-family: 'Geist', sans-serif;
   font-size: 13px; font-weight: 600;
   padding: 6px 12px; border-radius: 999px;
   cursor: pointer;
-  color-scheme: dark;
+  color-scheme: light;
 }
-.branch-pick:hover, .branch-pick:focus { border-color: var(--gold); outline: none; }
+.branch-pick:hover, .branch-pick:focus { border-color: var(--blue-600); outline: 3px solid rgba(37,99,235,0.15); }
 .header-right { text-align: right; }
-.clock { font-size: 26px; font-weight: 600; font-family: 'Geist Mono', monospace; }
+.clock { font-size: 26px; font-weight: 600; font-family: 'Geist Mono', monospace; color: var(--gray-900); }
 .date-controls {
   display: flex; align-items: center; justify-content: flex-end;
   gap: 8px; margin-top: 4px;
 }
 .date-picker {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border-strong);
-  color: white;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-900);
   font-family: 'Geist Mono', monospace;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  color-scheme: dark;
+  color-scheme: light;
 }
-.date-picker:hover, .date-picker:focus { border-color: var(--gold); outline: none; }
+.date-picker:hover, .date-picker:focus { border-color: var(--blue-600); outline: 3px solid rgba(37,99,235,0.15); }
 .today-btn {
-  background: rgba(201,168,76,0.15);
-  border: 1px solid var(--gold);
-  color: var(--gold-bright);
+  background: var(--blue-100);
+  border: 1px solid var(--blue-600);
+  color: var(--blue-700);
   font-family: inherit;
   font-size: 10.5px;
   font-weight: 700;
@@ -226,26 +241,26 @@ body {
   display: none;
 }
 .today-btn.show { display: inline-block; }
-.today-btn:hover { background: rgba(201,168,76,0.3); }
+.today-btn:hover { background: var(--blue-600); color: #FFFFFF; }
 .history-flag {
   font-size: 9.5px;
-  color: var(--gold-bright);
+  color: var(--warning-700);
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  background: rgba(201,168,76,0.12);
-  border: 1px solid rgba(201,168,76,0.35);
+  background: var(--warning-light);
+  border: 1px solid var(--warning-500);
   padding: 3px 8px; border-radius: 999px;
   display: none;
 }
 .history-flag.show { display: inline-block; }
 .live-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+  background: var(--success-light); border: 1px solid var(--success-500);
   padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
-  color: var(--green-bright);
+  color: var(--success-700);
 }
-.live-pill.dim { color: var(--gray); background: rgba(107,122,141,0.15); border-color: rgba(107,122,141,0.3); }
+.live-pill.dim { color: var(--gray-500); background: var(--gray-100); border-color: var(--gray-300); }
 .live-dot {
   width: 8px; height: 8px; border-radius: 50%; background: currentColor;
   animation: pulse 1.5s infinite;
@@ -255,30 +270,33 @@ body {
 /* ---------- KPI STRIP ---------- */
 .kpis {
   display: grid; grid-template-columns: repeat(6, 1fr);
-  gap: 0; padding: 16px 32px;
-  border-bottom: 1px solid var(--border);
+  gap: 0; padding: 16px 24px;
+  background: #FFFFFF;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.06);
+  margin: 16px 32px 0;
   flex-shrink: 0;
 }
-.kpi { padding: 0 18px; border-right: 1px solid var(--border); }
+.kpi { padding: 0 18px; border-right: 1px solid var(--gray-200); }
 .kpi:last-child { border-right: none; }
 .kpi .label {
-  font-size: 10px; color: var(--gold); text-transform: uppercase;
+  font-size: 10px; color: var(--gray-500); text-transform: uppercase;
   letter-spacing: 1.4px; font-weight: 600;
 }
 .kpi .value {
   font-size: 32px; font-weight: 700; line-height: 1.1; margin-top: 5px;
-  font-family: 'Geist Mono', monospace; color: white;
+  font-family: 'Geist Mono', monospace; color: var(--gray-900);
 }
-.kpi .value-sub { font-size: 11px; color: var(--gray-light); margin-top: 3px; }
-.kpi.warn .value { color: var(--amber-bright); }
-.kpi.bad .value  { color: var(--red-bright); }
-.kpi.good .value { color: var(--green-bright); }
-.kpi.gold .value { color: var(--gold-bright); }
+.kpi .value-sub { font-size: 11px; color: var(--gray-500); margin-top: 3px; }
+.kpi.warn .value { color: var(--warning-700); }
+.kpi.bad .value  { color: var(--danger-700); }
+.kpi.good .value { color: var(--success-700); }
+.kpi.gold .value { color: var(--gold-700); }
 
 /* ---------- VISUAL INSIGHTS (charts) ---------- */
 .charts-section {
-  padding: 18px 32px;
-  border-bottom: 1px solid var(--border);
+  padding: 16px 32px 0;
   flex-shrink: 0;
 }
 .charts-header {
@@ -286,81 +304,114 @@ body {
   margin-bottom: 12px;
 }
 .charts-title {
-  font-size: 13px; font-weight: 600; color: white;
+  font-size: 13px; font-weight: 600; color: var(--gray-900);
   letter-spacing: 2px; text-transform: uppercase;
 }
-.charts-title .icon { color: var(--gold-bright); margin-right: 8px; }
-.charts-sub { font-size: 11px; color: var(--gray-light); }
+.charts-title .icon { color: var(--blue-600); margin-right: 8px; }
+.charts-sub { font-size: 11px; color: var(--gray-500); }
 .charts-grid {
-  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px;
+  display: grid; grid-template-columns: 1fr; gap: 16px;
+}
+.charts-grid.row-2 {
+  grid-template-columns: 1fr 1fr;
 }
 .chart-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 16px 20px;
   display: flex; flex-direction: column;
   position: relative; overflow: hidden;
   min-height: 280px;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.06);
 }
 .chart-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px; background: var(--gold);
+  width: 3px; background: var(--blue-600);
 }
 .chart-card-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 10px;
 }
 .chart-card-title {
-  font-size: 14px; font-weight: 600; color: white;
+  font-size: 16px; font-weight: 600; color: var(--gray-900);
   display: flex; align-items: center; gap: 8px;
 }
 .chart-card-title .icon { font-size: 17px; }
 .chart-card-sub {
-  font-size: 10px; color: var(--gold); text-transform: uppercase;
+  font-size: 10.5px; color: var(--gray-500); text-transform: uppercase;
   letter-spacing: 1.5px; font-weight: 600;
 }
 .chart-card-stat { display: flex; gap: 16px; margin-bottom: 6px; flex-wrap: wrap; }
 .chart-card-stat .group .num {
   font-family: 'Geist Mono', monospace;
-  font-size: 20px; font-weight: 700; color: var(--gold-bright);
+  font-size: 20px; font-weight: 700; color: var(--gray-900);
   line-height: 1;
 }
-.chart-card-stat .group .num.green { color: var(--green-bright); }
-.chart-card-stat .group .num.red   { color: var(--red-bright); }
+.chart-card-stat .group .num.green { color: var(--success-700); }
+.chart-card-stat .group .num.red   { color: var(--danger-700); }
 .chart-card-stat .group .lbl {
-  font-size: 9.5px; color: var(--gray-light);
+  font-size: 9.5px; color: var(--gray-500);
   text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;
 }
 .chart-card-body { flex: 1; min-height: 200px; position: relative; }
 .chart-empty {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  text-align: center; color: var(--gray); font-size: 12px;
+  text-align: center; color: var(--gray-500); font-size: 12px;
   padding: 16px;
 }
+.chart-skeleton {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+  background-size: 200% 100%;
+  animation: chart-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes chart-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
-/* Override ApexCharts default tooltip / legend / axis colors */
+/* Override ApexCharts default tooltip / legend / axis — LIGHT theme */
 .apexcharts-tooltip {
-  background: var(--navy-mid) !important;
-  border: 1px solid var(--border-strong) !important;
-  color: white !important;
+  background: #FFFFFF !important;
+  border: 1px solid var(--gray-200) !important;
+  box-shadow: 0 4px 12px rgba(17,24,39,0.08), 0 2px 4px rgba(17,24,39,0.04) !important;
+  color: var(--gray-900) !important;
+  border-radius: 8px !important;
   font-family: 'Geist', sans-serif !important;
 }
 .apexcharts-tooltip-title {
-  background: var(--navy-light) !important;
-  border-bottom: 1px solid var(--border) !important;
+  background: var(--gray-50) !important;
+  border-bottom: 1px solid var(--gray-200) !important;
+  color: var(--gray-700) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 8px 12px !important;
 }
-.apexcharts-legend-text { color: var(--gray-light) !important; font-size: 11px !important; }
-.apexcharts-xaxis text, .apexcharts-yaxis text {
-  fill: var(--gray-light) !important;
+.apexcharts-tooltip-series-group { padding: 6px 12px !important; }
+.apexcharts-tooltip-text-y-value,
+.apexcharts-tooltip-text-y-label {
   font-family: 'Geist Mono', monospace !important;
+  font-size: 13px !important;
+  color: var(--gray-900) !important;
+}
+.apexcharts-legend-text { color: var(--gray-700) !important; font-size: 12px !important; }
+.apexcharts-xaxis text, .apexcharts-yaxis text {
+  fill: var(--gray-500) !important;
+  font-family: 'Geist Mono', monospace !important;
+}
+.apexcharts-gridline { stroke: var(--gray-200) !important; }
+.apexcharts-xaxistooltip, .apexcharts-yaxistooltip {
+  background: #FFFFFF !important;
+  border-color: var(--gray-200) !important;
+  color: var(--gray-900) !important;
 }
 
 /* ---------- TRUST + VERIFY LAYERS (4 cards) ---------- */
 .trust-section {
-  padding: 18px 32px;
-  border-bottom: 1px solid var(--border);
+  padding: 16px 32px 0;
   flex-shrink: 0;
 }
 .trust-header {
@@ -368,70 +419,71 @@ body {
   margin-bottom: 12px;
 }
 .trust-title {
-  font-size: 13px; font-weight: 600; color: white;
+  font-size: 13px; font-weight: 600; color: var(--gray-900);
   letter-spacing: 2px; text-transform: uppercase;
 }
-.trust-title .shield { color: var(--gold-bright); margin-right: 8px; }
-.trust-sub { font-size: 11px; color: var(--gray-light); }
+.trust-title .shield { color: var(--blue-600); margin-right: 8px; }
+.trust-sub { font-size: 11px; color: var(--gray-500); }
 
 .trust-grid {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 .trust-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
   padding: 14px 16px;
   display: flex; flex-direction: column; gap: 8px;
   position: relative; overflow: hidden;
-  transition: background 0.3s, border-color 0.3s;
+  transition: box-shadow 0.2s, border-color 0.3s;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.06);
 }
 .trust-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px; background: var(--gray);
+  width: 3px; background: var(--gray-300);
 }
-.trust-card.green::before  { background: var(--green-bright); }
-.trust-card.amber::before  { background: var(--amber-bright); }
-.trust-card.red::before    { background: var(--red-bright); }
-.trust-card.gray::before   { background: var(--gray); }
-.trust-card.green { background: rgba(74,222,128,0.05); border-color: rgba(74,222,128,0.25); }
-.trust-card.amber { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.3); }
-.trust-card.red   { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.35); }
+.trust-card.green::before  { background: var(--success-500); }
+.trust-card.amber::before  { background: var(--warning-500); }
+.trust-card.red::before    { background: var(--danger-500); }
+.trust-card.gray::before   { background: var(--gray-300); }
+.trust-card.green { background: var(--success-light); border-color: rgba(16,185,129,0.4); }
+.trust-card.amber { background: var(--warning-light); border-color: rgba(245,158,11,0.4); }
+.trust-card.red   { background: var(--danger-light);  border-color: rgba(239,68,68,0.4); }
 
 .trust-top { display: flex; align-items: center; justify-content: space-between; }
 .trust-layer-num {
   font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-  color: var(--gold); font-family: 'Geist Mono', monospace;
+  color: var(--gray-500); font-family: 'Geist Mono', monospace;
 }
 .trust-status-pill {
   font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px;
   padding: 3px 8px; border-radius: 999px;
-  background: rgba(255,255,255,0.08); color: var(--gray-light);
+  background: var(--gray-100); color: var(--gray-700);
 }
-.trust-card.green .trust-status-pill { background: rgba(74,222,128,0.15); color: var(--green-bright); }
-.trust-card.amber .trust-status-pill { background: rgba(251,191,36,0.18); color: var(--amber-bright); }
-.trust-card.red   .trust-status-pill { background: rgba(239,68,68,0.18);  color: var(--red-bright); }
+.trust-card.green .trust-status-pill { background: rgba(16,185,129,0.15); color: var(--success-700); }
+.trust-card.amber .trust-status-pill { background: rgba(245,158,11,0.18); color: var(--warning-700); }
+.trust-card.red   .trust-status-pill { background: rgba(239,68,68,0.18);  color: var(--danger-700); }
 
 .trust-name {
-  font-size: 15px; font-weight: 600; color: white;
+  font-size: 15px; font-weight: 600; color: var(--gray-900);
   display: flex; align-items: center; gap: 8px;
 }
 .trust-name .icon { font-size: 18px; }
 .trust-metric {
   font-size: 28px; font-weight: 700; line-height: 1.1;
-  font-family: 'Geist Mono', monospace; color: white;
+  font-family: 'Geist Mono', monospace; color: var(--gray-900);
 }
-.trust-card.green .trust-metric { color: var(--green-bright); }
-.trust-card.amber .trust-metric { color: var(--amber-bright); }
-.trust-card.red   .trust-metric { color: var(--red-bright); }
-.trust-card.gray  .trust-metric { color: var(--gray-light); }
+.trust-card.green .trust-metric { color: var(--success-700); }
+.trust-card.amber .trust-metric { color: var(--warning-700); }
+.trust-card.red   .trust-metric { color: var(--danger-700); }
+.trust-card.gray  .trust-metric { color: var(--gray-700); }
 .trust-detail {
-  font-size: 11.5px; color: var(--gray-light); line-height: 1.5;
+  font-size: 11.5px; color: var(--gray-700); line-height: 1.5;
   min-height: 32px;
 }
-.trust-card.red .trust-detail   { color: #FCA5A5; }
-.trust-card.amber .trust-detail { color: #FCD34D; }
+.trust-card.red .trust-detail   { color: var(--danger-700); }
+.trust-card.amber .trust-detail { color: var(--warning-700); }
 
 /* ---------- MAIN 2x2 GRID ---------- */
 .main {
@@ -439,158 +491,180 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: minmax(260px, auto) minmax(260px, auto);
-  gap: 1px; background: var(--border);
+  gap: 16px;
+  padding: 16px 32px 0;
+  background: transparent;
 }
 .panel {
-  background: var(--navy);
+  background: #FFFFFF;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.06);
   display: flex; flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 .panel-header {
   padding: 14px 22px 12px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--gray-200);
   flex-shrink: 0;
 }
-.panel-header .h { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
-.panel-header .h-sub { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.6px; margin-top: 2px; }
+.panel-header .h { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; color: var(--gray-900); }
+.panel-header .h-sub { font-size: 10px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1.6px; margin-top: 2px; }
 .panel-body { flex: 1; overflow-y: auto; padding: 4px 0; }
 .panel-body::-webkit-scrollbar { width: 6px; }
-.panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+.panel-body::-webkit-scrollbar-thumb:hover { background: var(--gray-500); }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
 
 /* SUBMISSION LIST */
 .sub-row {
   display: grid; grid-template-columns: 32px 1fr auto;
   align-items: center; gap: 12px;
   padding: 11px 22px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--gray-100);
 }
 .sub-icon {
   width: 26px; height: 26px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700;
 }
-.sub-icon.ok    { background: rgba(74,222,128,0.15); color: var(--green-bright); }
-.sub-icon.draft { background: rgba(251,191,36,0.15); color: var(--amber-bright); }
-.sub-icon.wait  { background: rgba(168,180,197,0.12); color: var(--gray-light); }
-.sub-icon.late  { background: rgba(239,68,68,0.15); color: var(--red-bright); }
-.sub-name { font-size: 14px; font-weight: 600; }
-.sub-meta { font-size: 10.5px; color: var(--gray-light); margin-top: 2px; display: flex; gap: 9px; flex-wrap: wrap; }
+.sub-icon.ok    { background: var(--success-light); color: var(--success-700); }
+.sub-icon.draft { background: var(--warning-light); color: var(--warning-700); }
+.sub-icon.wait  { background: var(--gray-100); color: var(--gray-500); }
+.sub-icon.late  { background: var(--danger-light); color: var(--danger-700); }
+.sub-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+.sub-meta { font-size: 10.5px; color: var(--gray-500); margin-top: 2px; display: flex; gap: 9px; flex-wrap: wrap; }
 .sub-right { text-align: right; }
 .sub-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-.sub-status.ok    { color: var(--green-bright); }
-.sub-status.draft { color: var(--amber-bright); }
-.sub-status.wait  { color: var(--gray-light); }
-.sub-status.late  { color: var(--red-bright); }
-.sub-sales { font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 600; color: white; margin-top: 2px; }
-.sub-time { font-size: 10px; color: var(--gray); font-family: 'Geist Mono', monospace; margin-top: 1px; }
+.sub-status.ok    { color: var(--success-700); }
+.sub-status.draft { color: var(--warning-700); }
+.sub-status.wait  { color: var(--gray-500); }
+.sub-status.late  { color: var(--danger-700); }
+.sub-sales { font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 600; color: var(--gray-900); margin-top: 2px; }
+.sub-time { font-size: 10px; color: var(--gray-500); font-family: 'Geist Mono', monospace; margin-top: 1px; }
 
 /* ALERTS LIST */
 .alert-row {
   padding: 11px 22px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--gray-100);
   display: grid; grid-template-columns: 22px 1fr auto;
   gap: 11px; align-items: start;
 }
 .alert-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
 .alert-row[data-sev="critical"] .alert-dot,
-.alert-row[data-sev="high"] .alert-dot   { background: var(--red-bright); box-shadow: 0 0 8px var(--red-bright); }
-.alert-row[data-sev="medium"] .alert-dot { background: var(--amber-bright); }
-.alert-row[data-sev="low"] .alert-dot    { background: var(--gray-light); }
-.alert-title { font-size: 13px; font-weight: 600; }
-.alert-desc  { font-size: 11px; color: var(--gray-light); margin-top: 2px; line-height: 1.45; }
-.alert-meta  { font-size: 9.5px; color: var(--gray); margin-top: 3px; text-transform: uppercase; letter-spacing: 1px; }
+.alert-row[data-sev="high"] .alert-dot   { background: var(--danger-500); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+.alert-row[data-sev="medium"] .alert-dot { background: var(--warning-500); }
+.alert-row[data-sev="low"] .alert-dot    { background: var(--gray-400, var(--gray-light)); }
+.alert-title { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+.alert-desc  { font-size: 11px; color: var(--gray-700); margin-top: 2px; line-height: 1.45; }
+.alert-meta  { font-size: 9.5px; color: var(--gray-500); margin-top: 3px; text-transform: uppercase; letter-spacing: 1px; }
 .alert-row .layer-tag {
   display: inline-block;
   font-size: 9px; font-weight: 700; letter-spacing: 0.8px;
   padding: 1px 6px; border-radius: 4px;
-  background: rgba(201,168,76,0.15); color: var(--gold-bright);
+  background: var(--blue-100); color: var(--blue-700);
   margin-right: 6px; font-family: 'Geist Mono', monospace;
 }
 .alert-resolve {
-  background: rgba(255,255,255,0.06); border: 1px solid var(--border-strong);
-  color: white; padding: 4px 9px; border-radius: 6px;
+  background: #FFFFFF; border: 1px solid var(--gray-300);
+  color: var(--gray-700); padding: 4px 9px; border-radius: 6px;
   font-family: inherit; font-size: 10.5px; font-weight: 600;
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
-.alert-resolve:hover { background: rgba(74,222,128,0.15); border-color: var(--green-bright); color: var(--green-bright); }
+.alert-resolve:hover { background: var(--success-light); border-color: var(--success-500); color: var(--success-700); }
 .alert-resolve:disabled { opacity: 0.5; cursor: wait; }
 
 /* PRIORITIES */
-.prio-row { padding: 11px 22px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.prio-row { padding: 11px 22px; border-bottom: 1px solid var(--gray-100); }
 .prio-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .prio-rank {
   display: inline-block; font-size: 10.5px; font-weight: 700;
-  color: var(--gold); background: rgba(201,168,76,0.12);
+  color: var(--blue-700); background: var(--blue-100);
   padding: 2px 7px; border-radius: 4px; margin-right: 7px;
   font-family: 'Geist Mono', monospace;
 }
-.prio-name { font-size: 13px; font-weight: 600; }
+.prio-name { font-size: 13px; font-weight: 600; color: var(--gray-900); }
 .prio-counts { text-align: right; font-family: 'Geist Mono', monospace; }
-.prio-month { font-size: 17px; font-weight: 700; color: var(--gold-bright); }
-.prio-month-lbl { font-size: 9px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
-.prio-today { font-size: 10.5px; color: var(--green-bright); margin-top: 2px; }
-.prio-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 7px; overflow: hidden; }
-.prio-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold)); border-radius: 2px; transition: width 0.6s ease; }
+.prio-month { font-size: 17px; font-weight: 700; color: var(--gray-900); }
+.prio-month-lbl { font-size: 9px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
+.prio-today { font-size: 10.5px; color: var(--success-700); margin-top: 2px; }
+.prio-bar { height: 4px; background: var(--gray-100); border-radius: 2px; margin-top: 7px; overflow: hidden; }
+.prio-bar-fill { height: 100%; background: var(--blue-600); border-radius: 2px; transition: width 0.6s ease; }
 
 /* LIVE FEED */
 .feed-section {
-  border-top: 1px solid var(--border);
-  background: var(--navy);
+  margin: 16px 32px 24px;
+  background: #FFFFFF;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.06);
+  overflow: hidden;
   flex-shrink: 0;
 }
 .feed-header {
-  padding: 12px 32px 8px;
+  padding: 12px 22px 8px;
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--gray-200);
 }
-.feed-header .h { font-size: 14px; font-weight: 600; }
-.feed-header .h-sub { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.6px; }
+.feed-header .h { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+.feed-header .h-sub { font-size: 10px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1.6px; }
 .feed-list {
-  display: flex; gap: 1px; background: var(--border);
+  display: flex; gap: 1px; background: var(--gray-100);
   overflow-x: auto;
 }
 .feed-list::-webkit-scrollbar { height: 6px; }
-.feed-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.feed-list::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
 .feed-item {
-  background: var(--navy); flex: 0 0 260px; padding: 12px 16px;
+  background: #FFFFFF; flex: 0 0 260px; padding: 12px 16px;
   animation: slideIn 0.5s ease;
 }
 @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 .feed-row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.feed-name { font-size: 13px; font-weight: 600; }
-.feed-time { font-size: 10px; color: var(--gray); font-family: 'Geist Mono', monospace; }
-.feed-row2 { font-size: 11px; color: var(--gray-light); margin-top: 3px; line-height: 1.4; }
+.feed-name { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+.feed-time { font-size: 10px; color: var(--gray-500); font-family: 'Geist Mono', monospace; }
+.feed-row2 { font-size: 11px; color: var(--gray-700); margin-top: 3px; line-height: 1.4; }
 .feed-row3 { display: flex; align-items: baseline; justify-content: space-between; margin-top: 5px; }
-.feed-sales { font-family: 'Geist Mono', monospace; font-weight: 700; color: var(--gold-bright); font-size: 13px; }
+.feed-sales { font-family: 'Geist Mono', monospace; font-weight: 700; color: var(--gray-900); font-size: 13px; }
 .feed-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
 .feed-tag {
   font-size: 9px; padding: 2px 5px; border-radius: 4px;
-  background: rgba(255,255,255,0.06); color: var(--gray-light);
+  background: var(--gray-100); color: var(--gray-700);
   text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
-.feed-tag.gps    { background: rgba(24,95,165,0.18); color: #93C5FD; }
-.feed-tag.new    { background: rgba(255,214,107,0.15); color: var(--gold-bright); }
-.feed-tag.miss   { background: rgba(239,68,68,0.15); color: var(--red-bright); }
+.feed-tag.gps    { background: var(--blue-100); color: var(--blue-700); }
+.feed-tag.new    { background: var(--gold-50); color: var(--gold-700); }
+.feed-tag.miss   { background: var(--danger-light); color: var(--danger-700); }
 
 /* EMPTY STATES */
-.empty { text-align: center; padding: 26px 22px; color: var(--gray); font-size: 12px; }
+.empty { text-align: center; padding: 26px 22px; color: var(--gray-500); font-size: 12px; }
 
 /* RESPONSIVE */
 @media (max-width: 1280px) {
   .trust-grid  { grid-template-columns: repeat(2, 1fr); }
-  .charts-grid { grid-template-columns: 1fr; }
+  .charts-grid.row-2 { grid-template-columns: 1fr; }
 }
 @media (max-width: 1100px) {
-  .kpis { grid-template-columns: repeat(3, 1fr); }
-  .kpi { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .kpis { grid-template-columns: repeat(3, 1fr); margin: 12px 16px 0; }
+  .kpi { border-bottom: 1px solid var(--gray-200); padding-bottom: 10px; }
   .kpi:nth-child(3), .kpi:nth-child(6) { border-right: none; }
   .kpi .value { font-size: 24px; }
-  .main { grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); }
+  .main { grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); padding: 12px 16px 0; gap: 12px; }
+  .feed-section { margin: 12px 16px 16px; }
   .clock { font-size: 20px; }
   .header { padding: 12px 16px; }
-  .kpis, .trust-section, .charts-section { padding: 12px 16px; }
+  .trust-section, .charts-section { padding: 12px 16px 0; }
+  .chart-card { padding: 12px; min-height: 240px; }
   .trust-grid, .charts-grid { gap: 10px; }
+}
+@media (max-width: 767px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi:nth-child(3) { border-right: 1px solid var(--gray-200); }
+  .kpi:nth-child(2n) { border-right: none; }
+  .trust-grid { grid-template-columns: 1fr; }
+  .chart-card { min-height: 220px; }
+  .chart-card-body { min-height: 180px; }
 }
 /* ===== AUTH GATE ===== */
 #auth-gate-overlay{position:fixed;inset:0;z-index:99999;background:#fff;display:none;align-items:center;justify-content:center;padding:20px;font-family:system-ui,-apple-system,sans-serif}
@@ -701,64 +775,96 @@ body {
 <section class="charts-section">
   <div class="charts-header">
     <div class="charts-title"><span class="icon">📊</span>Visual Insights</div>
-    <div class="charts-sub" id="charts-sub">7-day momentum · Top salesmen · Brand portfolio</div>
+    <div class="charts-sub" id="charts-sub">30-day trend · Top 10 MTD · Collection aging · DSR compliance</div>
   </div>
-  <div class="charts-grid">
 
+  <!-- Row 1: Full-width sales trend -->
+  <div class="charts-grid" style="margin-bottom: 16px;">
     <div class="chart-card">
       <div class="chart-card-header">
-        <div class="chart-card-title"><span class="icon">📈</span>7-Day Sales Trend</div>
-        <div class="chart-card-sub" id="trend-window">Last 7 days</div>
+        <div class="chart-card-title"><span class="icon">📈</span>Daily Sales Trend</div>
+        <div class="chart-card-sub" id="sales-trend-window">Last 30 days</div>
       </div>
       <div class="chart-card-stat">
         <div class="group">
-          <div class="num" id="trend-total">RM 0</div>
-          <div class="lbl">7-day total</div>
+          <div class="num" id="sales-trend-total">RM 0</div>
+          <div class="lbl">30-day total</div>
         </div>
         <div class="group">
-          <div class="num" id="trend-delta">—</div>
-          <div class="lbl">vs prior 7d</div>
+          <div class="num" id="sales-trend-collect">RM 0</div>
+          <div class="lbl">collections</div>
+        </div>
+        <div class="group">
+          <div class="num" id="sales-trend-avg">RM 0</div>
+          <div class="lbl">avg / day</div>
         </div>
       </div>
-      <div class="chart-card-body" id="chart-trend"></div>
+      <div class="chart-card-body" id="chart-sales-trend" style="min-height: 260px;"></div>
     </div>
+  </div>
 
+  <!-- Row 2: Top 10 salesmen + Collection aging side by side -->
+  <div class="charts-grid row-2" style="margin-bottom: 16px;">
     <div class="chart-card">
       <div class="chart-card-header">
-        <div class="chart-card-title"><span class="icon">🏆</span>Top Salesmen</div>
-        <div class="chart-card-sub" id="lb-window">Top 8 by sales</div>
+        <div class="chart-card-title"><span class="icon">🏆</span>Top 10 Salesmen</div>
+        <div class="chart-card-sub" id="top10-window">Month to date</div>
       </div>
       <div class="chart-card-stat">
         <div class="group">
-          <div class="num" id="lb-submitted">0/0</div>
-          <div class="lbl">submitted</div>
-        </div>
-        <div class="group">
-          <div class="num" id="lb-leader">—</div>
+          <div class="num" id="top10-leader">—</div>
           <div class="lbl">leading</div>
         </div>
+        <div class="group">
+          <div class="num" id="top10-leader-sales">RM 0</div>
+          <div class="lbl">top sales</div>
+        </div>
       </div>
-      <div class="chart-card-body" id="chart-leaderboard"></div>
+      <div class="chart-card-body" id="chart-top10-salesmen" style="min-height: 320px;"></div>
     </div>
 
     <div class="chart-card">
       <div class="chart-card-header">
-        <div class="chart-card-title"><span class="icon">🥧</span>Brand Mix</div>
-        <div class="chart-card-sub" id="brands-window">By sales</div>
+        <div class="chart-card-title"><span class="icon">⏳</span>Collection Aging</div>
+        <div class="chart-card-sub" id="aging-window">Days since DSR</div>
       </div>
       <div class="chart-card-stat">
         <div class="group">
-          <div class="num" id="brands-count">0</div>
-          <div class="lbl">brands</div>
+          <div class="num" id="aging-total">RM 0</div>
+          <div class="lbl">total outstanding</div>
         </div>
         <div class="group">
-          <div class="num" id="brands-top">—</div>
-          <div class="lbl">top brand</div>
+          <div class="num red" id="aging-critical">RM 0</div>
+          <div class="lbl">90+ days</div>
         </div>
       </div>
-      <div class="chart-card-body" id="chart-brands"></div>
+      <div class="chart-card-body" id="chart-collection-aging" style="min-height: 220px;"></div>
     </div>
+  </div>
 
+  <!-- Row 3: Full-width submission heatmap (boss/manager only — RPC) -->
+  <div class="charts-grid">
+    <div class="chart-card" id="chart-heatmap-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><span class="icon">📅</span>DSR Submission Heatmap</div>
+        <div class="chart-card-sub" id="heatmap-window">Last 30 days · Salesman × date</div>
+      </div>
+      <div class="chart-card-stat">
+        <div class="group">
+          <div class="num green" id="heatmap-ontime">0%</div>
+          <div class="lbl">on-time rate</div>
+        </div>
+        <div class="group">
+          <div class="num" id="heatmap-salesmen">0</div>
+          <div class="lbl">salesmen</div>
+        </div>
+        <div class="group">
+          <div class="num red" id="heatmap-missing">0</div>
+          <div class="lbl">missing cells</div>
+        </div>
+      </div>
+      <div class="chart-card-body" id="chart-submission-heatmap" style="min-height: 360px;"></div>
+    </div>
   </div>
 </section>
 
@@ -1013,22 +1119,71 @@ function pool() {
     ? pilots
     : pilots.filter(p => p.branch_code === currentBranch);
 }
-let trendChart = null, lbChart = null, brandsChart = null;  // ApexCharts instances (reused for smooth update)
+// ApexCharts instances (reused for smooth update)
+let salesTrendChart = null;
+let top10Chart      = null;
+let agingChart      = null;
+let heatmapChart    = null;
+let chartsFetchInFlight = false;        // debounce concurrent fetches
+let chartsLastFetchAt = 0;               // ms timestamp
+// Cache last fetched rows so branch/date picker can re-render instantly
+// without hitting Supabase again.
+let chartsCache = { trend: null, top10: null, aging: null, heatmap: null };
 
-// Chart palette
-const C_NAVY    = '#0B1F3A';
-const C_GOLD    = '#C9A84C';
-const C_GOLD_B  = '#FFD66B';
-const C_BLUE_B  = '#60A5FA';
-const C_GREEN   = '#4ADE80';
-const C_PURPLE  = '#A78BFA';
-const C_AMBER   = '#FBBF24';
-const C_PINK    = '#F472B6';
-const C_TEAL    = '#5EEAD4';
-const C_RED     = '#EF4444';
-const C_GRAY    = '#6B7A8D';
-const C_GRAY_L  = '#A8B4C5';
-const BRAND_COLORS = [C_GOLD_B, C_BLUE_B, C_GREEN, C_PURPLE, C_AMBER, C_PINK, C_TEAL, C_RED, C_GRAY];
+// Chart palette (DS v1 light)
+const CHART_PALETTE = {
+  primary:      '#2563EB',
+  primaryLight: '#DBEAFE',
+  primaryDark:  '#1D4ED8',
+  success:      '#10B981',
+  successDark:  '#047857',
+  warning:      '#F59E0B',
+  warningDark:  '#B45309',
+  orange:       '#F97316',
+  danger:       '#EF4444',
+  dangerDark:   '#B91C1C',
+  gold:         '#EAB308',
+  goldDark:     '#A16207',
+  silver:       '#9CA3AF',
+  bronze:       '#B45309',
+  grid:         '#E5E7EB',
+  axisLabel:    '#6B7280',
+  textPrimary:  '#111827',
+  textSecondary:'#6B7280',
+  neutral:      '#9CA3AF',
+};
+
+// Common ApexCharts options shared by all 4 charts (light theme)
+const COMMON_APEX_OPTIONS = {
+  chart: {
+    fontFamily: 'Geist, -apple-system, BlinkMacSystemFont, sans-serif',
+    foreColor: '#374151',
+    background: 'transparent',
+    toolbar: { show: false },
+    animations: { enabled: true, easing: 'easeinout', speed: 400, animateGradually: { enabled: false } },
+    zoom: { enabled: false },
+  },
+  grid: {
+    show: true, borderColor: CHART_PALETTE.grid, strokeDashArray: 0,
+    xaxis: { lines: { show: false } },
+    yaxis: { lines: { show: true } },
+    padding: { left: 8, right: 8, top: 0, bottom: 0 },
+  },
+  legend: {
+    position: 'top', horizontalAlign: 'right',
+    fontSize: '12px', fontFamily: 'Geist, sans-serif', fontWeight: 500,
+    labels: { colors: '#374151' },
+    markers: { width: 10, height: 10, radius: 3 },
+    itemMargin: { horizontal: 12, vertical: 0 },
+  },
+  tooltip: {
+    enabled: true, theme: 'light',
+    style: { fontSize: '12px', fontFamily: 'Geist, sans-serif' },
+    marker: { show: true }, fillSeriesColor: false, x: { show: true },
+  },
+  dataLabels: { enabled: false },
+  noData: { text: 'Loading…', style: { color: '#6B7280', fontSize: '13px', fontFamily: 'Geist, sans-serif' } },
+};
 
 // Add days to a YYYY-MM-DD string (preserves locale by working in UTC)
 function addDays(ymd, n) {
@@ -1147,15 +1302,15 @@ async function fetchAll() {
 // ===== RENDER =====
 function render({ reports, entries, alerts, monthEntries, trendReports, trendStart, priorStart, today }) {
   renderKPIs(reports, alerts);
-  renderTrendChart(trendReports, trendStart, priorStart, today);
-  renderLeaderboardChart(reports);
-  renderBrandMixChart(reports);
   renderTrustLayers(reports, entries, alerts);
   renderSubmissionStatus(reports);
   renderAlerts(alerts);
   renderPriorities(entries, monthEntries);
   renderVisitsDetail(entries);
   renderFeed(entries);
+  // Charts (4 P0) fetch their own data from Supabase views/RPC.
+  // Independent of `reports` because they cover 30-day / MTD / aging windows.
+  fetchAndRenderCharts();
 }
 
 function renderKPIs(reports, alerts) {
@@ -1199,201 +1354,478 @@ function renderKPIs(reports, alerts) {
   $('kpi-alerts').className = 'kpi ' + (high > 0 ? 'bad' : (alerts.length > 0 ? 'warn' : 'good'));
 }
 
-// ----- CHARTS (Visual Insights) -----
+// ----- CHARTS (4 P0 — Daily Sales Trend / Top 10 / Aging / Heatmap) -----
 
-// 7-day trend area chart
-function renderTrendChart(trendReports, trendStart, priorStart, today) {
-  // Build sum-per-date map across the 14-day window
-  const byDate = {};
-  trendReports.forEach(r => {
-    byDate[r.report_date] = (byDate[r.report_date] || 0) + Number(r.total_sales || 0);
-  });
-  // Walk 14 days to ensure every date is present (0 if no submissions)
-  const allDays = [];
-  for (let d = priorStart; d <= today; d = addDays(d, 1)) allDays.push(d);
-  const last7 = allDays.slice(-7);
-  const prior7 = allDays.slice(0, 7);
-  const last7Total  = last7.reduce((s, d) => s + (byDate[d] || 0), 0);
-  const prior7Total = prior7.reduce((s, d) => s + (byDate[d] || 0), 0);
-  const deltaPct = prior7Total > 0 ? (last7Total - prior7Total) / prior7Total * 100 : null;
-
-  // Update stat boxes
-  $('trend-total').textContent = fmtRM(last7Total);
-  if (deltaPct == null) {
-    $('trend-delta').textContent = '—';
-    $('trend-delta').className   = 'num';
-  } else {
-    $('trend-delta').textContent = (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(0) + '%';
-    $('trend-delta').className   = 'num ' + (deltaPct >= 0 ? 'green' : 'red');
+// Format a number into "RM 1,234" or "RM 1.2K" style; defaults to full number.
+function chartFmtRM(v, opts = {}) {
+  const n = Number(v) || 0;
+  if (opts.compact && Math.abs(n) >= 1000) {
+    return 'RM ' + (n / 1000).toFixed(1) + 'K';
   }
-  $('trend-window').textContent = shortDate(trendStart) + ' – ' + shortDate(today);
+  return 'RM ' + n.toLocaleString('en-MY', { maximumFractionDigits: opts.dp ?? 0 });
+}
 
-  const values = last7.map(d => byDate[d] || 0);
-  const labels = last7.map(d => shortDate(d));
-  // Highlight today as the last marker
+// Aggregate the view rows (one per date × branch) into the shape each chart needs,
+// honoring the currently-selected branch (currentBranch === 'ALL' = no filter).
+function filterByCurrentBranch(rows) {
+  if (!rows) return [];
+  if (currentBranch === 'ALL') return rows;
+  return rows.filter(r => r.branch_code === currentBranch);
+}
+
+// ===== fetch + dispatch =====
+// `force=true` bypasses the 1 s debounce — use for user-initiated changes
+// (branch picker, date picker) where instant feedback matters.
+async function fetchAndRenderCharts(force) {
+  // Throttle: only one fetch in flight at a time, and refuse double-trigger
+  // within 1 s so a burst of realtime events does not stampede.
+  const now = Date.now();
+  if (chartsFetchInFlight) return;
+  if (!force && now - chartsLastFetchAt < 1000) return;
+  chartsFetchInFlight = true;
+  chartsLastFetchAt = now;
+
+  try {
+    const [trendRes, top10Res, agingRes, heatmapRes] = await Promise.all([
+      sb.from('chart_daily_sales_trend_30d').select('*'),
+      sb.from('chart_top10_salesmen_month').select('*'),
+      sb.from('chart_collection_aging').select('*'),
+      sb.rpc('get_dsr_submission_heatmap', { p_days: 30 }),
+    ]);
+
+    if (trendRes.error)   console.error('[chart 1 trend]',   trendRes.error);
+    if (top10Res.error)   console.error('[chart 2 top10]',   top10Res.error);
+    if (agingRes.error)   console.error('[chart 3 aging]',   agingRes.error);
+    if (heatmapRes.error) console.error('[chart 4 heatmap]', heatmapRes.error);
+
+    chartsCache.trend   = trendRes.data   || [];
+    chartsCache.top10   = top10Res.data   || [];
+    chartsCache.aging   = agingRes.data   || [];
+    chartsCache.heatmap = heatmapRes.data || [];
+
+    renderChartsFromCache();
+  } catch (e) {
+    console.error('[charts] fetch failed:', e);
+  } finally {
+    chartsFetchInFlight = false;
+  }
+}
+
+// Re-render all 4 charts from the in-memory cache (no network).
+// Used when branch picker / date picker changes — chart data window is
+// 30-day rolling so refetching just to apply a client-side branch filter is wasteful.
+function renderChartsFromCache() {
+  if (chartsCache.trend   !== null) renderSalesTrendChart(chartsCache.trend);
+  if (chartsCache.top10   !== null) renderTop10SalesmenChart(chartsCache.top10);
+  if (chartsCache.aging   !== null) renderCollectionAgingChart(chartsCache.aging);
+  if (chartsCache.heatmap !== null) renderSubmissionHeatmapChart(chartsCache.heatmap);
+}
+
+// ===== Chart 1: Daily Sales Trend (30d area+line) =====
+// View row shape: { date, branch_code, total_sales, total_collection, report_count }
+function renderSalesTrendChart(rows) {
+  const filtered = filterByCurrentBranch(rows);
+  // Aggregate per date across selected branch(es).
+  const byDate = {};
+  filtered.forEach(r => {
+    const d = r.date;
+    if (!byDate[d]) byDate[d] = { sales: 0, collection: 0 };
+    byDate[d].sales      += Number(r.total_sales      || 0);
+    byDate[d].collection += Number(r.total_collection || 0);
+  });
+  const sortedDates = Object.keys(byDate).sort();
+
+  // Stat header
+  const totalSales      = sortedDates.reduce((s, d) => s + byDate[d].sales,      0);
+  const totalCollection = sortedDates.reduce((s, d) => s + byDate[d].collection, 0);
+  const avgPerDay       = sortedDates.length ? totalSales / sortedDates.length : 0;
+  $('sales-trend-total').textContent   = chartFmtRM(totalSales);
+  $('sales-trend-collect').textContent = chartFmtRM(totalCollection);
+  $('sales-trend-avg').textContent     = chartFmtRM(avgPerDay);
+
+  const salesSeries      = sortedDates.map(d => ({ x: new Date(d).getTime(), y: byDate[d].sales }));
+  const collectionSeries = sortedDates.map(d => ({ x: new Date(d).getTime(), y: byDate[d].collection }));
 
   const opts = {
-    chart: { type: 'area', height: 220, toolbar: { show: false }, zoom: { enabled: false }, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
-    series: [{ name: 'Sales', data: values }],
+    ...COMMON_APEX_OPTIONS,
+    chart: { ...COMMON_APEX_OPTIONS.chart, type: 'area', height: 260 },
+    series: [
+      { name: 'Sales',       type: 'area', data: salesSeries },
+      { name: 'Collections', type: 'line', data: collectionSeries },
+    ],
+    colors: [CHART_PALETTE.primary, CHART_PALETTE.success],
+    stroke: { curve: 'smooth', width: [2.5, 2.5] },
+    fill: {
+      type: ['gradient', 'solid'],
+      gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02, stops: [0, 100] },
+    },
+    markers: { size: 0, hover: { size: 5, sizeOffset: 2 }, strokeColors: '#FFFFFF', strokeWidth: 2 },
     xaxis: {
-      categories: labels,
-      labels: { style: { colors: C_GRAY_L, fontSize: '10px' } },
-      axisBorder: { color: 'rgba(255,255,255,0.1)' },
-      axisTicks: { color: 'rgba(255,255,255,0.1)' }
+      type: 'datetime',
+      tickAmount: 6,
+      axisBorder: { show: true, color: CHART_PALETTE.grid },
+      axisTicks:  { show: false },
+      labels: {
+        style: { colors: CHART_PALETTE.axisLabel, fontSize: '11px', fontFamily: 'Geist, sans-serif', fontWeight: 500 },
+        format: 'MM/dd',
+        datetimeUTC: false,
+      },
     },
     yaxis: {
-      labels: { style: { colors: C_GRAY_L, fontSize: '10px' }, formatter: v => v >= 1000 ? 'RM ' + (v/1000).toFixed(1) + 'K' : 'RM ' + v.toFixed(0) }
+      axisBorder: { show: false },
+      axisTicks:  { show: false },
+      labels: {
+        style: { colors: CHART_PALETTE.axisLabel, fontSize: '11px', fontFamily: 'Geist Mono, monospace', fontWeight: 500 },
+        formatter: v => chartFmtRM(v, { compact: true }),
+      },
+      title: { text: 'RM', style: { color: CHART_PALETTE.axisLabel, fontSize: '10px', fontWeight: 600 } },
     },
-    stroke: { curve: 'smooth', width: 3, colors: [C_GOLD] },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05, stops: [0, 100] } },
-    colors: [C_GOLD],
-    markers: { size: 4, colors: [C_GOLD_B], strokeColors: C_NAVY, strokeWidth: 2, hover: { size: 6 } },
-    dataLabels: { enabled: false },
-    grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3, padding: { left: 10, right: 10 } },
-    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') } }
+    tooltip: {
+      ...COMMON_APEX_OPTIONS.tooltip,
+      shared: true,
+      x: { format: 'dd MMM yyyy (ddd)' },
+      y: { formatter: v => chartFmtRM(v, { dp: 2 }) },
+    },
+    responsive: [
+      { breakpoint: 768, options: { chart: { height: 220 }, xaxis: { tickAmount: 4 } } },
+    ],
   };
 
-  if (!trendChart) {
-    trendChart = new ApexCharts(document.querySelector('#chart-trend'), opts);
-    trendChart.render();
+  if (sortedDates.length === 0) {
+    opts.noData = { text: 'No DSR data in the last 30 days', style: { color: CHART_PALETTE.axisLabel, fontSize: '13px' } };
+  }
+
+  if (!salesTrendChart) {
+    salesTrendChart = new ApexCharts(document.querySelector('#chart-sales-trend'), opts);
+    salesTrendChart.render();
   } else {
-    trendChart.updateOptions(opts);
+    salesTrendChart.updateOptions(opts);
   }
 }
 
-// Top Salesmen horizontal bar (top 8 by sales on viewDate)
-function renderLeaderboardChart(reports) {
-  const pilots = pool();   // shadow with branch-filtered list
-  // Sum sales per salesman across all their (multi-brand) DSRs for viewDate
-  const byId = {};
-  reports.forEach(r => {
-    if (r.status !== 'submitted' && r.status !== 'approved') return;
-    byId[r.salesman_id] = (byId[r.salesman_id] || 0) + Number(r.total_sales || 0);
-  });
-  // Sort all salesmen by sales DESC, take top 8 (with sales > 0). Pad with stubs if fewer.
-  const allPoints = pilots.map(p => {
-    const nm = p.full_name || p.name || p.sr_code || '?';
-    return {
-      sr: p.emp_no || p.sr_code || p.name || '?',
-      name: p.emp_no ? `${p.emp_no} · ${nm}` : nm,
-      sales: byId[p.id] || 0
-    };
-  }).sort((a, b) => b.sales - a.sales);
-  const points = allPoints.filter(p => p.sales > 0).slice(0, 8);
-  // If 0 salesmen with sales, show top 5 alphabetical as empty stubs
-  if (points.length === 0) {
-    points.push(...allPoints.slice(0, 5));
+// ===== Chart 2: Top 10 Salesmen (MTD horizontal bar) =====
+// View row shape: { salesman_id, emp_no, sr_code, name, branch_code,
+//                   total_sales, total_profit, report_count, rank }
+function renderTop10SalesmenChart(rows) {
+  const filtered = filterByCurrentBranch(rows).slice(0, 10);
+  // Sort by total_sales desc just in case the view ordering shifted.
+  filtered.sort((a, b) => Number(b.total_sales || 0) - Number(a.total_sales || 0));
+
+  // Header
+  const leader = filtered[0];
+  $('top10-leader').textContent       = leader ? (leader.emp_no || leader.sr_code || leader.name || '—') : '—';
+  $('top10-leader-sales').textContent = leader ? chartFmtRM(leader.total_sales) : 'RM 0';
+
+  function rankColor(rank) {
+    if (rank === 1) return CHART_PALETTE.gold;
+    if (rank === 2) return CHART_PALETTE.silver;
+    if (rank === 3) return CHART_PALETTE.bronze;
+    return CHART_PALETTE.primary;
   }
 
-  // Stat boxes
-  const submittedCount = Object.keys(byId).length;
-  $('lb-submitted').textContent = submittedCount + '/' + pilots.length;
-  $('lb-leader').textContent    = (points[0]?.sales > 0 ? points[0].sr : '—');
-
-  const data = points.map((p, i) => ({
-    x: p.sr,
-    y: p.sales,
-    fillColor: p.sales > 0 ? BRAND_COLORS[i % BRAND_COLORS.length] : C_GRAY
-  }));
+  const data = filtered.map((r, i) => {
+    const labelName = r.emp_no
+      ? r.emp_no + ' · ' + (r.name || '—')
+      : (r.name || r.sr_code || '—');
+    return {
+      x: labelName,
+      y: Number(r.total_sales || 0),
+      fillColor: rankColor(Number(r.rank) || (i + 1)),
+      meta: { rank: r.rank, branch: r.branch_code, reports: r.report_count },
+    };
+  });
 
   const opts = {
-    chart: { type: 'bar', height: 220, toolbar: { show: false }, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
-    series: [{ name: 'Sales', data }],
+    ...COMMON_APEX_OPTIONS,
+    chart: { ...COMMON_APEX_OPTIONS.chart, type: 'bar', height: Math.max(filtered.length * 36 + 60, 240) },
+    series: [{ name: 'Total Sales', data }],
     plotOptions: {
-      bar: { horizontal: true, barHeight: '65%', distributed: true, borderRadius: 4 }
+      bar: { horizontal: true, borderRadius: 4, borderRadiusApplication: 'end', barHeight: '70%', distributed: true },
     },
     dataLabels: {
-      enabled: true, textAnchor: 'start', offsetX: 8,
-      style: { colors: ['white'], fontSize: '11px', fontWeight: 600, fontFamily: 'Geist Mono, monospace' },
-      formatter: v => v >= 1 ? 'RM ' + Number(v).toLocaleString('en-MY') : ''
+      enabled: true,
+      formatter: v => chartFmtRM(v, { compact: true }),
+      offsetX: 6,
+      style: { fontSize: '12px', fontFamily: 'Geist Mono, monospace', fontWeight: 600, colors: [CHART_PALETTE.textPrimary] },
+    },
+    xaxis: {
+      axisBorder: { show: true, color: CHART_PALETTE.grid }, axisTicks: { show: false },
+      labels: {
+        style: { colors: CHART_PALETTE.axisLabel, fontSize: '11px', fontFamily: 'Geist Mono, monospace', fontWeight: 500 },
+        formatter: v => chartFmtRM(v, { compact: true }),
+      },
+    },
+    yaxis: {
+      axisBorder: { show: false }, axisTicks: { show: false },
+      labels: { style: { colors: CHART_PALETTE.textPrimary, fontSize: '12px', fontFamily: 'Geist, sans-serif', fontWeight: 500 } },
     },
     legend: { show: false },
-    xaxis: {
-      labels: { style: { colors: C_GRAY_L, fontSize: '10px' }, formatter: v => v >= 1000 ? (v/1000) + 'K' : v.toFixed(0) },
-      axisBorder: { color: 'rgba(255,255,255,0.1)' },
-      axisTicks: { color: 'rgba(255,255,255,0.1)' }
+    tooltip: {
+      ...COMMON_APEX_OPTIONS.tooltip,
+      custom: ({ seriesIndex, dataPointIndex, w }) => {
+        const d = w.config.series[seriesIndex].data[dataPointIndex];
+        const m = d.meta || {};
+        return `
+          <div style="padding: 12px; min-width: 200px;">
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px;">#${Number(m.rank) || '?'} · ${escHtml(m.branch || '')}</div>
+            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 8px;">${escHtml(d.x)}</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0;">
+              <span style="color: #6B7280;">Total sales</span>
+              <span style="font-family: 'Geist Mono', monospace; font-weight: 600; color: #111827;">${chartFmtRM(d.y, { dp: 2 })}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0;">
+              <span style="color: #6B7280;">Reports</span>
+              <span style="font-family: 'Geist Mono', monospace; font-weight: 600; color: #111827;">${m.reports || 0}</span>
+            </div>
+          </div>`;
+      },
     },
-    yaxis: { labels: { style: { colors: C_GRAY_L, fontSize: '11px', fontFamily: 'Geist Mono, monospace' } } },
-    grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3 },
-    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') } }
+    responsive: [
+      { breakpoint: 768, options: { chart: { height: Math.max(filtered.length * 32 + 60, 220) }, dataLabels: { style: { fontSize: '11px' } } } },
+    ],
   };
 
-  if (!lbChart) {
-    lbChart = new ApexCharts(document.querySelector('#chart-leaderboard'), opts);
-    lbChart.render();
+  if (filtered.length === 0) {
+    opts.noData = { text: 'No salesman activity this month', style: { color: CHART_PALETTE.axisLabel, fontSize: '13px' } };
+  }
+
+  if (!top10Chart) {
+    top10Chart = new ApexCharts(document.querySelector('#chart-top10-salesmen'), opts);
+    top10Chart.render();
   } else {
-    lbChart.updateOptions(opts);
+    top10Chart.updateOptions(opts, true, true);   // (options, redrawPaths, animate) — true,true to force re-anim on bar count change
   }
 }
 
-// Brand mix donut
-function renderBrandMixChart(reports) {
-  // Sum sales per division_code (submitted/approved only)
-  const byBrand = {};
-  reports.forEach(r => {
-    if (r.status !== 'submitted' && r.status !== 'approved') return;
-    const b = r.division_code || 'Unknown';
-    byBrand[b] = (byBrand[b] || 0) + Number(r.total_sales || 0);
+// ===== Chart 3: Collection Aging (4 buckets, stacked 100% bar) =====
+// View row shape: { bucket, branch_code, entry_count, total_amount }
+// bucket ∈ {'0-30','30-60','60-90','90+'}
+function renderCollectionAgingChart(rows) {
+  const filtered = filterByCurrentBranch(rows);
+  const buckets = ['0-30', '30-60', '60-90', '90+'];
+  const sums = { '0-30': 0, '30-60': 0, '60-90': 0, '90+': 0 };
+  filtered.forEach(r => {
+    if (sums[r.bucket] !== undefined) sums[r.bucket] += Number(r.total_amount || 0);
   });
-  const entries = Object.entries(byBrand)
-    .filter(([_, v]) => v > 0)
-    .sort((a, b) => b[1] - a[1]);
-  const total = entries.reduce((s, [_, v]) => s + v, 0);
+  const total = buckets.reduce((s, b) => s + sums[b], 0);
 
-  $('brands-count').textContent = entries.length;
-  $('brands-top').textContent   = entries.length ? entries[0][0].replace(/^M-/, '') : '—';
-
-  const host = document.querySelector('#chart-brands');
-  if (entries.length === 0) {
-    // Destroy old chart if exists, show empty state
-    if (brandsChart) { brandsChart.destroy(); brandsChart = null; }
-    host.innerHTML = '<div class="chart-empty">No sales recorded — awaiting submissions</div>';
-    return;
-  }
-  // Restore chart host if we previously stuffed it with empty state
-  if (!host.querySelector('.apexcharts-canvas') && !brandsChart) {
-    host.innerHTML = '';
-  }
-
-  const labels = entries.map(([k]) => k);
-  const values = entries.map(([, v]) => v);
-  const topLabel = entries[0][0].replace(/^M-/, '');
+  $('aging-total').textContent    = chartFmtRM(total);
+  $('aging-critical').textContent = chartFmtRM(sums['90+']);
 
   const opts = {
-    chart: { type: 'donut', height: 240, background: 'transparent', fontFamily: 'Geist, sans-serif', animations: { enabled: true, speed: 400 } },
-    series: values,
-    labels,
-    colors: BRAND_COLORS.slice(0, values.length),
+    ...COMMON_APEX_OPTIONS,
+    chart: { ...COMMON_APEX_OPTIONS.chart, type: 'bar', height: 180, stacked: true, stackType: '100%' },
+    series: [
+      { name: '0-30 days',  data: [sums['0-30']] },
+      { name: '30-60 days', data: [sums['30-60']] },
+      { name: '60-90 days', data: [sums['60-90']] },
+      { name: '90+ days',   data: [sums['90+']] },
+    ],
+    colors: [CHART_PALETTE.success, CHART_PALETTE.warning, CHART_PALETTE.orange, CHART_PALETTE.danger],
     plotOptions: {
-      pie: {
-        donut: {
-          size: '60%',
-          labels: {
-            show: true,
-            name:  { color: C_GRAY_L, fontSize: '10px', fontFamily: 'Geist, sans-serif', offsetY: 0 },
-            value: { color: 'white', fontSize: '20px', fontFamily: 'Geist Mono, monospace', fontWeight: 700, formatter: v => Math.round(v/total*100) + '%' },
-            total: { show: true, label: 'Top brand', fontSize: '10px', color: C_GOLD, fontFamily: 'Geist, sans-serif', fontWeight: 600, formatter: () => topLabel }
-          }
-        }
-      }
+      bar: { horizontal: true, borderRadius: 0, barHeight: '60%' },
     },
-    dataLabels: { enabled: false },
-    stroke: { width: 2, colors: [C_NAVY] },
+    dataLabels: {
+      enabled: true,
+      formatter: (val, { seriesIndex, w }) => {
+        const raw = Number((w.config.series[seriesIndex].data || [])[0]) || 0;
+        const pct = total > 0 ? Math.round(raw / total * 100) : 0;
+        if (pct < 8) return '';
+        return pct + '%';
+      },
+      style: { fontSize: '12px', fontFamily: 'Geist Mono, monospace', fontWeight: 700, colors: ['#FFFFFF'] },
+    },
+    xaxis: {
+      categories: ['All'],
+      axisBorder: { show: false }, axisTicks: { show: false },
+      labels: { show: false },
+    },
+    yaxis: { show: false },
     legend: {
-      position: 'bottom', horizontalAlign: 'center',
-      fontSize: '10px', fontFamily: 'Geist Mono, monospace',
-      labels: { colors: C_GRAY_L },
-      markers: { width: 8, height: 8, radius: 2 },
-      itemMargin: { horizontal: 4, vertical: 2 }
+      ...COMMON_APEX_OPTIONS.legend,
+      position: 'top', horizontalAlign: 'left',
+      markers: { width: 12, height: 12, radius: 2 },
     },
-    tooltip: { theme: 'dark', y: { formatter: v => 'RM ' + Number(v).toLocaleString('en-MY') + ' (' + Math.round(v/total*100) + '%)' } }
+    tooltip: {
+      ...COMMON_APEX_OPTIONS.tooltip,
+      y: { formatter: v => chartFmtRM(v, { dp: 2 }) + (total > 0 ? ' (' + Math.round(v / total * 100) + '%)' : '') },
+    },
+    grid: { show: false, padding: { left: 0, right: 0, top: 0, bottom: 0 } },
   };
 
-  if (!brandsChart) {
-    brandsChart = new ApexCharts(host, opts);
-    brandsChart.render();
+  if (total === 0) {
+    opts.series = [];
+    opts.noData = { text: 'No outstanding collections', style: { color: CHART_PALETTE.axisLabel, fontSize: '13px' } };
+  }
+
+  if (!agingChart) {
+    agingChart = new ApexCharts(document.querySelector('#chart-collection-aging'), opts);
+    agingChart.render();
   } else {
-    brandsChart.updateOptions(opts);
+    agingChart.updateOptions(opts);
+  }
+}
+
+// ===== Chart 4: DSR Submission Heatmap (salesman × date) =====
+// RPC row shape: { salesman_id, emp_no, sr_code, name, branch_code,
+//                  report_date, submitted (bool), status }
+// status_code mapping: submitted=true → 3 (on-time, green)
+//                      submitted=false & status='draft' → 2 (late, amber)
+//                      submitted=false & status null → 1 (missing, red)
+//                      weekend (Sun=0) → 0 (off, gray)
+function renderSubmissionHeatmapChart(rows) {
+  // RPC enforces boss/manager-only via SECURITY DEFINER + GRANT EXECUTE.
+  // For salesman role the RPC returns 0 rows — hide the entire card in that case.
+  const card = $('chart-heatmap-card');
+  if (!rows || rows.length === 0) {
+    if (heatmapChart) { heatmapChart.destroy(); heatmapChart = null; }
+    if (card) card.style.display = 'none';
+    return;
+  }
+  if (card) card.style.display = '';
+
+  const filtered = filterByCurrentBranch(rows);
+  if (filtered.length === 0) {
+    $('heatmap-ontime').textContent  = '0%';
+    $('heatmap-salesmen').textContent = '0';
+    $('heatmap-missing').textContent = '0';
+    if (heatmapChart) heatmapChart.updateOptions({ series: [], noData: { text: 'No DSR data for this branch', style: { color: CHART_PALETTE.axisLabel, fontSize: '13px' } } });
+    return;
+  }
+
+  // Build salesman → submissions[] map; collect unique sorted dates.
+  const bySalesman = new Map();
+  const allDates = new Set();
+  filtered.forEach(r => {
+    const key = r.salesman_id;
+    if (!bySalesman.has(key)) {
+      bySalesman.set(key, {
+        salesman_id: r.salesman_id,
+        emp_no: r.emp_no, sr_code: r.sr_code, name: r.name,
+        branch_code: r.branch_code, cells: [],
+      });
+    }
+    bySalesman.get(key).cells.push({ date: r.report_date, submitted: r.submitted, status: r.status });
+    allDates.add(r.report_date);
+  });
+  const sortedDates = [...allDates].sort();
+
+  // Convert to ApexCharts heatmap series. Each salesman = 1 series.
+  // Cap to top 25 by on-time rate desc (TV screens fit comfortably).
+  const seriesAll = [];
+  let totalCells = 0, onTimeCells = 0, missingCells = 0;
+  for (const s of bySalesman.values()) {
+    const byDate = {};
+    s.cells.forEach(c => { byDate[c.date] = c; });
+    let on = 0, total = 0, missing = 0;
+    const data = sortedDates.map(d => {
+      const cell = byDate[d];
+      const dow = new Date(d + 'T00:00:00+08:00').getDay();
+      const isWeekend = (dow === 0); // Sunday off; Saturday is a working day in MY retail
+      let statusCode;
+      if (!cell || cell.submitted === undefined) {
+        statusCode = isWeekend ? 0 : 1;
+      } else if (cell.submitted) {
+        statusCode = 3; on++;
+      } else if (cell.status === 'draft') {
+        statusCode = 2;
+      } else if (isWeekend) {
+        statusCode = 0;
+      } else {
+        statusCode = 1; missing++;
+      }
+      if (!isWeekend) total++;
+      return { x: d.slice(5), y: statusCode };
+    });
+    onTimeCells  += on;
+    missingCells += missing;
+    totalCells   += total;
+    const rate = total > 0 ? on / total : 0;
+    seriesAll.push({
+      name: (s.emp_no ? s.emp_no + ' · ' : '') + (s.name || s.sr_code || '—'),
+      rate,
+      data,
+    });
+  }
+  seriesAll.sort((a, b) => b.rate - a.rate);
+  const series = seriesAll.slice(0, 25);
+
+  const onTimePct = totalCells > 0 ? Math.round(onTimeCells / totalCells * 100) : 0;
+  $('heatmap-ontime').textContent  = onTimePct + '%';
+  $('heatmap-salesmen').textContent = bySalesman.size;
+  $('heatmap-missing').textContent = missingCells;
+
+  const opts = {
+    ...COMMON_APEX_OPTIONS,
+    chart: { ...COMMON_APEX_OPTIONS.chart, type: 'heatmap', height: Math.max(series.length * 22 + 100, 240) },
+    series,
+    plotOptions: {
+      heatmap: {
+        shadeIntensity: 0,
+        radius: 3,
+        useFillColorAsStroke: false,
+        colorScale: {
+          ranges: [
+            { from: 0, to: 0, color: CHART_PALETTE.grid,       name: 'Off day' },
+            { from: 1, to: 1, color: CHART_PALETTE.danger,     name: 'Missing' },
+            { from: 2, to: 2, color: CHART_PALETTE.warning,    name: 'Draft / late' },
+            { from: 3, to: 3, color: CHART_PALETTE.success,    name: 'Submitted' },
+          ],
+        },
+      },
+    },
+    stroke: { width: 2, colors: ['#FFFFFF'] },
+    dataLabels: { enabled: false },
+    xaxis: {
+      type: 'category',
+      axisBorder: { show: false }, axisTicks: { show: false },
+      labels: {
+        rotate: 0, hideOverlappingLabels: true,
+        style: { colors: CHART_PALETTE.axisLabel, fontSize: '10px', fontFamily: 'Geist Mono, monospace', fontWeight: 500 },
+      },
+    },
+    yaxis: {
+      labels: {
+        style: { colors: CHART_PALETTE.textPrimary, fontSize: '12px', fontFamily: 'Geist, sans-serif', fontWeight: 500 },
+        maxWidth: 160,
+      },
+    },
+    legend: {
+      ...COMMON_APEX_OPTIONS.legend,
+      position: 'bottom', horizontalAlign: 'center',
+      markers: { width: 12, height: 12, radius: 3 },
+    },
+    tooltip: {
+      ...COMMON_APEX_OPTIONS.tooltip,
+      custom: ({ seriesIndex, dataPointIndex, w }) => {
+        const seriesName = w.config.series[seriesIndex].name;
+        const point = w.config.series[seriesIndex].data[dataPointIndex];
+        const statusMap = { 0: 'Off day', 1: 'Missing', 2: 'Draft / late', 3: 'Submitted' };
+        const statusColor = { 0: '#9CA3AF', 1: '#EF4444', 2: '#F59E0B', 3: '#10B981' };
+        return `
+          <div style="padding: 10px 12px; min-width: 200px;">
+            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px;">${escHtml(seriesName)}</div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+              <span style="color: #6B7280;">Date</span>
+              <span style="font-family: 'Geist Mono', monospace; color: #111827;">${point.x}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0;">
+              <span style="color: #6B7280;">Status</span>
+              <span style="font-weight: 600; color: ${statusColor[point.y]};">${statusMap[point.y]}</span>
+            </div>
+          </div>`;
+      },
+    },
+    responsive: [
+      { breakpoint: 768, options: { chart: { height: Math.max(series.length * 20 + 100, 220) }, yaxis: { labels: { style: { fontSize: '11px' }, maxWidth: 120 } } } },
+    ],
+  };
+
+  if (!heatmapChart) {
+    heatmapChart = new ApexCharts(document.querySelector('#chart-submission-heatmap'), opts);
+    heatmapChart.render();
+  } else {
+    heatmapChart.updateOptions(opts, true, true);
   }
 }
 
@@ -1764,7 +2196,8 @@ function setupBranchPicker() {
   pick.value = currentBranch;
   pick.addEventListener('change', () => {
     currentBranch = pick.value || 'M';
-    fetchAll();
+    renderChartsFromCache();   // instant re-render with new branch filter
+    fetchAll();                // refresh KPIs/feed (which also kicks chart fetch)
   });
 }
 
