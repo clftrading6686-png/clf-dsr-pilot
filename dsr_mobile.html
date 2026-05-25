@@ -406,7 +406,7 @@ body.history-mode .submit-bar { display: none; }
     <h1>CLF Trading · DSR</h1>
     <p class="sub">Please sign in to continue</p>
     <div id="auth-gate-msg"></div>
-    <div class="field"><label>Email</label><input type="email" id="auth-gate-email" autocomplete="email"/></div>
+    <div class="field"><label>Staff ID or Email</label><input type="text" id="auth-gate-email" autocomplete="username" placeholder="e.g. TER500"/></div>
     <div class="field"><label>Password</label><input type="password" id="auth-gate-password" autocomplete="current-password"/></div>
     <button id="auth-gate-btn" type="button">Sign In</button>
   </div>
@@ -696,6 +696,20 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
+// ===== SYNC PRE-CHECK: auto-fill Staff ID from cached session metadata =====
+// Runs BEFORE any init code; lets logged-in salesmen skip the Staff ID input.
+(function preFillFromSession(){
+  try{
+    const cached=localStorage.getItem('sb-wgwupdjiugmdgxprctse-auth-token');
+    if(!cached)return;
+    const parsed=JSON.parse(cached);
+    const user=parsed&&(parsed.user||(parsed.currentSession&&parsed.currentSession.user));
+    if(!user)return;
+    const md=user.user_metadata||{};
+    if(md.emp_no)localStorage.setItem('clf_dsr_emp_no',md.emp_no);
+  }catch(_){}
+})();
+
 // ===== AUTH GATE (v2 - fixes display, click race, lowercase email) =====
 (function(){
   const TOKEN_KEY='sb-wgwupdjiugmdgxprctse-auth-token';
@@ -712,9 +726,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   function hideOverlay(){o.classList.remove('show');}
   try{if(!localStorage.getItem(TOKEN_KEY))showOverlay();}catch(_){showOverlay();}
   b.onclick=async()=>{
-    const em=(e.value||'').trim().toLowerCase();
+    let em=(e.value||'').trim().toLowerCase();
     const pw=p.value||'';
-    if(!em||!pw){setMsg('Please enter email and password','error');return;}
+    if(!em||!pw){setMsg('Please enter Staff ID or email and password','error');return;}
+    // Staff ID (no @) → convert to internal email format
+    if(!em.includes('@'))em=em+'@clf-staff.local';
     b.disabled=true;
     const orig=b.textContent;
     b.textContent='Signing in...';
@@ -726,7 +742,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       setTimeout(()=>location.reload(),200);
     }catch(err){
       console.error('[auth-gate] sign-in failed:',err);
-      setMsg((err&&err.message)||'Login failed. Check email and password.','error');
+      setMsg((err&&err.message)||'Login failed. Check Staff ID/email and password.','error');
       b.disabled=false;
       b.textContent=orig;
       try{p.focus();p.select();}catch(_){}

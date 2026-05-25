@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSR Dashboard — Charts Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0B1F3A;
+  --navy-mid: #1A3A5C;
+  --navy-light: #2A4A6C;
+  --blue: #185FA5;
+  --blue-bright: #60A5FA;
+  --gold: #C9A84C;
+  --gold-light: #F5E6B8;
+  --gold-bright: #FFD66B;
+  --green-bright: #4ADE80;
+  --amber-bright: #FBBF24;
+  --red-bright: #EF4444;
+  --purple: #A78BFA;
+  --pink: #F472B6;
+  --teal: #5EEAD4;
+  --gray: #6B7A8D;
+  --gray-light: #A8B4C5;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100vh;
+  font-family: 'Geist', -apple-system, sans-serif;
+  background: var(--navy);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  background:
+    radial-gradient(ellipse at top right, rgba(201,168,76,0.08), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(24,95,165,0.12), transparent 50%),
+    var(--navy);
+  padding: 32px;
+}
+.mockup-banner {
+  background: rgba(255,214,107,0.08);
+  border: 1px dashed var(--gold);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--gold-bright);
+  display: flex; align-items: center; gap: 10px;
+}
+.mockup-banner .icon { font-size: 18px; }
+.section-title {
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: white; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .shield { color: var(--gold-bright); }
+.section-title .sub {
+  font-size: 11px; color: var(--gray-light);
+  letter-spacing: 0; text-transform: none;
+  margin-left: 12px; font-weight: 400;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 14px;
+}
+.chart-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.chart-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--gold);
+}
+.chart-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.chart-card-title {
+  font-size: 14px; font-weight: 600; color: white;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-card-title .icon { font-size: 18px; }
+.chart-card-sub {
+  font-size: 10px; color: var(--gold); text-transform: uppercase;
+  letter-spacing: 1.6px; font-weight: 600;
+}
+.chart-card-body {
+  flex: 1; min-height: 220px;
+}
+.chart-card-stat {
+  display: flex; gap: 16px; margin-bottom: 6px;
+}
+.chart-card-stat .num {
+  font-family: 'Geist Mono', monospace;
+  font-size: 22px; font-weight: 700; color: var(--gold-bright);
+  line-height: 1;
+}
+.chart-card-stat .lbl {
+  font-size: 10px; color: var(--gray-light);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  margin-top: 4px;
+}
+
+/* Override ApexCharts theming */
+.apexcharts-tooltip {
+  background: var(--navy-mid) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: white !important;
+  font-family: 'Geist', sans-serif !important;
+}
+.apexcharts-tooltip-title {
+  background: var(--navy-light) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.apexcharts-legend-text { color: var(--gray-light) !important; font-size: 11px !important; }
+.apexcharts-xaxis text, .apexcharts-yaxis text { fill: var(--gray-light) !important; font-family: 'Geist Mono', monospace !important; }
+
+.note {
+  margin-top: 26px; padding: 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  font-size: 13px; color: var(--gray-light); line-height: 1.7;
+}
+.note strong { color: white; font-weight: 600; }
+.note .legend {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 2px; margin-right: 4px; vertical-align: middle;
+}
+
+@media (max-width: 1100px) {
+  .chart-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <span class="icon">🎨</span>
+  <div>
+    <strong>MOCKUP PREVIEW</strong> — Static visual preview of the proposed 3 charts (A + B + C).
+    Real version will pull live data from Supabase and sync with the date picker.
+  </div>
+</div>
+
+<div class="section-title">
+  <span class="shield">📊</span>Visual Insights
+  <span class="sub">7-day momentum · Today's leaderboard · Brand portfolio</span>
+</div>
+
+<div class="chart-grid">
+
+  <!-- ============ A: 7-Day Sales Trend ============ -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title"><span class="icon">📈</span>7-Day Sales Trend</div>
+      <div class="chart-card-sub">Last 7 days</div>
+    </div>
+    <div class="chart-card-stat">
+      <div>
+        <div class="num">RM 96.4K</div>
+        <div class="lbl">7-day total</div>
+      </div>
+      <div>
+        <div class="num" style="color: var(--green-bright);">+18%</div>
+        <div class="lbl">vs prior 7d</div>
+      </div>
+    </div>
+    <div class="chart-card-body" id="chart-trend"></div>
+  </div>
+
+  <!-- ============ B: Champion Leaderboard ============ -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title"><span class="icon">🏆</span>Today's Champion Leaderboard</div>
+      <div class="chart-card-sub">By sales</div>
+    </div>
+    <div class="chart-card-stat">
+      <div>
+        <div class="num">5 / 5</div>
+        <div class="lbl">submitted</div>
+      </div>
+      <div>
+        <div class="num" style="color: var(--gold-bright);">LEN-KM</div>
+        <div class="lbl">#1 today</div>
+      </div>
+    </div>
+    <div class="chart-card-body" id="chart-leaderboard"></div>
+  </div>
+
+  <!-- ============ C: Brand Mix Donut ============ -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title"><span class="icon">🥧</span>Brand Mix Today</div>
+      <div class="chart-card-sub">% of sales</div>
+    </div>
+    <div class="chart-card-stat">
+      <div>
+        <div class="num">7</div>
+        <div class="lbl">brands sold</div>
+      </div>
+      <div>
+        <div class="num" style="color: var(--gold-bright);">ACLO</div>
+        <div class="lbl">top brand 38%</div>
+      </div>
+    </div>
+    <div class="chart-card-body" id="chart-brands"></div>
+  </div>
+
+</div>
+
+<div class="note">
+  <strong>Mock data used:</strong><br>
+  <strong>A — Sales Trend</strong>: 7 days fake values RM 11–17K each, mild uptrend (typical "good week" feel)<br>
+  <strong>B — Leaderboard</strong>: LEN-KM 4.2K · ANN-CX 2.8K · LOKE-CP 1.8K · LEONG-SA 1.2K · CHONG-SY 0.4K, color-coded per Champion<br>
+  <strong>C — Brand Mix</strong>: M-ACLO 38% · M-GEN 23% · M-MARS 17% · M-ANGENET 12% · M-MDL 6% · M-MARS 3% · others 1%<br><br>
+  <strong>Real version differences:</strong> live data from Supabase · synced with date picker · empty state if no data ("Awaiting first submissions")
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+// Theme palette matching dashboard
+const NAVY      = '#0B1F3A';
+const GOLD      = '#C9A84C';
+const GOLD_B    = '#FFD66B';
+const BLUE      = '#185FA5';
+const BLUE_B    = '#60A5FA';
+const GREEN     = '#4ADE80';
+const AMBER     = '#FBBF24';
+const PURPLE    = '#A78BFA';
+const PINK      = '#F472B6';
+const TEAL      = '#5EEAD4';
+const RED       = '#EF4444';
+const GRAY      = '#6B7A8D';
+const GRAY_L    = '#A8B4C5';
+
+// ===== A: 7-Day Sales Trend (area chart) =====
+new ApexCharts(document.querySelector('#chart-trend'), {
+  chart: {
+    type: 'area', height: 240,
+    toolbar: { show: false }, zoom: { enabled: false },
+    background: 'transparent', fontFamily: 'Geist, sans-serif',
+    sparkline: { enabled: false }
+  },
+  series: [{
+    name: 'Total Sales (RM)',
+    data: [11200, 13800, 12500, 15200, 14600, 16800, 12300]
+  }],
+  xaxis: {
+    categories: ['Mon 5/6', 'Tue 5/7', 'Wed 5/8', 'Thu 5/9', 'Fri 5/10', 'Sat 5/11', 'Today'],
+    labels: { style: { colors: GRAY_L, fontSize: '11px' } },
+    axisBorder: { color: 'rgba(255,255,255,0.1)' },
+    axisTicks: { color: 'rgba(255,255,255,0.1)' }
+  },
+  yaxis: {
+    labels: {
+      style: { colors: GRAY_L, fontSize: '11px' },
+      formatter: v => 'RM ' + (v/1000).toFixed(0) + 'K'
+    }
+  },
+  stroke: { curve: 'smooth', width: 3, colors: [GOLD] },
+  fill: {
+    type: 'gradient',
+    gradient: {
+      shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05,
+      stops: [0, 100], colorStops: [
+        { offset: 0,   color: GOLD,    opacity: 0.5 },
+        { offset: 100, color: GOLD,    opacity: 0   }
+      ]
+    }
+  },
+  markers: { size: 5, colors: [GOLD_B], strokeColors: NAVY, strokeWidth: 2, hover: { size: 7 } },
+  dataLabels: { enabled: false },
+  grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3 },
+  tooltip: {
+    theme: 'dark',
+    y: { formatter: v => 'RM ' + v.toLocaleString('en-MY') }
+  }
+}).render();
+
+// ===== B: Champion Leaderboard (horizontal bar) =====
+new ApexCharts(document.querySelector('#chart-leaderboard'), {
+  chart: {
+    type: 'bar', height: 240,
+    toolbar: { show: false }, background: 'transparent',
+    fontFamily: 'Geist, sans-serif'
+  },
+  series: [{
+    name: 'Sales',
+    data: [
+      { x: 'LEN-KM',   y: 4200, fillColor: GOLD_B },
+      { x: 'ANN-CX',   y: 2800, fillColor: BLUE_B },
+      { x: 'LOKE-CP',  y: 1800, fillColor: GREEN  },
+      { x: 'LEONG-SA', y: 1200, fillColor: PURPLE },
+      { x: 'CHONG-SY', y: 400,  fillColor: GRAY   }
+    ]
+  }],
+  plotOptions: {
+    bar: {
+      horizontal: true, barHeight: '65%', distributed: true,
+      borderRadius: 4, dataLabels: { position: 'top' }
+    }
+  },
+  dataLabels: {
+    enabled: true, textAnchor: 'start', offsetX: 8,
+    style: { colors: ['white'], fontSize: '12px', fontWeight: 600, fontFamily: 'Geist Mono, monospace' },
+    formatter: v => 'RM ' + v.toLocaleString('en-MY')
+  },
+  legend: { show: false },
+  xaxis: {
+    labels: { style: { colors: GRAY_L, fontSize: '11px' }, formatter: v => v >= 1000 ? (v/1000) + 'K' : v },
+    axisBorder: { color: 'rgba(255,255,255,0.1)' },
+    axisTicks: { color: 'rgba(255,255,255,0.1)' }
+  },
+  yaxis: { labels: { style: { colors: GRAY_L, fontSize: '12px', fontFamily: 'Geist Mono, monospace' } } },
+  grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 3 },
+  tooltip: {
+    theme: 'dark',
+    y: { formatter: v => 'RM ' + v.toLocaleString('en-MY') }
+  }
+}).render();
+
+// ===== C: Brand Mix Donut =====
+new ApexCharts(document.querySelector('#chart-brands'), {
+  chart: {
+    type: 'donut', height: 260,
+    background: 'transparent', fontFamily: 'Geist, sans-serif'
+  },
+  series: [38, 23, 17, 12, 6, 3, 1],
+  labels: ['M-ACLO', 'M-GEN', 'M-MARS', 'M-ANGENET', 'M-MDL', 'M-MRG', 'Other'],
+  colors: [GOLD_B, BLUE_B, GREEN, PURPLE, AMBER, PINK, GRAY],
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '65%',
+        labels: {
+          show: true,
+          name: { fontSize: '11px', color: GRAY_L, fontFamily: 'Geist, sans-serif', offsetY: 0 },
+          value: {
+            fontSize: '24px', color: 'white',
+            fontFamily: 'Geist Mono, monospace', fontWeight: 700,
+            formatter: v => v + '%'
+          },
+          total: {
+            show: true, label: 'Top brand',
+            fontSize: '10px', color: GOLD,
+            fontFamily: 'Geist, sans-serif', fontWeight: 600,
+            formatter: w => 'ACLO'
+          }
+        }
+      }
+    }
+  },
+  dataLabels: { enabled: false },
+  stroke: { width: 2, colors: [NAVY] },
+  legend: {
+    position: 'bottom', horizontalAlign: 'center',
+    fontSize: '10px', fontFamily: 'Geist Mono, monospace',
+    labels: { colors: GRAY_L },
+    markers: { width: 9, height: 9, radius: 2 },
+    itemMargin: { horizontal: 6, vertical: 2 }
+  },
+  tooltip: {
+    theme: 'dark',
+    y: { formatter: v => v + '% of today\'s sales' }
+  }
+}).render();
+</script>
+</body>
+</html>
