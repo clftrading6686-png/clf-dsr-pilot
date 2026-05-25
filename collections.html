@@ -582,13 +582,14 @@ async function loadCollections() {
   list.innerHTML = '<div class="empty">Loading...</div>';
 
   let query = sb.from('collections').select(`
-    id, order_id, salesman_id, customer_id,
+    id, order_id, dsr_entry_id, salesman_id, customer_id,
     amount_due, amount_collected, amount_submitted, amount_banked,
     due_date, status, created_at,
-    salesmen (id, name, zone),
+    salesmen (id, emp_no, name, zone, branch_code),
     customers (id, name, area, credit_term_days),
-    orders (id, brand_id, order_date, brands(id, name))
-  `).order('due_date', { ascending: true });
+    orders (id, brand_id, order_date, brands(id, name)),
+    dsr_entries (id, visit_at, customer_code, daily_reports(division_code, report_date))
+  `).order('created_at', { ascending: false });
 
   if (state.selectedSalesmanId !== 'ALL') {
     query = query.eq('salesman_id', state.selectedSalesmanId);
@@ -624,9 +625,11 @@ function render() {
   $('cnt-banked').textContent = counts.banked;
 
   // Summary
-  const overdueAmt = all.filter(isOverdue).reduce((s, c) => s + Number(c.amount_due || 0), 0);
-  const outstanding = all.filter(c => c.status !== 'banked').reduce((s, c) => s + Number(c.amount_due || 0), 0);
-  const outstandingCount = all.filter(c => c.status !== 'banked').length;
+  // DSR-sourced rows have amount_due=0 — exclude from "outstanding" counts/totals.
+  const isOrderBased = c => Number(c.amount_due || 0) > 0;
+  const overdueAmt = all.filter(isOverdue).filter(isOrderBased).reduce((s, c) => s + Number(c.amount_due || 0), 0);
+  const outstanding = all.filter(c => c.status !== 'banked').filter(isOrderBased).reduce((s, c) => s + Number(c.amount_due || 0), 0);
+  const outstandingCount = all.filter(c => c.status !== 'banked').filter(isOrderBased).length;
   const inHand = all.filter(c => c.status === 'collected').reduce((s, c) => s + Number(c.amount_collected || c.amount_due || 0), 0);
 
   const thisMonthStart = todayMY().slice(0, 7) + '-01';
@@ -661,17 +664,33 @@ function render() {
 }
 
 function renderCard(c) {
-  const overdue = isOverdue(c);
-  const due = dueLabel(c.due_date, c.status);
+  // DSR-sourced collections are simple receipts (no order, no due date, no pipeline)
+  const isDsr = !!c.dsr_entry_id;
+  const overdue = !isDsr && isOverdue(c);
+  const due = isDsr ? { cls: '', text: '' } : dueLabel(c.due_date, c.status);
   const cardCls = c.status === 'banked' ? 'banked' : (overdue ? 'overdue' : (due.cls === 'warn' ? 'due-soon' : ''));
 
   const status = overdue ? 'overdue' : c.status;
   const customerName = c.customers?.name || '(unknown)';
   const customerArea = c.customers?.area || '';
   const creditDays = c.customers?.credit_term_days || '';
-  const brandName = c.orders?.brands?.name || '?';
-  const salesmanName = c.salesmen?.name || '?';
+  // Brand: from order, or DSR division as fallback
+  const brandName = c.orders?.brands?.name
+                 || c.dsr_entries?.daily_reports?.division_code
+                 || (isDsr ? 'DSR' : '?');
+  // Salesman with Staff ID prefix
+  const empNo = c.salesmen?.emp_no || '';
+  const sName = c.salesmen?.name || '?';
+  const salesmanName = empNo ? `${empNo} · ${sName}` : sName;
   const salesmanZone = c.salesmen?.zone || '';
+  // DSR: show visit date instead of due date; main amount is amount_collected
+  const visitDate = (c.dsr_entries?.visit_at || c.dsr_entries?.daily_reports?.report_date || '').slice(0, 10);
+  const mainAmount = isDsr ? c.amount_collected : c.amount_due;
+  const mainAmtLabel = isDsr ? 'collected' : 'amount due';
+  const dateLine = isDsr ? visitDate : (c.due_date || '—');
+  const dateTag = isDsr
+    ? `<div class="due-tag" style="color:#16a34a;">DSR visit</div>`
+    : `<div class="due-tag ${due.cls}">${due.text}</div>`;
 
   const showSalesman = state.selectedSalesmanId === 'ALL';
 
@@ -686,18 +705,19 @@ function renderCard(c) {
           ${showSalesman ? `<span>👤 ${escapeHtml(salesmanName)}${salesmanZone ? ' · ' + escapeHtml(salesmanZone) : ''}</span>` : ''}
           <span>🏷️ ${escapeHtml(brandName)}</span>
           ${customerArea ? `<span>📍 ${escapeHtml(customerArea)}</span>` : ''}
-          ${creditDays ? `<span>⏱ ${creditDays}-day terms</span>` : ''}
+          ${!isDsr && creditDays ? `<span>⏱ ${creditDays}-day terms</span>` : ''}
+          ${isDsr ? '<span style="color:#16a34a;font-weight:600;">📋 From DSR</span>' : ''}
         </div>
       </div>
       <div class="coll-amount">
-        <div class="amt">${fmtRMfull(c.amount_due)}</div>
-        <div class="amt-label">amount due</div>
+        <div class="amt">${fmtRMfull(mainAmount)}</div>
+        <div class="amt-label">${mainAmtLabel}</div>
       </div>
       <div class="coll-due">
-        <div class="due-date">${c.due_date || '—'}</div>
-        <div class="due-tag ${due.cls}">${due.text}</div>
+        <div class="due-date">${dateLine || '—'}</div>
+        ${dateTag}
       </div>
-      ${renderPipeline(c)}
+      ${isDsr ? '' : renderPipeline(c)}
     </div>
   `;
 }
