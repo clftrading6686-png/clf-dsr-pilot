@@ -1177,7 +1177,7 @@ async function searchCustomers(query) {
   const safe = q.replace(/[%_]/g, ch => '\\' + ch);
   const { data, error } = await sb
     .from('customers')
-    .select('legacy_code, name, area, category')
+    .select('id, legacy_code, name, area, category')
     .eq('branch_code', 'M')
     .or(`name.ilike.%${safe}%,legacy_code.ilike.%${safe}%`)
     .order('name')
@@ -1188,6 +1188,7 @@ async function searchCustomers(query) {
   }
   // Map to legacy shape used by renderer
   return (data || []).map(c => ({
+    id: c.id,
     code: c.legacy_code,
     name: c.name,
     area: c.area,
@@ -1278,6 +1279,7 @@ function addFromSearch(code) {
     if (other?.entry?.photo) { prefillPhoto = other.entry.photo; prefillPath = other.entry.photo_path; break; }
   }
   state.todayCustomers.push({
+    customer_db_id: c.id,  // Link back to customers.id (fixes null customer_id bug)
     code: c.code, name: c.name, area: c.area, category: c.category,
     isNewOp: false,
     entry: prefillPhoto ? { photo: prefillPhoto, photo_path: prefillPath } : {},
@@ -1843,10 +1845,29 @@ function openSubmitModal() {
 }
 function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
 
-// Submit ONE brand's DSR (1 daily_report + N dsr_entries + photos).
+// Submit ONE brand's DSR (1 daily_report + N dsr_entries + photos + collections).
 // Returns the inserted/updated report row. Throws on hard failure.
 async function submitOneBrand(brand, customers, ctx) {
   // ctx = { now, dl, isLate, todayMY, branchCode, salesman }
+
+  // Backward-compat: drafts saved before customer_db_id fix don't have it.
+  // Batch lookup so submit reliably stamps customer_id on dsr_entries.
+  const codesToLookup = customers
+    .filter(c => !c.isNewOp && !c.customer_db_id && c.code && !String(c.code).startsWith('NEW-'))
+    .map(c => c.code);
+  if (codesToLookup.length > 0) {
+    try {
+      const { data: looked } = await sb.from('customers')
+        .select('id, legacy_code').in('legacy_code', codesToLookup);
+      if (looked && looked.length) {
+        const map = new Map(looked.map(r => [r.legacy_code, r.id]));
+        customers.forEach(c => {
+          if (!c.customer_db_id && map.has(c.code)) c.customer_db_id = map.get(c.code);
+        });
+      }
+    } catch (e) { console.warn('customer lookup failed:', e); }
+  }
+
   const visits = customers.filter(entryIsVisit).length;
   const eff    = customers.filter(c => (c.entry?.total_sales || 0) > 0).length;
   const sales  = customers.reduce((s, c) => s + Number(c.entry?.total_sales || 0), 0);
@@ -1923,6 +1944,29 @@ async function submitOneBrand(brand, customers, ctx) {
     if (photoRows.length > 0) {
       const { error: photoErr } = await sb.from('dsr_photos').insert(photoRows);
       if (photoErr) console.warn('photo metadata insert failed for', brand, photoErr);
+    }
+
+    // Auto-sync collections: one row per entry with total_collection > 0
+    // dsr_entry_id FK has ON DELETE CASCADE — re-submits clean up old rows automatically.
+    const collectionRows = [];
+    insertedEntries.forEach(ie => {
+      const c = customers.find(x => x.code === ie.customer_code);
+      if (!c) return;
+      const amt = Number(c.entry?.total_collection || 0);
+      if (amt > 0 && !c.isNewOp && c.customer_db_id) {
+        collectionRows.push({
+          dsr_entry_id: ie.id,
+          salesman_id: ctx.salesman.id,
+          customer_id: c.customer_db_id,
+          amount_due: 0,
+          amount_collected: amt,
+          status: 'collected',
+        });
+      }
+    });
+    if (collectionRows.length > 0) {
+      const { error: collErr } = await sb.from('collections').insert(collectionRows);
+      if (collErr) console.warn('collections sync failed for', brand, collErr);
     }
   }
   return { report, visits, eff, sales, coll };
