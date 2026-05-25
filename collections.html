@@ -365,27 +365,50 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
-// ===== AUTH GATE =====
-(async function(){
+// ===== AUTH GATE (v2 - fixes display, click race, lowercase email) =====
+(function(){
+  const TOKEN_KEY='sb-wgwupdjiugmdgxprctse-auth-token';
   const o=document.getElementById('auth-gate-overlay');
   const m=document.getElementById('auth-gate-msg');
   const b=document.getElementById('auth-gate-btn');
   const e=document.getElementById('auth-gate-email');
   const p=document.getElementById('auth-gate-password');
-  function show(t,k){o.classList.add('show');if(t){m.textContent=t;m.className=k||'info'}else{m.style.display='none'}}
-  function hide(){o.classList.remove('show')}
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session)show();else hide();
-  sb.auth.onAuthStateChange((evt,sess)=>{if(sess)hide();else show()});
+  function setMsg(t,k){
+    if(t){m.textContent=t;m.classList.remove('error','info');m.classList.add(k||'info');}
+    else{m.textContent='';m.classList.remove('error','info');}
+  }
+  function showOverlay(){o.classList.add('show');}
+  function hideOverlay(){o.classList.remove('show');}
+  try{if(!localStorage.getItem(TOKEN_KEY))showOverlay();}catch(_){showOverlay();}
   b.onclick=async()=>{
-    const em=e.value.trim(),pw=p.value;
-    if(!em||!pw){show('Please enter email and password','error');return}
-    b.disabled=true;const o0=b.textContent;b.textContent='Signing in...';
-    const{error}=await sb.auth.signInWithPassword({email:em,password:pw});
-    if(error){show(error.message||'Login failed','error');b.disabled=false;b.textContent=o0;return}
-    location.reload();
+    const em=(e.value||'').trim().toLowerCase();
+    const pw=p.value||'';
+    if(!em||!pw){setMsg('Please enter email and password','error');return;}
+    b.disabled=true;
+    const orig=b.textContent;
+    b.textContent='Signing in...';
+    setMsg('','');
+    try{
+      const{error}=await sb.auth.signInWithPassword({email:em,password:pw});
+      if(error)throw error;
+      hideOverlay();
+      setTimeout(()=>location.reload(),200);
+    }catch(err){
+      console.error('[auth-gate] sign-in failed:',err);
+      setMsg((err&&err.message)||'Login failed. Check email and password.','error');
+      b.disabled=false;
+      b.textContent=orig;
+      try{p.focus();p.select();}catch(_){}
+    }
   };
-  [e,p].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter')b.click()}));
+  [e,p].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!b.disabled)b.click();}));
+  sb.auth.getSession().then(({data:{session}})=>{
+    if(session)hideOverlay();else showOverlay();
+  }).catch(err=>{console.error('[auth-gate] getSession failed:',err);showOverlay();});
+  sb.auth.onAuthStateChange((evt,sess)=>{
+    if(evt==='SIGNED_OUT'||(!sess&&evt!=='INITIAL_SESSION'))showOverlay();
+    else if(sess)hideOverlay();
+  });
 })();
 
 // ===== STATE =====
