@@ -948,7 +948,7 @@ async function fetchAll() {
       .eq('report_date', today).in('salesman_id', pilotIds),
 
     sb.from('dsr_entries')
-      .select('id, report_id, customer_code, customer_name, is_new_outlet, total_sales, total_collection, visited, visit_at, reason_code, remark, priorities_pushed, gps_checkin, gps_variance_km, created_at, daily_reports!inner(salesman_id, report_date)')
+      .select('id, report_id, customer_code, customer_name, is_new_outlet, total_sales, total_collection, visited, visit_at, reason_code, remark, priorities_pushed, gps_checkin, gps_variance_km, created_at, daily_reports!inner(salesman_id, report_date), dsr_photos(id)')
       .eq('daily_reports.report_date', today).in('daily_reports.salesman_id', pilotIds)
       .order('created_at', { ascending: false }).limit(60),
 
@@ -1111,11 +1111,14 @@ function renderLeaderboardChart(reports) {
     byId[r.salesman_id] = (byId[r.salesman_id] || 0) + Number(r.total_sales || 0);
   });
   // Sort all salesmen by sales DESC, take top 8 (with sales > 0). Pad with stubs if fewer.
-  const allPoints = pilots.map(p => ({
-    sr: p.sr_code || p.name || '?',
-    name: p.full_name || p.name || p.sr_code || '?',
-    sales: byId[p.id] || 0
-  })).sort((a, b) => b.sales - a.sales);
+  const allPoints = pilots.map(p => {
+    const nm = p.full_name || p.name || p.sr_code || '?';
+    return {
+      sr: p.emp_no || p.sr_code || p.name || '?',
+      name: p.emp_no ? `${p.emp_no} · ${nm}` : nm,
+      sales: byId[p.id] || 0
+    };
+  }).sort((a, b) => b.sales - a.sales);
   const points = allPoints.filter(p => p.sales > 0).slice(0, 8);
   // If 0 salesmen with sales, show top 5 alphabetical as empty stubs
   if (points.length === 0) {
@@ -1259,7 +1262,7 @@ function renderTrustLayers(reports, entries, alerts) {
   // ---------- LAYER 1: Submission Trust ----------
   const pendingNames = pilots
     .filter(p => !submittedSalesmen.has(p.id))
-    .map(p => p.sr_code || p.full_name || p.name)
+    .map(p => p.emp_no ? `${p.emp_no} · ${p.full_name || p.name || ''}` : (p.sr_code || p.full_name || p.name))
     .filter(Boolean);
   const totalBrandReports = reports.filter(r => r.status === 'submitted' || r.status === 'approved').length;
 
@@ -1363,7 +1366,8 @@ function renderSubmissionStatus(reports) {
   }).sort((a, b) => a.weight - b.weight || (a.p.full_name || '').localeCompare(b.p.full_name || ''));
 
   list.innerHTML = ranked.map(({ p, myReports, submitted, drafts, state }) => {
-    const name = p.full_name || p.name || p.sr_code;
+    const nameOnly = p.full_name || p.name || p.sr_code;
+    const name = p.emp_no ? `${p.emp_no} · ${nameOnly}` : nameOnly;
     const stat = state === 'ok'    ? { icon: '✓', label: submitted.length + (submitted.length === 1 ? ' Brand ✓' : ' Brands ✓') }
               : state === 'draft' ? { icon: '✎', label: 'Draft' }
               :                      { icon: '◐', label: 'Pending' };
@@ -1506,12 +1510,19 @@ function renderVisitsDetail(entries) {
   if (!visited.length) { list.innerHTML = '<div class="empty">No visits recorded on this day</div>'; return; }
 
   const nameById = {};
-  pilots.forEach(p => { nameById[p.id] = p.sr_code || p.full_name || p.name; });
+  pilots.forEach(p => {
+    const nm = p.full_name || p.name || p.sr_code || '';
+    nameById[p.id] = p.emp_no ? `${p.emp_no} · ${nm}` : (p.sr_code || nm);
+  });
 
   list.innerHTML = visited.map(e => {
     const sid = e.daily_reports?.salesman_id;
     const sName = nameById[sid] || '?';
     const gpsBad = Number(e.gps_variance_km || 0) > GPS_VARIANCE_THRESHOLD_KM;
+    const photoCount = Array.isArray(e.dsr_photos) ? e.dsr_photos.length : 0;
+    const photoBadge = photoCount > 0
+      ? `<span style="color:#16a34a;">📷 ✓${photoCount > 1 ? ' ×' + photoCount : ''}</span>`
+      : `<span style="color:var(--red-bright);">📷 ✗</span>`;
     return `
       <div class="sub-row">
         <div class="sub-icon ${gpsBad ? 'late' : 'ok'}">${gpsBad ? '!' : '✓'}</div>
@@ -1519,6 +1530,7 @@ function renderVisitsDetail(entries) {
           <div class="sub-name">${escHtml(e.customer_name || e.customer_code || 'Customer')}</div>
           <div class="sub-meta">
             <span>${escHtml(sName)}</span>
+            ${photoBadge}
             ${e.gps_checkin ? '<span>GPS ✓</span>' : '<span style="color:var(--gray);">no GPS</span>'}
             ${gpsBad ? `<span style="color:var(--red-bright);">var ${Number(e.gps_variance_km).toFixed(1)}km</span>` : ''}
             ${e.is_new_outlet ? '<span style="color:var(--gold-bright);">NEW</span>' : ''}
@@ -1541,14 +1553,20 @@ function renderFeed(entries) {
   if (!recent.length) { feed.innerHTML = '<div class="empty" style="flex:1; padding:22px;">No entries on this day</div>'; return; }
 
   const nameById = {};
-  pilots.forEach(p => { nameById[p.id] = p.full_name || p.name || p.sr_code; });
+  pilots.forEach(p => {
+    const nm = p.full_name || p.name || p.sr_code || '';
+    nameById[p.id] = p.emp_no ? `${p.emp_no} · ${nm}` : (p.sr_code || nm);
+  });
 
   feed.innerHTML = recent.map(e => {
     const sid = e.daily_reports?.salesman_id;
     const sName = nameById[sid] || '?';
+    const photoCount = Array.isArray(e.dsr_photos) ? e.dsr_photos.length : 0;
     const tags = [];
     if (e.is_new_outlet) tags.push('<span class="feed-tag new">NEW</span>');
     if (e.gps_checkin)   tags.push('<span class="feed-tag gps">GPS</span>');
+    if (photoCount > 0)  tags.push(`<span class="feed-tag" style="background:#dcfce7;color:#15803d;">📷 ${photoCount}</span>`);
+    else if (e.visited)  tags.push('<span class="feed-tag" style="background:#fee2e2;color:#991b1b;">📷 ✗</span>');
     if (!e.visited && e.reason_code) tags.push(`<span class="feed-tag miss">MISS · ${escHtml(e.reason_code)}</span>`);
     return `
       <div class="feed-item">

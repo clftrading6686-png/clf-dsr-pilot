@@ -1309,7 +1309,7 @@ function renderSalesmanDropdown() {
   // Populate the datalist with all 116 active salesmen (Staff ID → name hint).
   // Browser shows native autocomplete as user types.
   $('salesman-codes-list').innerHTML = SALESMEN.map(s =>
-    `<option value="${escapeHtml(s.emp_no)}" label="${escapeHtml(s.name || '')}">`
+    `<option value="${escapeHtml(s.emp_no)}" label="${escapeHtml(s.emp_no + ' · ' + (s.name || ''))}">`
   ).join('');
   // Pre-fill input if we restored state.currentSalesmanId (emp_no) from localStorage
   const input = $('salesman-pick');
@@ -1338,7 +1338,7 @@ function renderSalesmanConfirm() {
   const sm = SALESMEN.find(s => (s.emp_no || '').toUpperCase() === raw);
   if (sm) {
     el.className = 'who-confirm ok';
-    el.innerHTML = `✓ ${escapeHtml(sm.name)}`;
+    el.innerHTML = `✓ ${escapeHtml(sm.emp_no)} · ${escapeHtml(sm.name)}`;
     input.classList.add('valid');
     input.classList.remove('invalid');
   } else {

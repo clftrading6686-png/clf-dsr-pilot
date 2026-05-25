@@ -448,7 +448,7 @@ async function fetchToday() {
     .select(`
       id, order_date, list_price_total, selling_price_total, profit, created_at,
       salesman_id, customer_id, brand_id,
-      salesmen (id, name, zone),
+      salesmen (id, emp_no, name, zone),
       customers (id, name),
       brands (id, name)
     `)
@@ -485,9 +485,11 @@ function render(orders) {
   orders.forEach(o => {
     const sid = o.salesman_id;
     if (!bySalesman[sid]) {
+      const nm = o.salesmen?.name || '(unknown)';
+      const emp = o.salesmen?.emp_no || '';
       bySalesman[sid] = {
         id: sid,
-        name: o.salesmen?.name || '(unknown)',
+        name: emp ? `${emp} · ${nm}` : nm,
         zone: o.salesmen?.zone || '',
         profit: 0, orders: 0, sales: 0
       };
@@ -605,8 +607,8 @@ function setupRealtime() {
         let name = 'Someone';
         let profit = 0;
         if (sid) {
-          const { data: s } = await sb.from('salesmen').select('name').eq('id', sid).maybeSingle();
-          name = s?.name || name;
+          const { data: s } = await sb.from('salesmen').select('emp_no, name').eq('id', sid).maybeSingle();
+          if (s) name = s.emp_no ? `${s.emp_no} · ${s.name}` : s.name;
           // Get latest big order for this salesman today
           const { data: o } = await sb.from('orders')
             .select('profit')

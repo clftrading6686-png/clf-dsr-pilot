@@ -535,7 +535,7 @@ function setConnStatus(ok, text) {
 async function init() {
   try {
     const [salesmenResp, customersResp] = await Promise.all([
-      sb.from('salesmen').select('id, name, role, zone').order('name'),
+      sb.from('salesmen').select('id, emp_no, name, role, zone').order('emp_no'),
       sb.from('customers').select('id, name, area, credit_term_days').order('name'),
     ]);
 
@@ -564,7 +564,7 @@ function populateSalesmenDropdown() {
   state.salesmen.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent = `${s.name}${s.zone ? ' · ' + s.zone : ''}${s.role !== 'salesman' ? ' (' + s.role + ')' : ''}`;
+    opt.textContent = `${s.emp_no ? s.emp_no + ' · ' : ''}${s.name}${s.zone ? ' · ' + s.zone : ''}${s.role !== 'salesman' ? ' (' + s.role + ')' : ''}`;
     sel.appendChild(opt);
   });
 }
