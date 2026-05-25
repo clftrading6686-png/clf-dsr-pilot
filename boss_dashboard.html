@@ -487,6 +487,12 @@ body {
 #auth-gate-msg{font-size:12px;padding:8px 10px;border-radius:6px;margin-bottom:10px;display:none}
 #auth-gate-msg.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 #auth-gate-msg.info{display:block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+/* ===== USER BAR ===== */
+#user-bar{position:fixed;top:8px;right:8px;z-index:9000;background:rgba(255,255,255,.96);padding:5px 10px;border-radius:8px;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:none;gap:8px;align-items:center;font-family:system-ui,-apple-system,sans-serif;border:1px solid #e5e7eb}
+#user-bar.show{display:inline-flex}
+#user-bar-email{color:#64748b;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#user-bar-logout{background:none;border:1px solid #e5e7eb;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;color:#2563eb;font-family:inherit}
+#user-bar-logout:hover{background:#eff6ff}
 </style>
 </head>
 <body>
@@ -501,6 +507,12 @@ body {
     <div class="field"><label>Password</label><input type="password" id="auth-gate-password" autocomplete="current-password"/></div>
     <button id="auth-gate-btn" type="button">Sign In</button>
   </div>
+</div>
+
+<!-- ===== USER BAR ===== -->
+<div id="user-bar">
+  <span id="user-bar-email"></span>
+  <button id="user-bar-logout" type="button">Sign out</button>
 </div>
 
 
@@ -792,12 +804,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     }
   };
   [e,p].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!b.disabled)b.click();}));
+  // User bar (logout + show email) — visible only when logged in
+  const ub=document.getElementById('user-bar');
+  const ubEmail=document.getElementById('user-bar-email');
+  const ubLogout=document.getElementById('user-bar-logout');
+  function showUserBar(email){if(ub){ubEmail.textContent=email||'';ub.classList.add('show');}}
+  function hideUserBar(){if(ub)ub.classList.remove('show');}
+  if(ubLogout)ubLogout.onclick=async()=>{
+    if(!confirm('Sign out of CLF Trading Boss Dashboard?'))return;
+    try{await sb.auth.signOut();}catch(_){}
+    location.reload();
+  };
   sb.auth.getSession().then(({data:{session}})=>{
-    if(session)hideOverlay();else showOverlay();
-  }).catch(err=>{console.error('[auth-gate] getSession failed:',err);showOverlay();});
+    if(session){hideOverlay();showUserBar(session.user&&session.user.email);}
+    else{showOverlay();hideUserBar();}
+  }).catch(err=>{console.error('[auth-gate] getSession failed:',err);showOverlay();hideUserBar();});
   sb.auth.onAuthStateChange((evt,sess)=>{
-    if(evt==='SIGNED_OUT'||(!sess&&evt!=='INITIAL_SESSION'))showOverlay();
-    else if(sess)hideOverlay();
+    if(evt==='SIGNED_OUT'||(!sess&&evt!=='INITIAL_SESSION')){showOverlay();hideUserBar();}
+    else if(sess){hideOverlay();showUserBar(sess.user&&sess.user.email);}
   });
 })();
 
