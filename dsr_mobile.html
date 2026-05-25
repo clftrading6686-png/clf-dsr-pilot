@@ -1855,14 +1855,15 @@ async function submitOneBrand(brand, customers, ctx) {
   const codesToLookup = customers
     .filter(c => !c.isNewOp && !c.customer_db_id && c.code && !String(c.code).startsWith('NEW-'))
     .map(c => c.code);
+  const customerMeta = {};  // code → { id, credit_term_days }
   if (codesToLookup.length > 0) {
     try {
       const { data: looked } = await sb.from('customers')
-        .select('id, legacy_code').in('legacy_code', codesToLookup);
+        .select('id, legacy_code, credit_term_days').in('legacy_code', codesToLookup);
       if (looked && looked.length) {
-        const map = new Map(looked.map(r => [r.legacy_code, r.id]));
+        looked.forEach(r => { customerMeta[r.legacy_code] = r; });
         customers.forEach(c => {
-          if (!c.customer_db_id && map.has(c.code)) c.customer_db_id = map.get(c.code);
+          if (!c.customer_db_id && customerMeta[c.code]) c.customer_db_id = customerMeta[c.code].id;
         });
       }
     } catch (e) { console.warn('customer lookup failed:', e); }
@@ -1946,21 +1947,41 @@ async function submitOneBrand(brand, customers, ctx) {
       if (photoErr) console.warn('photo metadata insert failed for', brand, photoErr);
     }
 
-    // Auto-sync collections: one row per entry with total_collection > 0
-    // dsr_entry_id FK has ON DELETE CASCADE — re-submits clean up old rows automatically.
+    // Auto-sync collections — two row kinds per dsr_entry:
+    //   1) status='collected' if total_collection > 0 (cash received this visit)
+    //   2) status='pending'   if total_sales      > 0 (credit sale, due in N days)
+    // dsr_entry_id FK ON DELETE CASCADE: re-submits clean up old rows automatically.
     const collectionRows = [];
+    const reportDate = ctx.todayMY; // 'YYYY-MM-DD'
     insertedEntries.forEach(ie => {
       const c = customers.find(x => x.code === ie.customer_code);
-      if (!c) return;
-      const amt = Number(c.entry?.total_collection || 0);
-      if (amt > 0 && !c.isNewOp && c.customer_db_id) {
+      if (!c || c.isNewOp || !c.customer_db_id) return;
+      const collAmt  = Number(c.entry?.total_collection || 0);
+      const salesAmt = Number(c.entry?.total_sales || 0);
+      // Cash received
+      if (collAmt > 0) {
         collectionRows.push({
           dsr_entry_id: ie.id,
           salesman_id: ctx.salesman.id,
           customer_id: c.customer_db_id,
           amount_due: 0,
-          amount_collected: amt,
+          amount_collected: collAmt,
           status: 'collected',
+        });
+      }
+      // Credit sale → pending
+      if (salesAmt > 0) {
+        const days = customerMeta[c.code]?.credit_term_days || 30;
+        const due = new Date(reportDate + 'T00:00:00');
+        due.setDate(due.getDate() + days);
+        collectionRows.push({
+          dsr_entry_id: ie.id,
+          salesman_id: ctx.salesman.id,
+          customer_id: c.customer_db_id,
+          amount_due: salesAmt,
+          amount_collected: 0,
+          status: 'pending',
+          due_date: due.toISOString().slice(0, 10),
         });
       }
     });
