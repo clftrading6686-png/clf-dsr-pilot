@@ -248,9 +248,37 @@ body {
 }
 .conn-dot.ok { background: #22C55E; }
 .conn-dot.err { background: var(--red); }
+/* ===== AUTH GATE ===== */
+#auth-gate-overlay{position:fixed;inset:0;z-index:99999;background:#fff;display:none;align-items:center;justify-content:center;padding:20px;font-family:system-ui,-apple-system,sans-serif}
+#auth-gate-overlay.show{display:flex}
+#auth-gate-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:32px 28px;width:380px;max-width:100%;box-shadow:0 12px 40px rgba(15,23,42,.1)}
+#auth-gate-card h1{font-size:22px;font-weight:700;margin:0 0 4px;color:#0f172a}
+#auth-gate-card .sub{color:#64748b;font-size:13px;margin:0 0 20px}
+#auth-gate-card .field{margin-bottom:14px}
+#auth-gate-card label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:#334155}
+#auth-gate-card input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box}
+#auth-gate-card input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+#auth-gate-btn{width:100%;padding:11px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:15px;cursor:pointer;margin-top:6px}
+#auth-gate-btn:disabled{opacity:.6;cursor:not-allowed}
+#auth-gate-msg{font-size:12px;padding:8px 10px;border-radius:6px;margin-bottom:10px;display:none}
+#auth-gate-msg.error{display:block;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+#auth-gate-msg.info{display:block;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
 </style>
 </head>
 <body>
+
+<!-- ===== AUTH GATE ===== -->
+<div id="auth-gate-overlay">
+  <div id="auth-gate-card">
+    <h1>CLF Trading · New Order</h1>
+    <p class="sub">Please sign in to continue</p>
+    <div id="auth-gate-msg"></div>
+    <div class="field"><label>Email</label><input type="email" id="auth-gate-email" autocomplete="email"/></div>
+    <div class="field"><label>Password</label><input type="password" id="auth-gate-password" autocomplete="current-password"/></div>
+    <button id="auth-gate-btn" type="button">Sign In</button>
+  </div>
+</div>
+
 
 <div class="header">
   <div class="header-row">
@@ -393,7 +421,32 @@ const SUPABASE_URL = 'https://wgwupdjiugmdgxprctse.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
 const BIG_ORDER_THRESHOLD = 500;
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ===== AUTH GATE =====
+(async function(){
+  const o=document.getElementById('auth-gate-overlay');
+  const m=document.getElementById('auth-gate-msg');
+  const b=document.getElementById('auth-gate-btn');
+  const e=document.getElementById('auth-gate-email');
+  const p=document.getElementById('auth-gate-password');
+  function show(t,k){o.classList.add('show');if(t){m.textContent=t;m.className=k||'info'}else{m.style.display='none'}}
+  function hide(){o.classList.remove('show')}
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session)show();else hide();
+  sb.auth.onAuthStateChange((evt,sess)=>{if(sess)hide();else show()});
+  b.onclick=async()=>{
+    const em=e.value.trim(),pw=p.value;
+    if(!em||!pw){show('Please enter email and password','error');return}
+    b.disabled=true;const o0=b.textContent;b.textContent='Signing in...';
+    const{error}=await sb.auth.signInWithPassword({email:em,password:pw});
+    if(error){show(error.message||'Login failed','error');b.disabled=false;b.textContent=o0;return}
+    location.reload();
+  };
+  [e,p].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter')b.click()}));
+})();
 
 // ===== STATE =====
 const state = {
