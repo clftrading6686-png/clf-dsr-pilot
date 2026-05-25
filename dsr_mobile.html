@@ -946,9 +946,23 @@ async function capturePhoto(customer, code) {
           processed = await convertHeicToJpeg(file);
         }
 
-        // Step 2 — Compress to 1280px / quality 0.85
+        // Step 2 — Compress to 1280px / quality 0.72 (target ~180 KB)
+        // Keeps width at 1280 so receipts/signatures stay readable.
+        // Fallback lowers quality only (NOT width) if photo is unusually large.
         showToast('📸 Compressing... / Memampatkan...');
-        const compressed = await compressImage(processed, 1280, 0.85);
+        let compressed = await compressImage(processed, 1280, 0.72);
+        // Safety: reject 0-byte / corrupt output from broken canvas.toBlob
+        if (!compressed || compressed.size < 1000) {
+          throw new Error('compression produced invalid output (' + (compressed?.size || 0) + ' bytes)');
+        }
+        // Fallback: if still > 280 KB, recompress at lower quality but keep width
+        if (compressed.size > 280 * 1024) {
+          showToast('📸 Recompressing... / Memampatkan semula...');
+          compressed = await compressImage(processed, 1280, 0.55);
+          if (!compressed || compressed.size < 1000) {
+            throw new Error('recompression failed');
+          }
+        }
 
         // Step 3 — Upload with retry (3 attempts, backoff 0s/1s/3s)
         const filename = `${state.currentSalesmanId}/${todayDateMY()}/${code}_${Date.now()}.jpg`;
