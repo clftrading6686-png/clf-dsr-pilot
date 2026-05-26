@@ -1296,7 +1296,7 @@ async function searchCustomers(query) {
   const safe = q.replace(/[%_]/g, ch => '\\' + ch);
   const { data, error } = await sb
     .from('customers')
-    .select('id, legacy_code, name, area, category')
+    .select('id, legacy_code, name, area, category, credit_term_days')
     .eq('branch_code', 'M')
     .or(`name.ilike.%${safe}%,legacy_code.ilike.%${safe}%`)
     .order('name')
@@ -1312,6 +1312,7 @@ async function searchCustomers(query) {
     name: c.name,
     area: c.area,
     category: c.category,
+    credit_term_days: c.credit_term_days,
   }));
 }
 
@@ -1400,6 +1401,7 @@ function addFromSearch(code) {
   state.todayCustomers.push({
     customer_db_id: c.id,  // Link back to customers.id (fixes null customer_id bug)
     code: c.code, name: c.name, area: c.area, category: c.category,
+    credit_term_days: c.credit_term_days,  // Cached for submit payload (avoids 30-day fallback)
     isNewOp: false,
     entry: prefillPhoto ? { photo: prefillPhoto, photo_path: prefillPath } : {},
   });
@@ -1964,13 +1966,19 @@ function openSubmitModal() {
 }
 function closeSubmitModal() { $('submit-modal').classList.remove('show'); }
 
-// Submit ONE brand's DSR (1 daily_report + N dsr_entries + photos + collections).
-// Returns the inserted/updated report row. Throws on hard failure.
+// Submit ONE brand's DSR — single atomic RPC call (`submit_dsr`).
+// The RPC writes daily_reports + dsr_entries + dsr_photos + collections in one
+// transaction. On any failure, everything rolls back and we throw a structured
+// error so doSubmit() surfaces it via showToast.
+// Returns: { brand, visits, eff, sales, coll, is_late, daily_report_id,
+//            entries_count, photos_count, collections_count }
 async function submitOneBrand(brand, customers, ctx) {
   // ctx = { now, dl, isLate, todayMY, branchCode, salesman }
+  // Note: ctx.isLate is now informational only — the authoritative value comes
+  // from `data.is_late` in the RPC response (server clock vs MY 23:59).
 
   // Backward-compat: drafts saved before customer_db_id fix don't have it.
-  // Batch lookup so submit reliably stamps customer_id on dsr_entries.
+  // Batch lookup so the payload reliably carries customer_id + credit_term_days.
   const codesToLookup = customers
     .filter(c => !c.isNewOp && !c.customer_db_id && c.code && !String(c.code).startsWith('NEW-'))
     .map(c => c.code);
@@ -1988,128 +1996,117 @@ async function submitOneBrand(brand, customers, ctx) {
     } catch (e) { console.warn('customer lookup failed:', e); }
   }
 
+  // Local aggregates — UI-display only. RPC recomputes authoritative values
+  // server-side from dsr_entries and writes them to daily_reports.
   const visits = customers.filter(entryIsVisit).length;
   const eff    = customers.filter(c => (c.entry?.total_sales || 0) > 0).length;
   const sales  = customers.reduce((s, c) => s + Number(c.entry?.total_sales || 0), 0);
   const coll   = customers.reduce((s, c) => s + Number(c.entry?.total_collection || 0), 0);
-  const strike = visits > 0 ? Math.round((eff / visits) * 100) : 0;
 
-  const reportPayload = {
+  // Build the entries array. Photos are nested per-entry (RPC reads them at
+  // entries[i].photos[]). credit_term_days is injected so the RPC's 30-day
+  // default doesn't silently override the customer's actual term.
+  const entries = customers.map((c, idx) => {
+    const entry = {
+      customer_id: c.isNewOp ? null : (c.customer_db_id || null),
+      customer_code: c.code,
+      customer_name: c.name,
+      is_new_outlet: !!c.isNewOp,
+      sequence_no: idx + 1,
+      sales_objective: c.entry?.sales_objective || 0,
+      total_sales: Number(c.entry?.total_sales || 0),
+      total_collection: Number(c.entry?.total_collection || 0),
+      visited: entryIsVisit(c),
+      visit_at: entryIsVisit(c) ? ctx.now.toISOString() : null,
+      reason_code: c.entry?.reason || null,
+      remark: c.entry?.remark || null,
+      priorities_pushed: c.entry?.priorities || [],
+      gps_checkin: c.entry?.gps || null,
+      credit_term_days: c.credit_term_days ?? customerMeta[c.code]?.credit_term_days ?? 30,
+      photos: [],
+    };
+    if (c.entry?.photo) {
+      entry.photos.push({
+        storage_path: c.entry.photo_path || '',
+        public_url: c.entry.photo,
+        photo_type: 'storefront',
+        gps_at_capture: c.entry.gps || null,
+        // file_size_bytes intentionally omitted — uploader doesn't track it
+      });
+    }
+    return entry;
+  });
+
+  // Single payload — matches spec §2.2. Aggregate fields (total_visits,
+  // total_sales, total_collection, effective_calls, strike_rate_pct) are NOT
+  // sent — the RPC computes them server-side and the client values would be
+  // overwritten anyway.
+  const payload = {
     salesman_id: ctx.salesman.id,
     report_date: ctx.todayMY,
     branch_code: ctx.branchCode,
     division_code: brand,
     week_day_code: computeWeekDayCode(),
-    total_visits: visits,
-    total_sales: sales,
-    total_collection: coll,
-    effective_calls: eff,
-    strike_rate_pct: strike,
     status: 'submitted',
-    submitted_at: ctx.now.toISOString(),
-    deadline_at: ctx.dl.toISOString(),
-    is_late: ctx.isLate,
     monthly_priorities_snapshot: MONTHLY_PRIORITIES,
+    entries,
   };
-  const { data: report, error: reportErr } = await sb
-    .from('daily_reports')
-    .upsert(reportPayload, { onConflict: 'salesman_id,report_date,division_code' })
-    .select()
-    .single();
-  if (reportErr) throw reportErr;
 
-  // Replace existing entries (idempotent re-submit)
-  await sb.from('dsr_entries').delete().eq('report_id', report.id);
+  // Single atomic RPC call. The function is SECURITY DEFINER and runs the
+  // whole multi-table write inside one transaction with EXCEPTION WHEN OTHERS,
+  // so it always returns a jsonb instead of raising.
+  const { data, error } = await sb.rpc('submit_dsr', { p_payload: payload });
 
-  const entries = customers.map((c, idx) => ({
-    report_id: report.id,
-    customer_id: c.isNewOp ? null : (c.customer_db_id || null),
-    customer_code: c.code,
-    customer_name: c.name,
-    is_new_outlet: !!c.isNewOp,
-    sales_objective: c.entry?.sales_objective || 0,
-    total_sales: Number(c.entry?.total_sales || 0),
-    total_collection: Number(c.entry?.total_collection || 0),
-    visited: entryIsVisit(c),
-    visit_at: entryIsVisit(c) ? ctx.now.toISOString() : null,
-    reason_code: c.entry?.reason || null,
-    remark: c.entry?.remark || null,
-    priorities_pushed: c.entry?.priorities || [],
-    gps_checkin: c.entry?.gps || null,
-    sequence_no: idx + 1,
-  }));
-
-  let insertedEntries = [];
-  if (entries.length > 0) {
-    const { data, error: entriesErr } = await sb
-      .from('dsr_entries').insert(entries).select('id, customer_code');
-    if (entriesErr) throw entriesErr;
-    insertedEntries = data || [];
-
-    // Photos
-    const photoRows = [];
-    insertedEntries.forEach(ie => {
-      const c = customers.find(x => x.code === ie.customer_code);
-      if (c?.entry?.photo) {
-        photoRows.push({
-          entry_id: ie.id,
-          storage_path: c.entry.photo_path || '',
-          public_url: c.entry.photo,
-          photo_type: 'storefront',
-          taken_at: ctx.now.toISOString(),
-          gps_at_capture: c.entry.gps || null,
-        });
-      }
-    });
-    if (photoRows.length > 0) {
-      const { error: photoErr } = await sb.from('dsr_photos').insert(photoRows);
-      if (photoErr) console.warn('photo metadata insert failed for', brand, photoErr);
-    }
-
-    // Auto-sync collections — two row kinds per dsr_entry:
-    //   1) status='collected' if total_collection > 0 (cash received this visit)
-    //   2) status='pending'   if total_sales      > 0 (credit sale, due in N days)
-    // dsr_entry_id FK ON DELETE CASCADE: re-submits clean up old rows automatically.
-    const collectionRows = [];
-    const reportDate = ctx.todayMY; // 'YYYY-MM-DD'
-    insertedEntries.forEach(ie => {
-      const c = customers.find(x => x.code === ie.customer_code);
-      if (!c || c.isNewOp || !c.customer_db_id) return;
-      const collAmt  = Number(c.entry?.total_collection || 0);
-      const salesAmt = Number(c.entry?.total_sales || 0);
-      // Cash received
-      if (collAmt > 0) {
-        collectionRows.push({
-          dsr_entry_id: ie.id,
-          salesman_id: ctx.salesman.id,
-          customer_id: c.customer_db_id,
-          amount_due: 0,
-          amount_collected: collAmt,
-          status: 'collected',
-        });
-      }
-      // Credit sale → pending
-      if (salesAmt > 0) {
-        const days = customerMeta[c.code]?.credit_term_days || 30;
-        const due = new Date(reportDate + 'T00:00:00');
-        due.setDate(due.getDate() + days);
-        collectionRows.push({
-          dsr_entry_id: ie.id,
-          salesman_id: ctx.salesman.id,
-          customer_id: c.customer_db_id,
-          amount_due: salesAmt,
-          amount_collected: 0,
-          status: 'pending',
-          due_date: due.toISOString().slice(0, 10),
-        });
-      }
-    });
-    if (collectionRows.length > 0) {
-      const { error: collErr } = await sb.from('collections').insert(collectionRows);
-      if (collErr) console.warn('collections sync failed for', brand, collErr);
-    }
+  // Transport-level failure (network, auth, function not found, etc.)
+  if (error) {
+    throw new Error(error.message || 'Network error — please retry');
   }
-  return { report, visits, eff, sales, coll };
+
+  // Structured failure from the RPC. Map known codes to user-facing messages.
+  if (!data || data.ok !== true) {
+    const code = data?.code || 'UNKNOWN';
+    const serverMsg = data?.message || 'Submit failed';
+    let userMsg;
+    switch (code) {
+      case 'NOT_AUTHENTICATED':
+        userMsg = 'Session expired — please re-enter your Staff ID and try again.';
+        break;
+      case 'FORBIDDEN':
+        userMsg = 'Permission denied — you can only submit your own DSR. Re-login if this is wrong.';
+        break;
+      case 'INVALID_PAYLOAD':
+        // Surface the server's message + any offending field/customer so the
+        // salesman can fix the entry that triggered it.
+        {
+          const det = data?.details || {};
+          const where = det.customer_code ? ` (customer ${det.customer_code})` : '';
+          userMsg = `${serverMsg}${where} — please review your entries.`;
+        }
+        break;
+      case 'REPORT_LOCKED':
+        userMsg = 'This DSR has been approved — only boss can edit it now.';
+        break;
+      case 'DB_ERROR':
+        // data.details.sqlstate exists but is ops-facing; do NOT leak to user.
+        userMsg = 'Submit failed — please try again. If it keeps happening, contact admin.';
+        break;
+      default:
+        userMsg = serverMsg;
+    }
+    const err = new Error(userMsg);
+    err.code = code;
+    throw err;
+  }
+
+  // Success — return server-authoritative values + local UI aggregates.
+  return {
+    visits, eff, sales, coll,
+    is_late: data.is_late,
+    daily_report_id: data.daily_report_id,
+    entries_count: data.entries_count,
+    photos_count: data.photos_count,
+    collections_count: data.collections_count,
+  };
 }
 
 async function doSubmit() {
@@ -2190,9 +2187,14 @@ async function doSubmit() {
 
       const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       const brandList = ok.map(o => o.brand).join(', ');
+      // Authoritative is_late comes from the RPC (server clock vs MY 23:59).
+      // All brands submit same report_date, so any ok response's is_late is fine.
+      // Fall back to ctx.isLate (client clock) only if response is missing.
+      const serverIsLate = ok.find(o => typeof o.is_late === 'boolean')?.is_late;
+      const isLate = (typeof serverIsLate === 'boolean') ? serverIsLate : ctx.isLate;
       $('success-stats').innerHTML = `
         <div><span>Submitted at</span><span>${time}</span></div>
-        <div><span>Status</span><span>${ctx.isLate ? '⚠️ LATE' : '✅ On Time'}</span></div>
+        <div><span>Status</span><span>${isLate ? '⚠️ LATE' : '✅ On Time'}</span></div>
         <div><span>DSRs created</span><span>${ok.length} (${escapeHtml(brandList)})</span></div>
         <div><span>Total Visits</span><span>${totalVisits}</span></div>
         <div><span>Effective</span><span>${totalEff}</span></div>

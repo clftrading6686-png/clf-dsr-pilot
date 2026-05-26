@@ -1,88 +1,1441 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  ============================================================
+  CLF Pilot Operations Board — index.html
+  Owner: Frontend-Eng agent
+  Spec:  outputs/team/designer/pilot_board_design_spec.md (v1, §13 approved)
+  DS:    outputs/design_system_prompt.md (v1, light)
+
+  CHANGELOG
+  --------
+  2026-05-26  v1.1  Reviewer round 1 fixes (3 Major).
+                    - M1: External-modal listener leak fixed. ESC-close (which
+                      bypasses our close() fn) no longer leaks handlers. Now
+                      uses { once: true } on cancel/go clicks + a 'close' event
+                      listener on the dialog itself for backdropClick cleanup.
+                      Repeated open→ESC→open→continue no longer opens 2 tabs.
+                    - M2: Removed inline style="font-weight:500;color:var(...)"
+                      from the card-title subtitle <span>. Replaced with new
+                      CSS class .pb-card-subtitle (defined in <style> block).
+                      Prevents the HANDOFF lesson #5 inline-style override trap.
+                    - M3: Renamed keyframe pb-shimmer → chart-shimmer per spec
+                      §9 #15 ("reuse boss_dashboard's @keyframes chart-shimmer").
+                      No content change, name-only rename for consistency.
+  2026-05-26  v1.0  Initial pilot board (replaces old dark placeholder).
+                    - 9 cards (4 Operations + 5 Analytics) data-driven by CARDS[]
+                    - Role-aware render: boss / manager / salesman / driver
+                      + TV display redirect (Phase 1 binding decision §13 #2/#3)
+                    - 1-query stats via pilot_board_stats view (single())
+                    - Inline auth gate (no /login.html dependency)
+                    - External-site jump <dialog> modal (no "skip" checkbox §13 #5)
+                    - DS v1 tokens only (zero hardcoded hex in selectors)
+                    - lucide SVG icons (§13 #7)
+                    - Skeleton shimmer reused from boss_dashboard pattern
+                    - All DB strings passed through escHtml() (lesson #6)
+                    - role/branch read from supabase auth user_metadata
+                      (matches collections.html pattern), with salesmen-table
+                      fallback if metadata missing.
+
+  KNOWN OPEN ITEMS (TODO PM)
+  --------------------------
+  - pilot_board_stats view not yet deployed → page renders with "—"
+    placeholders for stats; cards still clickable. Banner shown.
+  - Logo home link points to "/" (assumes pilot.clftrading.com root); change
+    if Phase 1 cutover URL differs (§13 #6 says pilot.clftrading.com — OK).
+  - Transport stats always NULL in Phase 1 per §13 #4 — UI shows "—".
+  ============================================================
+-->
+<html lang="zh-Hans">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLF Trading — Pilot Apps</title>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLF Pilot Operations Board · 入口</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
+/* ============================================================
+ * Design System v1 tokens (copied from boss_dashboard.html)
+ * ============================================================ */
+:root {
+  /* Brand blue */
+  --blue-50:  #EFF6FF;
+  --blue-100: #DBEAFE;
+  --blue-500: #3B82F6;
+  --blue-600: #2563EB;
+  --blue-700: #1D4ED8;
+  --blue-900: #1E3A8A;
+
+  /* Neutral gray */
+  --gray-50:  #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-500: #6B7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+
+  /* Semantic */
+  --success-50:  #ECFDF5;
+  --success-500: #10B981;
+  --success-700: #047857;
+
+  --warning-50:  #FFFBEB;
+  --warning-500: #F59E0B;
+  --warning-700: #B45309;
+
+  --danger-50:  #FEF2F2;
+  --danger-500: #EF4444;
+  --danger-700: #B91C1C;
+
+  --info-50:  #EFF6FF;
+  --info-500: #3B82F6;
+  --info-700: #1D4ED8;
+
+  /* Gold — leaderboard only */
+  --gold-50:  #FEFCE8;
+  --gold-500: #EAB308;
+  --gold-700: #A16207;
+
+  /* Surface */
+  --surface-page:     #F9FAFB;
+  --surface-card:     #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay:  rgba(17,24,39,0.5);
+
+  /* Typography */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  /* Spacing (4-base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radius */
+  --radius-sm-ds: 6px;
+  --radius-ds:    10px;
+  --radius-lg:    16px;
+  --radius-pill:  999px;
+
+  /* Shadow */
+  --shadow-xs:    0 1px 2px rgba(17,24,39,0.04);
+  --shadow-sm-ds: 0 1px 3px rgba(17,24,39,0.06), 0 1px 2px rgba(17,24,39,0.04);
+  --shadow-md-ds: 0 4px 12px rgba(17,24,39,0.08), 0 2px 4px rgba(17,24,39,0.04);
+  --shadow-lg-ds: 0 12px 32px rgba(17,24,39,0.12);
+
+  /* Border */
+  --border-default:    1px solid #E5E7EB;
+  --border-strong-ds:  1px solid #D1D5DB;
+  --border-focus:      2px solid #2563EB;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Geist', sans-serif;
-  background: linear-gradient(135deg, #0B1F3A 0%, #1A3A5C 100%);
-  color: white;
+html, body {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
+  font-family: var(--font-sans);
+  background: var(--surface-page);
+  color: var(--gray-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.container { max-width: 600px; width: 100%; }
-h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-.sub { color: #C9A84C; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 32px; }
-.app-card {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+body {
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- HEADER ---------- */
+.pb-header {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  height: 72px;
+  background: var(--surface-card);
+  border-bottom: var(--border-default);
+  box-shadow: var(--shadow-xs);
+}
+.pb-header-left { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.pb-logo {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  background: var(--blue-600);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF;
+  font-weight: 700; font-size: 14px;
   text-decoration: none;
-  color: white;
+  letter-spacing: 0.5px;
+}
+.pb-logo:hover { background: var(--blue-700); }
+.pb-title-block { display: flex; flex-direction: column; min-width: 0; }
+.pb-title {
+  font-size: 18px; font-weight: 600;
+  color: var(--gray-900); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pb-subtitle {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--gray-500); text-transform: uppercase; letter-spacing: 2px;
+  line-height: 1.3; margin-top: 2px;
+}
+.pb-header-right {
+  display: flex; align-items: center; gap: var(--space-3);
+  flex-shrink: 0;
+}
+.pb-user-pill {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 6px 12px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 500;
+  color: var(--gray-700);
+  max-width: 280px;
+  overflow: hidden;
+}
+.pb-user-pill .pb-user-name {
+  font-weight: 600; color: var(--gray-900);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pb-user-pill .pb-user-meta {
+  color: var(--gray-500); font-size: 12px;
+}
+.pb-btn {
+  font-family: inherit;
+  font-size: 14px; font-weight: 600;
+  padding: 9px 14px;
+  border-radius: var(--radius-ds);
+  cursor: pointer;
+  border: 1px solid transparent;
+  min-height: 40px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.pb-btn-primary { background: var(--blue-600); color: #FFFFFF; }
+.pb-btn-primary:hover { background: var(--blue-700); }
+.pb-btn-secondary {
+  background: var(--surface-card);
+  color: var(--gray-700);
+  border-color: var(--gray-200);
+}
+.pb-btn-secondary:hover { border-color: var(--blue-600); color: var(--blue-700); }
+.pb-btn:focus-visible { outline: 3px solid rgba(37,99,235,0.25); outline-offset: 1px; }
+
+/* Hamburger (mobile) */
+.pb-hamburger {
+  display: none;
+  background: var(--surface-card);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-ds);
+  width: 40px; height: 40px;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--gray-700);
+}
+.pb-hamburger:focus-visible { outline: 3px solid rgba(37,99,235,0.25); }
+.pb-mobile-drawer {
+  position: fixed; top: 56px; right: 8px; z-index: 60;
+  display: none; flex-direction: column; gap: var(--space-2);
+  background: var(--surface-card);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-ds);
+  box-shadow: var(--shadow-md-ds);
+  padding: var(--space-3);
+  min-width: 240px;
+}
+.pb-mobile-drawer.show { display: flex; }
+.pb-mobile-drawer .pb-user-pill { max-width: none; width: 100%; }
+
+/* ---------- ERROR BANNER ---------- */
+.pb-banner {
+  display: none;
+  align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  background: var(--warning-50);
+  color: var(--warning-700);
+  border-bottom: 1px solid var(--warning-500);
+  font-size: 13px; font-weight: 500;
+}
+.pb-banner.show { display: flex; }
+.pb-banner-icon { flex-shrink: 0; }
+.pb-banner-text { flex: 1; }
+.pb-banner-retry {
+  font-family: inherit;
+  background: var(--surface-card);
+  color: var(--warning-700);
+  border: 1px solid var(--warning-500);
+  padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+}
+.pb-banner-retry:hover { background: var(--warning-500); color: #FFFFFF; }
+
+/* ---------- MAIN CONTAINER ---------- */
+.pb-main {
+  flex: 1;
+  max-width: 1280px; width: 100%;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6);
+}
+
+/* ---------- WELCOME ROW ---------- */
+.pb-welcome {
+  font-size: 16px; font-weight: 400;
+  color: var(--gray-700);
+  margin-bottom: var(--space-6);
+  line-height: 1.5;
+}
+.pb-welcome strong { color: var(--gray-900); font-weight: 600; }
+.pb-welcome .pb-welcome-meta { color: var(--gray-500); font-size: 14px; }
+.pb-welcome-skeleton {
+  display: inline-block;
+  width: 280px; height: 18px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+  background-size: 200% 100%;
+  animation: chart-shimmer 1.5s infinite;
+  vertical-align: middle;
+}
+
+/* ---------- SECTION ---------- */
+.pb-section { margin-bottom: var(--space-6); }
+.pb-section-header {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.pb-section-title {
+  font-size: 18px; font-weight: 600;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.pb-section-sub {
+  font-size: 12px; font-weight: 500;
+  color: var(--gray-500);
+}
+
+/* ---------- CARD GRID ---------- */
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+/* ---------- CARD ---------- */
+.pb-card {
+  display: flex; flex-direction: column;
+  background: var(--surface-card);
+  border: var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm-ds);
+  padding: var(--space-5);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  min-height: 160px;
+  width: 100%;
+}
+.pb-card.tier-1 { min-height: 220px; }
+.pb-card:hover {
+  border-color: var(--blue-600);
+  box-shadow: var(--shadow-md-ds);
+  transform: translateY(-2px);
+}
+.pb-card:focus-visible {
+  outline: none;
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15), var(--shadow-md-ds);
+}
+.pb-card-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.pb-card-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-ds);
+  background: var(--blue-50);
+  color: var(--blue-700);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.pb-card-icon svg { width: 22px; height: 22px; stroke-width: 2; }
+.pb-card-icon.gold { background: var(--gold-50); color: var(--gold-700); }
+.pb-card-icon.warn { background: var(--warning-50); color: var(--warning-700); }
+
+.pb-pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.pb-pill-live {
+  background: var(--success-50); color: var(--success-700);
+  border-color: var(--success-500);
+}
+.pb-pill-external {
+  background: var(--blue-50); color: var(--blue-700);
+  border-color: var(--blue-500);
+}
+.pb-pill-beta {
+  background: var(--warning-50); color: var(--warning-700);
+  border-color: var(--warning-500);
+}
+
+.pb-card-title {
+  font-size: 18px; font-weight: 600;
+  color: var(--gray-900);
+  line-height: 1.3;
+  margin-bottom: var(--space-2);
+}
+.pb-card-subtitle {
+  /* Secondary text inside the title line, e.g. "DSR Mobile · 销售日报" */
+  font-weight: 500;
+  color: var(--gray-500);
+}
+.pb-card-desc {
+  font-size: 14px; font-weight: 400;
+  color: var(--gray-500);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.pb-card-stats {
+  display: flex; gap: var(--space-5);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--gray-200);
+}
+.pb-stat { display: flex; flex-direction: column; gap: var(--space-1); }
+.pb-stat-value {
+  font-family: var(--font-mono);
+  font-size: 20px; font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.1;
+}
+.pb-stat-label {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pb-card-cta {
+  margin-top: var(--space-4);
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: var(--space-1);
+  font-size: 13px; font-weight: 600;
+  color: var(--blue-600);
+}
+.pb-card-cta svg { width: 14px; height: 14px; }
+
+/* ---------- CARD SKELETON ---------- */
+.pb-card-skel {
+  background: var(--surface-card);
+  border: var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm-ds);
+  padding: var(--space-5);
+  min-height: 200px;
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.pb-skel-line {
+  height: 14px; border-radius: 4px;
+  background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+  background-size: 200% 100%;
+  animation: chart-shimmer 1.5s infinite;
+}
+.pb-skel-line.short { width: 40%; }
+.pb-skel-line.medium { width: 70%; }
+.pb-skel-line.icon { width: 40px; height: 40px; border-radius: var(--radius-ds); }
+.pb-skel-line.tall { height: 22px; }
+@keyframes chart-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Progress bar (loading) */
+.pb-progress {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 3px;
+  background: var(--gray-100);
+  overflow: hidden;
+  display: none;
+}
+.pb-progress.show { display: block; }
+.pb-progress-bar {
+  height: 100%; width: 0;
+  background: var(--success-500);
+  transition: width 0.4s ease;
+}
+
+/* ---------- EMPTY (no role match / no cards visible) ---------- */
+.pb-empty {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+/* ---------- LOGIN STATE (unauthenticated) ---------- */
+.pb-login-wrap {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: var(--space-6);
+  text-align: center;
+}
+.pb-login-card {
+  background: var(--surface-card);
+  border: var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm-ds);
+  padding: var(--space-7) var(--space-6);
+  max-width: 420px; width: 100%;
+}
+.pb-login-logo {
+  width: 64px; height: 64px;
+  background: var(--blue-600);
+  border-radius: 16px;
+  margin: 0 auto var(--space-5);
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF;
+  font-weight: 700; font-size: 18px;
+  letter-spacing: 0.5px;
+}
+.pb-login-title {
+  font-size: 22px; font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+.pb-login-sub {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: var(--space-5);
+  line-height: 1.5;
+}
+.pb-login-field { margin-bottom: var(--space-3); text-align: left; }
+.pb-login-field label {
   display: block;
-  transition: all 0.2s;
+  font-size: 12px; font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--space-1);
 }
-.app-card:hover { background: rgba(201,168,76,0.15); border-color: #C9A84C; }
-.app-card .name { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
-.app-card .desc { font-size: 13px; color: #A8B4C5; }
-.app-card .pill {
-  display: inline-block; background: #C9A84C; color: #0B1F3A;
-  padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
-  margin-left: 6px;
+.pb-login-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-ds);
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--surface-card);
+  color: var(--gray-900);
+  min-height: 44px;
 }
-.footer { color: #6B7A8D; font-size: 11px; text-align: center; margin-top: 32px; }
+.pb-login-field input:focus {
+  outline: none;
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+.pb-login-btn {
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: 12px;
+  background: var(--blue-600);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-ds);
+  font-family: inherit;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+.pb-login-btn:hover { background: var(--blue-700); }
+.pb-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pb-login-msg {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm-ds);
+  margin-bottom: var(--space-3);
+  display: none;
+  text-align: left;
+}
+.pb-login-msg.error {
+  display: block;
+  background: var(--danger-50);
+  color: var(--danger-700);
+  border: 1px solid var(--danger-500);
+}
+.pb-login-msg.info {
+  display: block;
+  background: var(--info-50);
+  color: var(--info-700);
+  border: 1px solid var(--info-500);
+}
+.pb-login-help {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: var(--space-4);
+}
+
+/* ---------- EXTERNAL MODAL (<dialog>) ---------- */
+.pb-modal::backdrop {
+  background: var(--surface-overlay);
+}
+.pb-modal {
+  border: none;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg-ds);
+  background: var(--surface-card);
+  color: var(--gray-900);
+  max-width: 440px;
+  width: calc(100% - 32px);
+}
+.pb-modal-inner { padding: var(--space-6); }
+.pb-modal-title {
+  font-size: 18px; font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.pb-modal-title svg { width: 20px; height: 20px; color: var(--blue-600); }
+.pb-modal-body {
+  font-size: 14px;
+  color: var(--gray-700);
+  line-height: 1.5;
+  margin-bottom: var(--space-5);
+}
+.pb-modal-body .pb-modal-target {
+  color: var(--gray-900); font-weight: 600;
+}
+.pb-modal-body small {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--gray-500); font-size: 12px;
+}
+.pb-modal-actions {
+  display: flex; justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* ---------- FOOTER ---------- */
+.pb-footer {
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-500);
+  max-width: 1280px; width: 100%;
+  margin: 0 auto;
+}
+
+/* ============================================================
+ * Responsive overrides
+ * ============================================================ */
+@media (max-width: 1023px) {
+  .pb-main { padding: var(--space-5) var(--space-5); }
+  .pb-header { padding: var(--space-3) var(--space-5); height: 64px; }
+}
+@media (max-width: 767px) {
+  .pb-header { padding: var(--space-3) var(--space-4); height: 56px; }
+  .pb-main { padding: var(--space-5) var(--space-4); }
+  .pb-footer { padding: var(--space-4) var(--space-4) var(--space-5); }
+  .pb-header-right .pb-user-pill,
+  .pb-header-right .pb-btn-secondary { display: none; }
+  .pb-hamburger { display: inline-flex; }
+  .pb-title { font-size: 16px; }
+  .pb-subtitle { letter-spacing: 1.5px; }
+  .pb-section-title { font-size: 16px; letter-spacing: 1.2px; }
+  .pb-card { padding: var(--space-4); min-height: 140px; }
+  .pb-card.tier-1 { min-height: 180px; }
+  .pb-card-title { font-size: 16px; }
+  .pb-card-icon { width: 36px; height: 36px; }
+  .pb-card-icon svg { width: 20px; height: 20px; }
+  .pb-stat-value { font-size: 18px; }
+  .pb-welcome { font-size: 15px; }
+  .pb-welcome .pb-welcome-meta { font-size: 13px; }
+  .pb-grid { gap: var(--space-4); }
+  .pb-banner { padding: var(--space-3) var(--space-4); font-size: 12px; }
+}
+@media (min-width: 1024px) {
+  .pb-hamburger { display: none !important; }
+  .pb-mobile-drawer { display: none !important; }
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .pb-card { transition: none; }
+  .pb-card:hover { transform: none; }
+  .pb-skel-line, .pb-welcome-skeleton { animation: none; }
+}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>CLF Trading</h1>
-  <div class="sub">Mentakab Pilot Apps</div>
 
-  <a class="app-card" href="dsr_mobile.html">
-    <div class="name">📱 Daily Sales Report <span class="pill">LIVE</span></div>
-    <div class="desc">For salesmen — replaces the paper DSR form, mobile-first</div>
-  </a>
-
-  <a class="app-card" href="route_plan_builder.html">
-    <div class="name">🗺️ Route Plan Builder</div>
-    <div class="desc">For salesmen — plan and submit monthly customer routes</div>
-  </a>
-
-  <a class="app-card" href="boss_dashboard.html">
-    <div class="name">👔 DSR Dashboard <span class="pill">NEW</span></div>
-    <div class="desc">For owner — 4-layer Trust + Verify · live KPIs · charts · date picker</div>
-  </a>
-
-  <a class="app-card" href="boss_leaderboard.html">
-    <div class="name">📺 TV Leaderboard</div>
-    <div class="desc">For office TV — live sales leaderboard (demo)</div>
-  </a>
-
-  <a class="app-card" href="collections.html">
-    <div class="name">💰 Collections Tracking</div>
-    <div class="desc">For owner & managers — pending / collected / banked</div>
-  </a>
-
-  <div class="sub" style="margin-top: 32px; margin-bottom: 12px;">User Guides</div>
-
-  <a class="app-card" href="sales_guide.html">
-    <div class="name">📖 Sales Guide</div>
-    <div class="desc">How to use the DSR app — for the 5 Mentakab Champions</div>
-  </a>
-
-  <a class="app-card" href="boss_guide.html">
-    <div class="name">📖 Boss Guide</div>
-    <div class="desc">How to read the DSR Dashboard — every section explained</div>
-  </a>
-
-  <div class="footer">© CLF Trading Sdn Bhd · Pilot system · Internal use only</div>
+<!-- Top progress bar (shown during initial fetch) -->
+<div class="pb-progress" id="pb-progress" aria-hidden="true">
+  <div class="pb-progress-bar" id="pb-progress-bar"></div>
 </div>
+
+<!-- Network error banner (hidden by default) -->
+<div class="pb-banner" id="pb-banner" role="alert" aria-live="polite">
+  <span class="pb-banner-icon" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </span>
+  <span class="pb-banner-text" id="pb-banner-text">数据连接失败，部分 stats 暂不可用，card 仍可点。</span>
+  <button class="pb-banner-retry" type="button" id="pb-banner-retry">重试</button>
+</div>
+
+<!-- HEADER (rendered for all states; user pill empty when unauth) -->
+<header class="pb-header" id="pb-header">
+  <div class="pb-header-left">
+    <a class="pb-logo" href="/" aria-label="CLF Trading 首页">CLF</a>
+    <div class="pb-title-block">
+      <div class="pb-title">CLF Trading</div>
+      <div class="pb-subtitle">Pilot Operations Board</div>
+    </div>
+  </div>
+  <div class="pb-header-right" id="pb-header-right">
+    <!-- populated by JS -->
+  </div>
+  <button class="pb-hamburger" type="button" id="pb-hamburger" aria-label="打开菜单" aria-expanded="false">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</header>
+
+<!-- Mobile drawer (folded user pill + logout) -->
+<div class="pb-mobile-drawer" id="pb-mobile-drawer" role="menu" aria-hidden="true"></div>
+
+<!-- MAIN -->
+<main class="pb-main" id="pb-main">
+  <!-- populated by JS: either login state or welcome+sections -->
+  <!-- initial render = skeleton -->
+  <div class="pb-welcome"><span class="pb-welcome-skeleton" aria-hidden="true"></span></div>
+  <section class="pb-section">
+    <div class="pb-section-header">
+      <span class="pb-section-title">操作中</span>
+      <span class="pb-section-sub">载入中…</span>
+    </div>
+    <div class="pb-grid" id="pb-grid-skel">
+      <div class="pb-card-skel"><div class="pb-skel-line icon"></div><div class="pb-skel-line tall medium"></div><div class="pb-skel-line"></div><div class="pb-skel-line short"></div></div>
+      <div class="pb-card-skel"><div class="pb-skel-line icon"></div><div class="pb-skel-line tall medium"></div><div class="pb-skel-line"></div><div class="pb-skel-line short"></div></div>
+      <div class="pb-card-skel"><div class="pb-skel-line icon"></div><div class="pb-skel-line tall medium"></div><div class="pb-skel-line"></div><div class="pb-skel-line short"></div></div>
+    </div>
+  </section>
+</main>
+
+<!-- External-site jump confirmation modal -->
+<dialog class="pb-modal" id="pb-modal" aria-labelledby="pb-modal-title">
+  <div class="pb-modal-inner">
+    <h2 class="pb-modal-title" id="pb-modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      即将打开外部页面
+    </h2>
+    <div class="pb-modal-body">
+      您将访问 <span class="pb-modal-target" id="pb-modal-target">—</span>。这是旧版页面，将在新 tab 打开。
+      <small>Phase 2 合并到本站后将不再需要跳转。</small>
+    </div>
+    <div class="pb-modal-actions">
+      <button class="pb-btn pb-btn-secondary" type="button" id="pb-modal-cancel">取消</button>
+      <button class="pb-btn pb-btn-primary" type="button" id="pb-modal-go">继续打开</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- FOOTER -->
+<footer class="pb-footer">
+  &copy; 2026 CLF Trading Sdn Bhd &middot; Pilot Board v1.0 &middot; Need help? Contact admin@clftrading.com
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ============================================================
+ * CLF Pilot Board — bootstrap
+ * ============================================================ */
+'use strict';
+
+// ----- Supabase config -----
+const SUPABASE_URL = 'https://wgwupdjiugmdgxprctse.supabase.co';
+// anon key — public, protected by RLS (HANDOFF §1).
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnd3VwZGppdWdtZGd4cHJjdHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NTI0MzEsImV4cCI6MjA5MzQyODQzMX0.iuNuuwrYRmIBVctdeEXjt4i7GlqxQ5v2fe4Zl4ZJ1yA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ----- Util: escape HTML (XSS prevention — lesson #6) -----
+const escHtml = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+
+// ----- Util: format RM -----
+const fmtRM = (n) => {
+  if (n == null || Number.isNaN(Number(n))) return '—';
+  const v = Number(n);
+  if (v >= 1000) return 'RM ' + (v / 1000).toFixed(1) + 'K';
+  return 'RM ' + v.toFixed(0);
+};
+const fmtInt = (n) => (n == null || Number.isNaN(Number(n))) ? '—' : String(Math.trunc(Number(n)));
+const fmtName = (n) => n == null || n === '' ? '—' : String(n);
+
+// ----- Util: today (Asia/Kuala_Lumpur display) -----
+function todayStrZh() {
+  try {
+    const d = new Date();
+    return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+  } catch (_) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/* ============================================================
+ * 9 CARDS — data-driven (no per-card if/else in render)
+ * ============================================================ */
+const CARDS = [
+  // ---- Operations ----
+  {
+    id: 'dsr_mobile', group: 'operations', tier: 1,
+    title: 'DSR Mobile', subtitle: '销售日报',
+    desc: '销售员每日订单、收款、照片上传',
+    icon: 'clipboard-check',
+    pill: { kind: 'live', text: 'LIVE' },
+    visibleTo: ['boss', 'manager', 'salesman'],
+    target: 'internal',
+    href: 'dsr_mobile.html',
+    statsFn: (s, role) => role === 'salesman'
+      ? [
+          { val: fmtInt(s.dsr_today_submitted) + '/1', label: '今日提交' },
+          { val: fmtRM(s.dsr_month_sales_rm), label: '本月销售' }
+        ]
+      : [
+          { val: fmtInt(s.dsr_today_submitted) + '/' + fmtInt(s.dsr_today_expected), label: '今日已交' },
+          { val: fmtRM(s.dsr_today_sales_rm), label: '今日销售' }
+        ],
+  },
+  {
+    id: 'fuel_form', group: 'operations', tier: 2,
+    title: 'Fuel Form', subtitle: '加油申报',
+    desc: '司机当日加油提交 + 收据照片',
+    icon: 'fuel',
+    iconTone: 'warn',
+    pill: { kind: 'external', text: 'EXTERNAL' },
+    visibleTo: ['boss', 'manager', 'driver'],
+    target: 'external',
+    href: 'https://clfproject01.github.io/clf-transport-forms/CLF_Fuel_Form.html',
+  },
+  {
+    id: 'pod_form', group: 'operations', tier: 2,
+    title: 'POD Form', subtitle: '送达凭证',
+    desc: 'Proof of Delivery：已签收发票拍照上传',
+    icon: 'package-check',
+    pill: { kind: 'external', text: 'EXTERNAL' },
+    visibleTo: ['boss', 'manager', 'driver'],
+    target: 'external',
+    href: 'https://clfproject01.github.io/clf-transport-forms/CLF_POD_Form.html',
+  },
+  {
+    id: 'leave_mgmt', group: 'operations', tier: 2,
+    title: 'Leave Management', subtitle: '请假管理',
+    desc: '提交、查看、审批请假申请',
+    icon: 'calendar-x',
+    pill: { kind: 'external', text: 'EXTERNAL' },
+    visibleTo: ['boss', 'manager', 'salesman', 'driver'],
+    target: 'external',
+    href: 'https://clfproject01.github.io/clf-transport-forms/CLF_Leave_Management.html',
+  },
+  // ---- Analytics ----
+  {
+    id: 'boss_dashboard', group: 'analytics', tier: 2,
+    title: 'Boss Dashboard', subtitle: '老板看板',
+    desc: 'KPI + 4 图表：销售趋势、TOP10、收款 aging、提交热力图',
+    icon: 'layout-dashboard',
+    pill: { kind: 'live', text: 'LIVE' },
+    visibleTo: ['boss', 'manager'],
+    target: 'internal',
+    href: 'boss_dashboard.html',
+  },
+  {
+    id: 'collections', group: 'analytics', tier: 1,
+    title: 'Collections', subtitle: '应收账款',
+    desc: '追踪未收款 + 逾期 + 按 branch 分组',
+    icon: 'wallet',
+    pill: { kind: 'live', text: 'LIVE' },
+    visibleTo: ['boss', 'manager', 'salesman'],
+    target: 'internal',
+    href: 'collections.html',
+    statsFn: (s, role) => role === 'salesman'
+      ? [
+          { val: fmtRM(s.coll_my_pending_rm), label: '我未收' },
+          { val: fmtInt(s.coll_my_overdue_count) + ' 笔', label: '我逾期' }
+        ]
+      : [
+          { val: fmtRM(s.coll_pending_rm), label: '待收总额' },
+          { val: fmtInt(s.coll_overdue_count) + ' 笔', label: '逾期笔数' }
+        ],
+  },
+  {
+    id: 'leaderboard', group: 'analytics', tier: 1,
+    title: 'Leaderboard', subtitle: 'TV 大屏',
+    desc: '实时销售员排行 · 适合办公室电视循环展示',
+    icon: 'trophy',
+    iconTone: 'gold',
+    pill: { kind: 'live', text: 'LIVE' },
+    visibleTo: ['boss', 'manager', 'salesman'],
+    target: 'internal',
+    href: 'boss_leaderboard.html?tv=1',
+    statsFn: (s) => [
+      { val: fmtName(s.leader_today_top_emp_no), label: '今日 #1' },
+      { val: fmtName(s.leader_month_top_emp_no), label: '本月领先' }
+    ],
+  },
+  {
+    id: 'sales_perf', group: 'analytics', tier: 2,
+    title: 'Sales Performance', subtitle: '销售业绩分析',
+    desc: '多维 filter（brand / group / 时段）+ 历史趋势',
+    icon: 'trending-up',
+    pill: { kind: 'external', text: 'EXTERNAL' },
+    visibleTo: ['boss', 'manager'],
+    target: 'external',
+    href: 'https://clftrading6686-png.github.io/clf-dash/',
+    externalNote: '需用 Boss 账号 (clftrading6686@gmail.com) 登录后可见真数据。',
+  },
+  {
+    id: 'transport_tower', group: 'analytics', tier: 1,
+    title: 'Transport Tower', subtitle: '车队监控',
+    desc: 'Fuel + POD 合规率 · 司机绩效 · 5 分钟自动刷新',
+    icon: 'truck',
+    pill: { kind: 'external', text: 'EXTERNAL' },
+    visibleTo: ['boss', 'manager'],
+    target: 'external',
+    href: 'https://clfproject01.github.io/clf-transport-forms/CLF_Dashboard.html',
+    statsFn: (s) => [
+      // Phase 1: transport fields are NULL by binding decision §13 #4
+      { val: (s.transport_pod_today_count != null && s.transport_pod_today_expected != null)
+          ? fmtInt(s.transport_pod_today_count) + '/' + fmtInt(s.transport_pod_today_expected)
+          : '—',
+        label: '今日 POD' },
+      { val: (s.transport_fuel_compliance_pct != null) ? Math.round(s.transport_fuel_compliance_pct) + '%' : '—',
+        label: 'Fuel 合规' }
+    ],
+  },
+];
+
+const SECTION_LABELS = {
+  operations: { title: '日常作业', subtitle: '项' },
+  analytics:  { title: '分析看板', subtitle: '项' },
+};
+
+/* ============================================================
+ * State
+ * ============================================================ */
+const state = {
+  session: null,
+  profile: null,    // { name, role, branch_code }
+  stats: null,      // pilot_board_stats row, or null
+  loadError: false,
+};
+
+/* ============================================================
+ * Auth gate helpers
+ * ============================================================ */
+async function readUserProfile(session) {
+  // Prefer user_metadata (matches collections.html / boss_dashboard.html pattern),
+  // fallback to a single salesmen lookup by auth_user_id.
+  const md = (session && session.user && session.user.user_metadata) || {};
+  const email = (session && session.user && session.user.email) || '';
+  let profile = {
+    name: md.name || md.full_name || (email ? email.split('@')[0] : ''),
+    role: (md.role || '').toLowerCase(),
+    branch_code: md.branch_code || null,
+    accessible_branches: Array.isArray(md.accessible_branches) ? md.accessible_branches : null,
+    email,
+  };
+  // Fallback: try salesmen row lookup if any field missing
+  if (!profile.role || !profile.name) {
+    try {
+      const { data, error } = await sb
+        .from('salesmen')
+        .select('id, name, full_name, role, branch_code, accessible_branches, emp_no')
+        .eq('auth_user_id', session.user.id)
+        .maybeSingle();
+      if (!error && data) {
+        profile.name = profile.name || data.full_name || data.name || profile.name;
+        profile.role = profile.role || (data.role || '').toLowerCase();
+        profile.branch_code = profile.branch_code || data.branch_code;
+        profile.accessible_branches = profile.accessible_branches ||
+          (Array.isArray(data.accessible_branches) ? data.accessible_branches : null);
+      }
+    } catch (e) {
+      console.warn('[pilot-board] salesmen fallback fetch failed:', e);
+    }
+  }
+  // Default role for unknown linked accounts → 'salesman' (least privilege)
+  if (!profile.role) profile.role = 'salesman';
+  return profile;
+}
+
+async function fetchStats() {
+  try {
+    const { data, error } = await sb
+      .from('pilot_board_stats')
+      .select('*')
+      .single();
+    if (error) {
+      console.warn('[pilot-board] stats fetch failed:', error.message || error);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.warn('[pilot-board] stats fetch threw:', e);
+    return null;
+  }
+}
+
+/* ============================================================
+ * Render — login state
+ * ============================================================ */
+function renderLogin(msg) {
+  const main = document.getElementById('pb-main');
+  const headerRight = document.getElementById('pb-header-right');
+  headerRight.innerHTML = '';
+  document.getElementById('pb-mobile-drawer').classList.remove('show');
+  main.innerHTML = `
+    <div class="pb-login-wrap">
+      <div class="pb-login-card" role="region" aria-label="登录">
+        <div class="pb-login-logo">CLF</div>
+        <h1 class="pb-login-title">CLF Pilot Operations Board</h1>
+        <p class="pb-login-sub">请使用您的账号登录以查看可用工具</p>
+        <div class="pb-login-msg" id="pb-login-msg"></div>
+        <form id="pb-login-form" novalidate>
+          <div class="pb-login-field">
+            <label for="pb-login-id">Staff ID 或 Email</label>
+            <input type="text" id="pb-login-id" autocomplete="username" placeholder="例如 TER500 或 boss@clftrading.com" required>
+          </div>
+          <div class="pb-login-field">
+            <label for="pb-login-pw">密码</label>
+            <input type="password" id="pb-login-pw" autocomplete="current-password" required>
+          </div>
+          <button class="pb-login-btn" type="submit" id="pb-login-btn">登录 / Login</button>
+        </form>
+        <p class="pb-login-help">忘记密码？请联系 admin@clftrading.com</p>
+      </div>
+    </div>
+  `;
+  if (msg) {
+    const m = document.getElementById('pb-login-msg');
+    m.textContent = msg;
+    m.classList.add('info');
+  }
+  const form = document.getElementById('pb-login-form');
+  const btn = document.getElementById('pb-login-btn');
+  const idEl = document.getElementById('pb-login-id');
+  const pwEl = document.getElementById('pb-login-pw');
+  const msgEl = document.getElementById('pb-login-msg');
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    let id = (idEl.value || '').trim().toLowerCase();
+    const pw = pwEl.value || '';
+    if (!id || !pw) {
+      msgEl.textContent = '请输入 Staff ID / Email 和密码';
+      msgEl.classList.remove('info'); msgEl.classList.add('error');
+      return;
+    }
+    if (!id.includes('@')) id = id + '@clf-staff.local';
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = '登录中…';
+    msgEl.textContent = '';
+    msgEl.classList.remove('info', 'error');
+    msgEl.style.display = 'none';
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email: id, password: pw });
+      if (error) throw error;
+      // onAuthStateChange will re-init; or just reload for clean state.
+      setTimeout(() => location.reload(), 150);
+    } catch (err) {
+      console.error('[pilot-board] sign-in failed:', err);
+      msgEl.textContent = (err && err.message) || '登录失败，请检查 Staff ID / Email 和密码';
+      msgEl.classList.add('error');
+      btn.disabled = false;
+      btn.textContent = orig;
+      try { pwEl.focus(); pwEl.select(); } catch (_) {}
+    }
+  });
+  setTimeout(() => { try { idEl.focus(); } catch (_) {} }, 50);
+}
+
+/* ============================================================
+ * Render — authenticated board
+ * ============================================================ */
+function renderHeaderRight(profile) {
+  const right = document.getElementById('pb-header-right');
+  const drawer = document.getElementById('pb-mobile-drawer');
+  const branch = profile.branch_code
+    ? ' · ' + escHtml(profile.branch_code)
+    : (Array.isArray(profile.accessible_branches) && profile.accessible_branches.length > 0
+        ? ' · ' + escHtml(profile.accessible_branches.join('+'))
+        : '');
+  const roleZh = ({
+    boss: 'Boss', manager: 'Manager', salesman: 'Salesman', driver: 'Driver'
+  })[profile.role] || profile.role;
+  const pillHtml = `
+    <span class="pb-user-pill" aria-label="当前用户">
+      <span class="pb-user-name">${escHtml(profile.name || '用户')}</span>
+      <span class="pb-user-meta">${escHtml(roleZh)}${branch}</span>
+    </span>
+  `;
+  const logoutHtml = `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout">退出</button>`;
+  right.innerHTML = pillHtml + logoutHtml;
+  drawer.innerHTML = pillHtml + `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout-m">退出</button>`;
+  const wire = (id) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener('click', async () => {
+      if (!confirm('确认退出 CLF Pilot Board？')) return;
+      try { await sb.auth.signOut(); } catch (_) {}
+      location.reload();
+    });
+  };
+  wire('pb-logout');
+  wire('pb-logout-m');
+}
+
+function renderWelcome(profile) {
+  const branchTxt = profile.branch_code
+    ? '已登录 ' + escHtml(profile.branch_code) + ' 分行'
+    : (Array.isArray(profile.accessible_branches) && profile.accessible_branches.length > 0
+        ? '已登录 ' + escHtml(profile.accessible_branches.join(' / ')) + ' 分行'
+        : '');
+  return `
+    <div class="pb-welcome">
+      您好，<strong>${escHtml(profile.name || '用户')}</strong>
+      <span class="pb-welcome-meta">· 今天是 ${escHtml(todayStrZh())}${branchTxt ? ' · ' + branchTxt : ''}</span>
+    </div>
+  `;
+}
+
+function pillClass(kind) {
+  if (kind === 'live') return 'pb-pill pb-pill-live';
+  if (kind === 'external') return 'pb-pill pb-pill-external';
+  if (kind === 'beta') return 'pb-pill pb-pill-beta';
+  return 'pb-pill';
+}
+
+function cardHtml(card, stats, role) {
+  const tierCls = card.tier === 1 ? 'tier-1' : 'tier-2';
+  const iconTone = card.iconTone || '';
+  const iconCls = ['pb-card-icon', iconTone].filter(Boolean).join(' ');
+  // Lucide creates the SVG from `data-lucide` attribute after createIcons()
+  const iconEl = `<span class="${iconCls}" aria-hidden="true"><i data-lucide="${escHtml(card.icon)}"></i></span>`;
+  const pillEl = card.pill
+    ? `<span class="${pillClass(card.pill.kind)}" aria-label="状态：${escHtml(card.pill.text)}">${escHtml(card.pill.text)}</span>`
+    : '';
+  let statsEl = '';
+  if (card.tier === 1 && typeof card.statsFn === 'function') {
+    const safeStats = stats || {};
+    const arr = card.statsFn(safeStats, role) || [];
+    statsEl = `
+      <div class="pb-card-stats">
+        ${arr.map(s => `
+          <div class="pb-stat">
+            <div class="pb-stat-value">${escHtml(s.val)}</div>
+            <div class="pb-stat-label">${escHtml(s.label)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  const ctaEl = `
+    <div class="pb-card-cta" aria-hidden="true">
+      ${card.target === 'external' ? '在新窗口打开' : '打开'}
+      <i data-lucide="${card.target === 'external' ? 'external-link' : 'arrow-right'}"></i>
+    </div>
+  `;
+  const aria = `打开 ${card.title}${card.subtitle ? ' · ' + card.subtitle : ''} — ${card.desc}${card.target === 'external' ? '（外部页面，新窗口打开）' : ''}`;
+  return `
+    <div class="pb-card ${tierCls}"
+         role="button" tabindex="0"
+         data-card-id="${escHtml(card.id)}"
+         aria-label="${escHtml(aria)}">
+      <div class="pb-card-header">
+        ${iconEl}
+        ${pillEl}
+      </div>
+      <div class="pb-card-title">${escHtml(card.title)}${card.subtitle ? ' · <span class="pb-card-subtitle">' + escHtml(card.subtitle) + '</span>' : ''}</div>
+      <div class="pb-card-desc">${escHtml(card.desc)}</div>
+      ${statsEl}
+      ${ctaEl}
+    </div>
+  `;
+}
+
+function renderBoard(profile, stats) {
+  const role = profile.role;
+  const visible = CARDS.filter(c => c.visibleTo.includes(role));
+  const groups = ['operations', 'analytics'];
+  const main = document.getElementById('pb-main');
+
+  if (visible.length === 0) {
+    main.innerHTML = renderWelcome(profile) + `
+      <div class="pb-empty" role="status">
+        当前账号 (<strong>${escHtml(role)}</strong>) 无可用工具。请联系管理员。
+      </div>
+    `;
+    return;
+  }
+
+  const sections = groups.map(g => {
+    const items = visible.filter(c => c.group === g);
+    if (items.length === 0) return '';
+    const meta = SECTION_LABELS[g] || { title: g, subtitle: '项' };
+    return `
+      <section class="pb-section" aria-labelledby="pb-sec-${escHtml(g)}">
+        <div class="pb-section-header">
+          <h2 class="pb-section-title" id="pb-sec-${escHtml(g)}">${escHtml(meta.title)}</h2>
+          <span class="pb-section-sub">· ${items.length} ${escHtml(meta.subtitle)}</span>
+        </div>
+        <div class="pb-grid">
+          ${items.map(c => cardHtml(c, stats, role)).join('')}
+        </div>
+      </section>
+    `;
+  }).join('');
+
+  main.innerHTML = renderWelcome(profile) + sections;
+
+  // Wire up card click + keyboard
+  main.querySelectorAll('.pb-card').forEach(el => {
+    const id = el.getAttribute('data-card-id');
+    const card = CARDS.find(c => c.id === id);
+    if (!card) return;
+    const fire = () => openCard(card);
+    el.addEventListener('click', fire);
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        fire();
+      }
+    });
+  });
+
+  // Refresh lucide icons after innerHTML swap
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    try { window.lucide.createIcons(); } catch (e) { console.warn('lucide.createIcons failed:', e); }
+  }
+}
+
+/* ============================================================
+ * Card click handlers
+ * ============================================================ */
+function openCard(card) {
+  if (card.target === 'internal') {
+    window.location.href = card.href;
+    return;
+  }
+  // External: confirmation modal first
+  openExternalModal(card);
+}
+
+function openExternalModal(card) {
+  const modal = document.getElementById('pb-modal');
+  const target = document.getElementById('pb-modal-target');
+  const body = modal.querySelector('.pb-modal-body');
+  const cancel = document.getElementById('pb-modal-cancel');
+  const go = document.getElementById('pb-modal-go');
+
+  target.textContent = card.title + (card.subtitle ? ' (' + card.subtitle + ')' : '');
+  // Rebuild body to include externalNote if present (XSS-safe: textContent / explicit construction)
+  body.innerHTML = `您将访问 <span class="pb-modal-target">${escHtml(card.title)}${card.subtitle ? ' (' + escHtml(card.subtitle) + ')' : ''}</span>。这是旧版页面，将在新 tab 打开。`
+    + (card.externalNote
+        ? '<small>' + escHtml(card.externalNote) + '</small>'
+        : '<small>Phase 2 合并到本站后将不再需要跳转。</small>');
+
+  // ===== Listener leak fix (v1.1, M1) =====
+  // ESC closes <dialog> natively WITHOUT firing our close() cleanup. So we
+  // attach all per-open handlers as { once: true } and rely on the dialog's
+  // native 'close' event (fires for both ESC + .close()) to remove the only
+  // listener that isn't auto-detached after one fire — backdropClick.
+  let proceedClicked = false;
+  const proceed = () => {
+    proceedClicked = true;
+    try { modal.close(); } catch (_) {}
+    // Open in new tab with proper rel attrs (reverse tabnabbing prevention)
+    const w = window.open(card.href, '_blank', 'noopener,noreferrer');
+    if (!w) {
+      // Fallback when popup blocked: surface a message
+      alert('浏览器拦截了新窗口。请允许弹窗或长按链接手动打开。');
+    }
+  };
+  const cancelClick = () => {
+    try { modal.close(); } catch (_) {}
+  };
+  const backdropClick = (ev) => {
+    // <dialog> click on backdrop has target === dialog itself
+    if (ev.target === modal) { try { modal.close(); } catch (_) {} }
+  };
+  const onCloseCleanup = () => {
+    modal.removeEventListener('click', backdropClick);
+    // cancel/go listeners are { once: true } → auto-detached after fire.
+    // If dialog closed via ESC or backdrop, they never fired; remove explicitly.
+    cancel.removeEventListener('click', cancelClick);
+    go.removeEventListener('click', proceed);
+  };
+  cancel.addEventListener('click', cancelClick, { once: true });
+  go.addEventListener('click', proceed, { once: true });
+  modal.addEventListener('click', backdropClick);
+  modal.addEventListener('close', onCloseCleanup, { once: true });
+
+  if (typeof modal.showModal === 'function') {
+    modal.showModal();
+  } else {
+    // Fallback: behave like a confirm. Manually detach since no 'close' event fires.
+    onCloseCleanup();
+    if (confirm('即将打开 ' + card.title + '（外部页面）。继续？')) {
+      proceed();
+    }
+  }
+}
+
+/* ============================================================
+ * Error banner control
+ * ============================================================ */
+function showBanner(text) {
+  const b = document.getElementById('pb-banner');
+  const t = document.getElementById('pb-banner-text');
+  if (text) t.textContent = text;
+  b.classList.add('show');
+}
+function hideBanner() { document.getElementById('pb-banner').classList.remove('show'); }
+document.getElementById('pb-banner-retry').addEventListener('click', async () => {
+  hideBanner();
+  await init();
+});
+
+/* ============================================================
+ * Mobile drawer toggle
+ * ============================================================ */
+const hamburger = document.getElementById('pb-hamburger');
+const drawer = document.getElementById('pb-mobile-drawer');
+hamburger.addEventListener('click', () => {
+  const open = drawer.classList.toggle('show');
+  hamburger.setAttribute('aria-expanded', String(open));
+  drawer.setAttribute('aria-hidden', String(!open));
+});
+document.addEventListener('click', (ev) => {
+  if (!drawer.classList.contains('show')) return;
+  if (drawer.contains(ev.target) || hamburger.contains(ev.target)) return;
+  drawer.classList.remove('show');
+  hamburger.setAttribute('aria-expanded', 'false');
+  drawer.setAttribute('aria-hidden', 'true');
+});
+
+/* ============================================================
+ * Top progress bar
+ * ============================================================ */
+function progressStart() {
+  const wrap = document.getElementById('pb-progress');
+  const bar = document.getElementById('pb-progress-bar');
+  wrap.classList.add('show');
+  bar.style.width = '0';
+  // animate to 90% while we wait
+  requestAnimationFrame(() => { bar.style.width = '90%'; });
+}
+function progressDone() {
+  const wrap = document.getElementById('pb-progress');
+  const bar = document.getElementById('pb-progress-bar');
+  bar.style.width = '100%';
+  setTimeout(() => { wrap.classList.remove('show'); bar.style.width = '0'; }, 250);
+}
+
+/* ============================================================
+ * Init flow
+ * ============================================================ */
+async function init() {
+  progressStart();
+  let sessionResp;
+  try {
+    sessionResp = await sb.auth.getSession();
+  } catch (e) {
+    console.error('[pilot-board] getSession failed:', e);
+    progressDone();
+    renderLogin();
+    return;
+  }
+  const session = sessionResp && sessionResp.data && sessionResp.data.session;
+  state.session = session;
+  if (!session) {
+    progressDone();
+    renderLogin();
+    return;
+  }
+
+  // Read profile (role + branch + name)
+  let profile;
+  try {
+    profile = await readUserProfile(session);
+  } catch (e) {
+    console.error('[pilot-board] profile read failed:', e);
+    progressDone();
+    renderLogin('无法读取用户信息，请重新登录。');
+    return;
+  }
+  state.profile = profile;
+
+  // ⚠️ TV Display kiosk redirect (binding decision §13 #3)
+  if (profile.role === 'tv_display' || profile.role === 'tv') {
+    progressDone();
+    window.location.replace('boss_leaderboard.html?tv=1');
+    return;
+  }
+
+  // Render header user pill immediately (don't wait for stats)
+  renderHeaderRight(profile);
+
+  // Fetch stats (1 call). Tier-2 cards don't need stats; Tier-1 will show "—" if null.
+  const stats = await fetchStats();
+  state.stats = stats;
+  state.loadError = (stats === null);
+
+  if (state.loadError) {
+    showBanner('数据连接失败，部分 stats 暂不可用（card 仍可正常使用）。');
+  } else {
+    hideBanner();
+  }
+
+  renderBoard(profile, stats);
+  progressDone();
+}
+
+// React to auth changes (sign-in/out from another tab, token refresh failure)
+sb.auth.onAuthStateChange((evt, sess) => {
+  if (evt === 'SIGNED_OUT' || (!sess && evt !== 'INITIAL_SESSION')) {
+    // Was authed, now not → reload to clean state
+    if (state.session) location.reload();
+  }
+});
+
+// Kick off
+init().catch(err => {
+  console.error('[pilot-board] init crashed:', err);
+  progressDone();
+  showBanner('页面初始化失败，请刷新重试。');
+});
+
+// Initial lucide pass (for any icons already in static DOM — banner etc.)
+if (window.lucide && typeof window.lucide.createIcons === 'function') {
+  try { window.lucide.createIcons(); } catch (_) {}
+}
+</script>
 </body>
 </html>
