@@ -517,17 +517,23 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
-// ===== ROLE GATE: salesman → lock to own collections =====
+// ===== ROLE GATE: salesman → lock to own / manager → restrict branch pills =====
 window.LOCK_SALESMAN_ID = null;
-(function lockSalesmanIfNeeded(){
+window.ALLOWED_BRANCHES = null;  // null = all, ARRAY = only these
+(function readSessionMetadata(){
   try{
     const cached=localStorage.getItem('sb-wgwupdjiugmdgxprctse-auth-token');
     if(!cached)return;
     const parsed=JSON.parse(cached);
     const user=parsed&&(parsed.user||(parsed.currentSession&&parsed.currentSession.user));
     const md=user&&user.user_metadata;
-    if(md&&md.role==='salesman'&&md.salesman_id){
+    if(!md)return;
+    if(md.role==='salesman'&&md.salesman_id){
       window.LOCK_SALESMAN_ID=md.salesman_id;
+    }
+    // Manager with accessible_branches → restrict branch pills to those
+    if(md.role==='manager'&&Array.isArray(md.accessible_branches)&&md.accessible_branches.length>0){
+      window.ALLOWED_BRANCHES=md.accessible_branches;
     }
   }catch(_){}
 })();
@@ -969,6 +975,17 @@ $('salesman-select').addEventListener('change', async (e) => {
   state.selectedSalesmanId = e.target.value;
   await loadCollections();
 });
+
+// Hide branch pills the user can't access (manager with accessible_branches set)
+(function restrictBranchPills(){
+  if (!window.ALLOWED_BRANCHES) return;  // boss / no restriction
+  const allowed = new Set(window.ALLOWED_BRANCHES);
+  document.querySelectorAll('.branch-pill[data-branch]').forEach(pill => {
+    const b = pill.dataset.branch;
+    if (b === 'ALL') return;  // always show ALL
+    if (!allowed.has(b)) pill.style.display = 'none';
+  });
+})();
 
 // Branch filter pills: narrow the salesman dropdown to one branch
 document.querySelectorAll('.branch-pill[data-branch]').forEach(pill => {
