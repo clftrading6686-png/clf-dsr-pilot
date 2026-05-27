@@ -8,6 +8,19 @@
 
   CHANGELOG
   --------
+  2026-05-26  v1.2  EN-only UI conversion (per Boss decision).
+                    - All Chinese user-facing strings translated to natural English.
+                    - 0 CJK characters in rendered UI (changelog comments kept Chinese
+                      where useful for context; CSS/JS comments are dev-facing only).
+                    - <html lang="zh-Hans"> → <html lang="en">.
+                    - todayStrZh() renamed → todayStrEn(); locale switched zh-CN → en-US.
+                    - roleZh identifier renamed → roleLabel for clarity.
+                    - Stats labels translated (e.g. 今日已交 → "Submitted Today",
+                      待收 → "Total Pending", 逾期 → "Overdue Count").
+                    - No JS logic / Supabase query / role detection / TV redirect changes.
+                    - 18 anti-patterns from spec §9 still honored (escHtml on all DB
+                      strings, no inline display:none, no hardcoded hex in selectors).
+                    - Other 5 production HTML files in this folder NOT touched.
   2026-05-26  v1.1  Reviewer round 1 fixes (3 Major).
                     - M1: External-modal listener leak fixed. ESC-close (which
                       bypasses our close() fn) no longer leaks handlers. Now
@@ -45,11 +58,11 @@
   - Transport stats always NULL in Phase 1 per §13 #4 — UI shows "—".
   ============================================================
 -->
-<html lang="zh-Hans">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CLF Pilot Operations Board · 入口</title>
+<title>CLF Pilot Operations Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -400,7 +413,7 @@ body {
   margin-bottom: var(--space-2);
 }
 .pb-card-subtitle {
-  /* Secondary text inside the title line, e.g. "DSR Mobile · 销售日报" */
+  /* Secondary text inside the title line, e.g. "DSR Mobile · Daily Sales Report" */
   font-weight: 500;
   color: var(--gray-500);
 }
@@ -693,14 +706,14 @@ body {
   <span class="pb-banner-icon" aria-hidden="true">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   </span>
-  <span class="pb-banner-text" id="pb-banner-text">数据连接失败，部分 stats 暂不可用，card 仍可点。</span>
-  <button class="pb-banner-retry" type="button" id="pb-banner-retry">重试</button>
+  <span class="pb-banner-text" id="pb-banner-text">Connection lost — some stats are temporarily unavailable. Cards still work.</span>
+  <button class="pb-banner-retry" type="button" id="pb-banner-retry">Retry</button>
 </div>
 
 <!-- HEADER (rendered for all states; user pill empty when unauth) -->
 <header class="pb-header" id="pb-header">
   <div class="pb-header-left">
-    <a class="pb-logo" href="/" aria-label="CLF Trading 首页">CLF</a>
+    <a class="pb-logo" href="/" aria-label="CLF Trading home">CLF</a>
     <div class="pb-title-block">
       <div class="pb-title">CLF Trading</div>
       <div class="pb-subtitle">Pilot Operations Board</div>
@@ -709,7 +722,7 @@ body {
   <div class="pb-header-right" id="pb-header-right">
     <!-- populated by JS -->
   </div>
-  <button class="pb-hamburger" type="button" id="pb-hamburger" aria-label="打开菜单" aria-expanded="false">
+  <button class="pb-hamburger" type="button" id="pb-hamburger" aria-label="Open menu" aria-expanded="false">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
 </header>
@@ -724,8 +737,8 @@ body {
   <div class="pb-welcome"><span class="pb-welcome-skeleton" aria-hidden="true"></span></div>
   <section class="pb-section">
     <div class="pb-section-header">
-      <span class="pb-section-title">操作中</span>
-      <span class="pb-section-sub">载入中…</span>
+      <span class="pb-section-title">Loading</span>
+      <span class="pb-section-sub">please wait…</span>
     </div>
     <div class="pb-grid" id="pb-grid-skel">
       <div class="pb-card-skel"><div class="pb-skel-line icon"></div><div class="pb-skel-line tall medium"></div><div class="pb-skel-line"></div><div class="pb-skel-line short"></div></div>
@@ -740,15 +753,15 @@ body {
   <div class="pb-modal-inner">
     <h2 class="pb-modal-title" id="pb-modal-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      即将打开外部页面
+      Opening external page
     </h2>
     <div class="pb-modal-body">
-      您将访问 <span class="pb-modal-target" id="pb-modal-target">—</span>。这是旧版页面，将在新 tab 打开。
-      <small>Phase 2 合并到本站后将不再需要跳转。</small>
+      You're about to open <span class="pb-modal-target" id="pb-modal-target">—</span>. This is a legacy page and will open in a new tab.
+      <small>Phase 2 will merge this into the main site so jumps won't be needed.</small>
     </div>
     <div class="pb-modal-actions">
-      <button class="pb-btn pb-btn-secondary" type="button" id="pb-modal-cancel">取消</button>
-      <button class="pb-btn pb-btn-primary" type="button" id="pb-modal-go">继续打开</button>
+      <button class="pb-btn pb-btn-secondary" type="button" id="pb-modal-cancel">Cancel</button>
+      <button class="pb-btn pb-btn-primary" type="button" id="pb-modal-go">Continue</button>
     </div>
   </div>
 </dialog>
@@ -789,11 +802,11 @@ const fmtRM = (n) => {
 const fmtInt = (n) => (n == null || Number.isNaN(Number(n))) ? '—' : String(Math.trunc(Number(n)));
 const fmtName = (n) => n == null || n === '' ? '—' : String(n);
 
-// ----- Util: today (Asia/Kuala_Lumpur display) -----
-function todayStrZh() {
+// ----- Util: today (English display) -----
+function todayStrEn() {
   try {
     const d = new Date();
-    return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   } catch (_) {
     return new Date().toISOString().slice(0, 10);
   }
@@ -806,8 +819,8 @@ const CARDS = [
   // ---- Operations ----
   {
     id: 'dsr_mobile', group: 'operations', tier: 1,
-    title: 'DSR Mobile', subtitle: '销售日报',
-    desc: '销售员每日订单、收款、照片上传',
+    title: 'DSR Mobile', subtitle: 'Daily Sales Report',
+    desc: 'Salesman daily orders, collections, and photo uploads',
     icon: 'clipboard-check',
     pill: { kind: 'live', text: 'LIVE' },
     visibleTo: ['boss', 'manager', 'salesman'],
@@ -815,18 +828,18 @@ const CARDS = [
     href: 'dsr_mobile.html',
     statsFn: (s, role) => role === 'salesman'
       ? [
-          { val: fmtInt(s.dsr_today_submitted) + '/1', label: '今日提交' },
-          { val: fmtRM(s.dsr_month_sales_rm), label: '本月销售' }
+          { val: fmtInt(s.dsr_today_submitted) + '/1', label: 'Submitted Today' },
+          { val: fmtRM(s.dsr_month_sales_rm), label: 'Sales This Month' }
         ]
       : [
-          { val: fmtInt(s.dsr_today_submitted) + '/' + fmtInt(s.dsr_today_expected), label: '今日已交' },
-          { val: fmtRM(s.dsr_today_sales_rm), label: '今日销售' }
+          { val: fmtInt(s.dsr_today_submitted) + '/' + fmtInt(s.dsr_today_expected), label: 'Submitted Today' },
+          { val: fmtRM(s.dsr_today_sales_rm), label: 'Sales Today' }
         ],
   },
   {
     id: 'fuel_form', group: 'operations', tier: 2,
-    title: 'Fuel Form', subtitle: '加油申报',
-    desc: '司机当日加油提交 + 收据照片',
+    title: 'Fuel Form', subtitle: 'Refueling Report',
+    desc: 'Driver daily refueling entries with receipt photos',
     icon: 'fuel',
     iconTone: 'warn',
     pill: { kind: 'external', text: 'EXTERNAL' },
@@ -836,8 +849,8 @@ const CARDS = [
   },
   {
     id: 'pod_form', group: 'operations', tier: 2,
-    title: 'POD Form', subtitle: '送达凭证',
-    desc: 'Proof of Delivery：已签收发票拍照上传',
+    title: 'POD Form', subtitle: 'Proof of Delivery',
+    desc: 'Upload photos of signed delivery invoices',
     icon: 'package-check',
     pill: { kind: 'external', text: 'EXTERNAL' },
     visibleTo: ['boss', 'manager', 'driver'],
@@ -846,8 +859,8 @@ const CARDS = [
   },
   {
     id: 'leave_mgmt', group: 'operations', tier: 2,
-    title: 'Leave Management', subtitle: '请假管理',
-    desc: '提交、查看、审批请假申请',
+    title: 'Leave Management', subtitle: 'Time-Off Requests',
+    desc: 'Submit, review, and approve leave applications',
     icon: 'calendar-x',
     pill: { kind: 'external', text: 'EXTERNAL' },
     visibleTo: ['boss', 'manager', 'salesman', 'driver'],
@@ -857,8 +870,8 @@ const CARDS = [
   // ---- Analytics ----
   {
     id: 'boss_dashboard', group: 'analytics', tier: 2,
-    title: 'Boss Dashboard', subtitle: '老板看板',
-    desc: 'KPI + 4 图表：销售趋势、TOP10、收款 aging、提交热力图',
+    title: 'Boss Dashboard', subtitle: 'Executive View',
+    desc: 'KPIs plus 4 charts: sales trend, top 10, collection aging, submission heatmap',
     icon: 'layout-dashboard',
     pill: { kind: 'live', text: 'LIVE' },
     visibleTo: ['boss', 'manager'],
@@ -867,8 +880,8 @@ const CARDS = [
   },
   {
     id: 'collections', group: 'analytics', tier: 1,
-    title: 'Collections', subtitle: '应收账款',
-    desc: '追踪未收款 + 逾期 + 按 branch 分组',
+    title: 'Collections', subtitle: 'Accounts Receivable',
+    desc: 'Track outstanding payments, overdue accounts, and branch breakdowns',
     icon: 'wallet',
     pill: { kind: 'live', text: 'LIVE' },
     visibleTo: ['boss', 'manager', 'salesman'],
@@ -876,18 +889,18 @@ const CARDS = [
     href: 'collections.html',
     statsFn: (s, role) => role === 'salesman'
       ? [
-          { val: fmtRM(s.coll_my_pending_rm), label: '我未收' },
-          { val: fmtInt(s.coll_my_overdue_count) + ' 笔', label: '我逾期' }
+          { val: fmtRM(s.coll_my_pending_rm), label: 'My Pending' },
+          { val: fmtInt(s.coll_my_overdue_count), label: 'My Overdue' }
         ]
       : [
-          { val: fmtRM(s.coll_pending_rm), label: '待收总额' },
-          { val: fmtInt(s.coll_overdue_count) + ' 笔', label: '逾期笔数' }
+          { val: fmtRM(s.coll_pending_rm), label: 'Total Pending' },
+          { val: fmtInt(s.coll_overdue_count), label: 'Overdue Count' }
         ],
   },
   {
     id: 'leaderboard', group: 'analytics', tier: 1,
-    title: 'Leaderboard', subtitle: 'TV 大屏',
-    desc: '实时销售员排行 · 适合办公室电视循环展示',
+    title: 'Leaderboard', subtitle: 'TV Display',
+    desc: 'Live salesman rankings — ideal for office TV rotation',
     icon: 'trophy',
     iconTone: 'gold',
     pill: { kind: 'live', text: 'LIVE' },
@@ -895,25 +908,25 @@ const CARDS = [
     target: 'internal',
     href: 'boss_leaderboard.html?tv=1',
     statsFn: (s) => [
-      { val: fmtName(s.leader_today_top_emp_no), label: '今日 #1' },
-      { val: fmtName(s.leader_month_top_emp_no), label: '本月领先' }
+      { val: fmtName(s.leader_today_top_emp_no), label: 'Today #1' },
+      { val: fmtName(s.leader_month_top_emp_no), label: 'Month Leader' }
     ],
   },
   {
     id: 'sales_perf', group: 'analytics', tier: 2,
-    title: 'Sales Performance', subtitle: '销售业绩分析',
-    desc: '多维 filter（brand / group / 时段）+ 历史趋势',
+    title: 'Sales Performance', subtitle: 'Performance Analytics',
+    desc: 'Multi-dimensional filters (brand / group / period) and historical trends',
     icon: 'trending-up',
     pill: { kind: 'external', text: 'EXTERNAL' },
     visibleTo: ['boss', 'manager'],
     target: 'external',
     href: 'https://clftrading6686-png.github.io/clf-dash/',
-    externalNote: '需用 Boss 账号 (clftrading6686@gmail.com) 登录后可见真数据。',
+    externalNote: 'Sign in with the Boss account (clftrading6686@gmail.com) to see real data.',
   },
   {
     id: 'transport_tower', group: 'analytics', tier: 1,
-    title: 'Transport Tower', subtitle: '车队监控',
-    desc: 'Fuel + POD 合规率 · 司机绩效 · 5 分钟自动刷新',
+    title: 'Transport Tower', subtitle: 'Fleet Monitoring',
+    desc: 'Fuel + POD compliance rates, driver performance, auto-refreshed every 5 minutes',
     icon: 'truck',
     pill: { kind: 'external', text: 'EXTERNAL' },
     visibleTo: ['boss', 'manager'],
@@ -924,16 +937,16 @@ const CARDS = [
       { val: (s.transport_pod_today_count != null && s.transport_pod_today_expected != null)
           ? fmtInt(s.transport_pod_today_count) + '/' + fmtInt(s.transport_pod_today_expected)
           : '—',
-        label: '今日 POD' },
+        label: 'POD Today' },
       { val: (s.transport_fuel_compliance_pct != null) ? Math.round(s.transport_fuel_compliance_pct) + '%' : '—',
-        label: 'Fuel 合规' }
+        label: 'Fuel Compliance' }
     ],
   },
 ];
 
 const SECTION_LABELS = {
-  operations: { title: '日常作业', subtitle: '项' },
-  analytics:  { title: '分析看板', subtitle: '项' },
+  operations: { title: 'Operations', subtitle: 'items' },
+  analytics:  { title: 'Analytics',  subtitle: 'items' },
 };
 
 /* ============================================================
@@ -1012,23 +1025,23 @@ function renderLogin(msg) {
   document.getElementById('pb-mobile-drawer').classList.remove('show');
   main.innerHTML = `
     <div class="pb-login-wrap">
-      <div class="pb-login-card" role="region" aria-label="登录">
+      <div class="pb-login-card" role="region" aria-label="Sign in">
         <div class="pb-login-logo">CLF</div>
         <h1 class="pb-login-title">CLF Pilot Operations Board</h1>
-        <p class="pb-login-sub">请使用您的账号登录以查看可用工具</p>
+        <p class="pb-login-sub">Please sign in with your account to see available tools.</p>
         <div class="pb-login-msg" id="pb-login-msg"></div>
         <form id="pb-login-form" novalidate>
           <div class="pb-login-field">
-            <label for="pb-login-id">Staff ID 或 Email</label>
-            <input type="text" id="pb-login-id" autocomplete="username" placeholder="例如 TER500 或 boss@clftrading.com" required>
+            <label for="pb-login-id">Staff ID or Email</label>
+            <input type="text" id="pb-login-id" autocomplete="username" placeholder="e.g. TER500 or boss@clftrading.com" required>
           </div>
           <div class="pb-login-field">
-            <label for="pb-login-pw">密码</label>
+            <label for="pb-login-pw">Password</label>
             <input type="password" id="pb-login-pw" autocomplete="current-password" required>
           </div>
-          <button class="pb-login-btn" type="submit" id="pb-login-btn">登录 / Login</button>
+          <button class="pb-login-btn" type="submit" id="pb-login-btn">Sign In</button>
         </form>
-        <p class="pb-login-help">忘记密码？请联系 admin@clftrading.com</p>
+        <p class="pb-login-help">Forgot password? Contact admin@clftrading.com</p>
       </div>
     </div>
   `;
@@ -1047,14 +1060,14 @@ function renderLogin(msg) {
     let id = (idEl.value || '').trim().toLowerCase();
     const pw = pwEl.value || '';
     if (!id || !pw) {
-      msgEl.textContent = '请输入 Staff ID / Email 和密码';
+      msgEl.textContent = 'Please enter Staff ID / Email and password.';
       msgEl.classList.remove('info'); msgEl.classList.add('error');
       return;
     }
     if (!id.includes('@')) id = id + '@clf-staff.local';
     btn.disabled = true;
     const orig = btn.textContent;
-    btn.textContent = '登录中…';
+    btn.textContent = 'Signing in…';
     msgEl.textContent = '';
     msgEl.classList.remove('info', 'error');
     msgEl.style.display = 'none';
@@ -1065,7 +1078,7 @@ function renderLogin(msg) {
       setTimeout(() => location.reload(), 150);
     } catch (err) {
       console.error('[pilot-board] sign-in failed:', err);
-      msgEl.textContent = (err && err.message) || '登录失败，请检查 Staff ID / Email 和密码';
+      msgEl.textContent = (err && err.message) || 'Sign-in failed. Check your Staff ID / Email and password.';
       msgEl.classList.add('error');
       btn.disabled = false;
       btn.textContent = orig;
@@ -1086,23 +1099,23 @@ function renderHeaderRight(profile) {
     : (Array.isArray(profile.accessible_branches) && profile.accessible_branches.length > 0
         ? ' · ' + escHtml(profile.accessible_branches.join('+'))
         : '');
-  const roleZh = ({
+  const roleLabel = ({
     boss: 'Boss', manager: 'Manager', salesman: 'Salesman', driver: 'Driver'
   })[profile.role] || profile.role;
   const pillHtml = `
-    <span class="pb-user-pill" aria-label="当前用户">
-      <span class="pb-user-name">${escHtml(profile.name || '用户')}</span>
-      <span class="pb-user-meta">${escHtml(roleZh)}${branch}</span>
+    <span class="pb-user-pill" aria-label="Signed-in user">
+      <span class="pb-user-name">${escHtml(profile.name || 'User')}</span>
+      <span class="pb-user-meta">${escHtml(roleLabel)}${branch}</span>
     </span>
   `;
-  const logoutHtml = `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout">退出</button>`;
+  const logoutHtml = `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout">Sign Out</button>`;
   right.innerHTML = pillHtml + logoutHtml;
-  drawer.innerHTML = pillHtml + `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout-m">退出</button>`;
+  drawer.innerHTML = pillHtml + `<button class="pb-btn pb-btn-secondary" type="button" id="pb-logout-m">Sign Out</button>`;
   const wire = (id) => {
     const b = document.getElementById(id);
     if (!b) return;
     b.addEventListener('click', async () => {
-      if (!confirm('确认退出 CLF Pilot Board？')) return;
+      if (!confirm('Sign out of CLF Pilot Board?')) return;
       try { await sb.auth.signOut(); } catch (_) {}
       location.reload();
     });
@@ -1113,14 +1126,14 @@ function renderHeaderRight(profile) {
 
 function renderWelcome(profile) {
   const branchTxt = profile.branch_code
-    ? '已登录 ' + escHtml(profile.branch_code) + ' 分行'
+    ? 'Branch ' + escHtml(profile.branch_code)
     : (Array.isArray(profile.accessible_branches) && profile.accessible_branches.length > 0
-        ? '已登录 ' + escHtml(profile.accessible_branches.join(' / ')) + ' 分行'
+        ? 'Branches ' + escHtml(profile.accessible_branches.join(' / '))
         : '');
   return `
     <div class="pb-welcome">
-      您好，<strong>${escHtml(profile.name || '用户')}</strong>
-      <span class="pb-welcome-meta">· 今天是 ${escHtml(todayStrZh())}${branchTxt ? ' · ' + branchTxt : ''}</span>
+      Welcome, <strong>${escHtml(profile.name || 'User')}</strong>
+      <span class="pb-welcome-meta">· Today is ${escHtml(todayStrEn())}${branchTxt ? ' · ' + branchTxt : ''}</span>
     </div>
   `;
 }
@@ -1139,7 +1152,7 @@ function cardHtml(card, stats, role) {
   // Lucide creates the SVG from `data-lucide` attribute after createIcons()
   const iconEl = `<span class="${iconCls}" aria-hidden="true"><i data-lucide="${escHtml(card.icon)}"></i></span>`;
   const pillEl = card.pill
-    ? `<span class="${pillClass(card.pill.kind)}" aria-label="状态：${escHtml(card.pill.text)}">${escHtml(card.pill.text)}</span>`
+    ? `<span class="${pillClass(card.pill.kind)}" aria-label="Status: ${escHtml(card.pill.text)}">${escHtml(card.pill.text)}</span>`
     : '';
   let statsEl = '';
   if (card.tier === 1 && typeof card.statsFn === 'function') {
@@ -1158,11 +1171,11 @@ function cardHtml(card, stats, role) {
   }
   const ctaEl = `
     <div class="pb-card-cta" aria-hidden="true">
-      ${card.target === 'external' ? '在新窗口打开' : '打开'}
+      ${card.target === 'external' ? 'Open in new tab' : 'Open'}
       <i data-lucide="${card.target === 'external' ? 'external-link' : 'arrow-right'}"></i>
     </div>
   `;
-  const aria = `打开 ${card.title}${card.subtitle ? ' · ' + card.subtitle : ''} — ${card.desc}${card.target === 'external' ? '（外部页面，新窗口打开）' : ''}`;
+  const aria = `Open ${card.title}${card.subtitle ? ' · ' + card.subtitle : ''} — ${card.desc}${card.target === 'external' ? ' (external page, opens in new tab)' : ''}`;
   return `
     <div class="pb-card ${tierCls}"
          role="button" tabindex="0"
@@ -1189,7 +1202,7 @@ function renderBoard(profile, stats) {
   if (visible.length === 0) {
     main.innerHTML = renderWelcome(profile) + `
       <div class="pb-empty" role="status">
-        当前账号 (<strong>${escHtml(role)}</strong>) 无可用工具。请联系管理员。
+        No tools are available for your account (<strong>${escHtml(role)}</strong>). Please contact the administrator.
       </div>
     `;
     return;
@@ -1198,7 +1211,7 @@ function renderBoard(profile, stats) {
   const sections = groups.map(g => {
     const items = visible.filter(c => c.group === g);
     if (items.length === 0) return '';
-    const meta = SECTION_LABELS[g] || { title: g, subtitle: '项' };
+    const meta = SECTION_LABELS[g] || { title: g, subtitle: 'items' };
     return `
       <section class="pb-section" aria-labelledby="pb-sec-${escHtml(g)}">
         <div class="pb-section-header">
@@ -1256,10 +1269,10 @@ function openExternalModal(card) {
 
   target.textContent = card.title + (card.subtitle ? ' (' + card.subtitle + ')' : '');
   // Rebuild body to include externalNote if present (XSS-safe: textContent / explicit construction)
-  body.innerHTML = `您将访问 <span class="pb-modal-target">${escHtml(card.title)}${card.subtitle ? ' (' + escHtml(card.subtitle) + ')' : ''}</span>。这是旧版页面，将在新 tab 打开。`
+  body.innerHTML = `You're about to open <span class="pb-modal-target">${escHtml(card.title)}${card.subtitle ? ' (' + escHtml(card.subtitle) + ')' : ''}</span>. This is a legacy page and will open in a new tab.`
     + (card.externalNote
         ? '<small>' + escHtml(card.externalNote) + '</small>'
-        : '<small>Phase 2 合并到本站后将不再需要跳转。</small>');
+        : '<small>Phase 2 will merge this into the main site so jumps won\'t be needed.</small>');
 
   // ===== Listener leak fix (v1.1, M1) =====
   // ESC closes <dialog> natively WITHOUT firing our close() cleanup. So we
@@ -1274,7 +1287,7 @@ function openExternalModal(card) {
     const w = window.open(card.href, '_blank', 'noopener,noreferrer');
     if (!w) {
       // Fallback when popup blocked: surface a message
-      alert('浏览器拦截了新窗口。请允许弹窗或长按链接手动打开。');
+      alert('Your browser blocked the new window. Please allow pop-ups, or long-press the link to open it manually.');
     }
   };
   const cancelClick = () => {
@@ -1301,7 +1314,7 @@ function openExternalModal(card) {
   } else {
     // Fallback: behave like a confirm. Manually detach since no 'close' event fires.
     onCloseCleanup();
-    if (confirm('即将打开 ' + card.title + '（外部页面）。继续？')) {
+    if (confirm('About to open ' + card.title + ' (external page). Continue?')) {
       proceed();
     }
   }
@@ -1387,7 +1400,7 @@ async function init() {
   } catch (e) {
     console.error('[pilot-board] profile read failed:', e);
     progressDone();
-    renderLogin('无法读取用户信息，请重新登录。');
+    renderLogin('Could not read your account info. Please sign in again.');
     return;
   }
   state.profile = profile;
@@ -1408,7 +1421,7 @@ async function init() {
   state.loadError = (stats === null);
 
   if (state.loadError) {
-    showBanner('数据连接失败，部分 stats 暂不可用（card 仍可正常使用）。');
+    showBanner('Connection lost — some stats are temporarily unavailable. Cards still work.');
   } else {
     hideBanner();
   }
@@ -1429,7 +1442,7 @@ sb.auth.onAuthStateChange((evt, sess) => {
 init().catch(err => {
   console.error('[pilot-board] init crashed:', err);
   progressDone();
-  showBanner('页面初始化失败，请刷新重试。');
+  showBanner('Page failed to initialize. Please refresh to retry.');
 });
 
 // Initial lucide pass (for any icons already in static DOM — banner etc.)
