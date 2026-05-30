@@ -1,8 +1,23 @@
 <!DOCTYPE html>
+<!--
+  CHANGELOG
+  --------
+  2026-05-26  Step 5: Add legacy github.io → pilot.clftrading.com redirect
+              (byte-identical IIFE snippet at top of <head>, also added to
+              index.html, dsr_mobile.html, boss_dashboard.html, boss_leaderboard.html).
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function () {
+  if (location.hostname === 'clftrading6686-png.github.io') {
+    var newPath = location.pathname.replace(/^\/clf-dsr-pilot/, '');
+    location.replace('https://pilot.clftrading.com' + newPath + location.search + location.hash);
+  }
+})();
+</script>
 <title>Collections — CLF Trading</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
