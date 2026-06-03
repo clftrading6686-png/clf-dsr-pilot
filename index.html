@@ -1078,6 +1078,7 @@ function renderLogin(msg) {
     if (!id || !pw) {
       msgEl.textContent = 'Please enter Staff ID / Email and password.';
       msgEl.classList.remove('info'); msgEl.classList.add('error');
+      msgEl.style.display = '';
       return;
     }
     if (!id.includes('@')) id = id + '@clf-staff.local';
@@ -1096,6 +1097,7 @@ function renderLogin(msg) {
       console.error('[pilot-board] sign-in failed:', err);
       msgEl.textContent = (err && err.message) || 'Sign-in failed. Check your Staff ID / Email and password.';
       msgEl.classList.add('error');
+      msgEl.style.display = '';
       btn.disabled = false;
       btn.textContent = orig;
       try { pwEl.focus(); pwEl.select(); } catch (_) {}
